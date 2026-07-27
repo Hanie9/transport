@@ -1,0 +1,449 @@
+import 'package:flutter/material.dart';
+
+import '../core/constants/app_constants.dart';
+
+class AppLocalizations {
+  AppLocalizations(this.locale);
+
+  final Locale locale;
+
+  static const supportedLocales = [
+    Locale('fa', 'IR'),
+    Locale('en', 'US'),
+  ];
+
+  static AppLocalizations of(BuildContext context) {
+    return Localizations.of<AppLocalizations>(context, AppLocalizations)!;
+  }
+
+  bool get isFa => locale.languageCode == 'fa';
+
+  String _t(String fa, String en) => isFa ? fa : en;
+
+  String get appName => _t('لجستیک', 'Legestic');
+  String get appTagline => _t(
+        'سامانه هوشمند حمل‌ونقل بار جاده‌ای',
+        'Smart road freight management system',
+      );
+
+  // Settings
+  String get settings => _t('تنظیمات', 'Settings');
+  String get language => _t('زبان', 'Language');
+  String get languagePersian => _t('فارسی', 'Persian');
+  String get languageEnglish => _t('انگلیسی', 'English');
+  String get darkMode => _t('حالت تاریک', 'Dark mode');
+  String get darkModeSubtitle => _t('نمایش رابط کاربری با تم تیره', 'Use a dark color theme');
+  String get settingsSubtitle => _t(
+        'شخصی‌سازی ظاهر و زبان اپلیکیشن',
+        'Customize app appearance and language',
+      );
+  String get helpSubtitle => _t('راهنمای بخش‌های اپلیکیشن', 'App section guide');
+  String helpRoleSubtitle(String role) => role == 'driver'
+      ? _t('راهنمای استفاده برای رانندگان', 'Usage guide for drivers')
+      : _t('راهنمای استفاده برای متصدیان حمل‌ونقل', 'Usage guide for transport coordinators');
+  String get appearance => _t('ظاهر', 'Appearance');
+  String get localization => _t('زبان و منطقه', 'Language & region');
+
+  // Drawer menu
+  String get aboutUs => _t('درباره ما', 'About us');
+  String get help => _t('راهنما', 'Help');
+  String get support => _t('پشتیبانی', 'Support');
+  String get changePassword => _t('تغییر رمز عبور', 'Change password');
+  String get aboutDescription => _t(
+        'لجستیک سامانه‌ای هوشمند برای مدیریت حمل‌ونقل بار جاده‌ای است که رانندگان و متصدیان حمل‌ونقل را به یکدیگر متصل می‌کند.',
+        'Legestic is a smart road freight platform that connects drivers and transport coordinators.',
+      );
+  String versionLabel(String version) => _t('نسخه $version', 'Version $version');
+  String get supportTitle => _t('تماس با پشتیبانی', 'Contact support');
+  String get supportSubtitle => _t(
+        'تیم پشتیبانی ما آماده پاسخگویی به سوالات شماست.',
+        'Our support team is ready to help with your questions.',
+      );
+  String get supportPhone => _t('تلفن پشتیبانی', 'Support phone');
+  String get supportHours => _t('ساعات پاسخگویی', 'Support hours');
+  String get supportHoursValue => _t('شنبه تا پنجشنبه ۸ تا ۱۸', 'Sat–Thu 8 AM – 6 PM');
+  String get changePasswordHint => _t(
+        'برای امنیت بیشتر، رمز عبور قوی انتخاب کنید.',
+        'Choose a strong password for better security.',
+      );
+  String get currentPassword => _t('رمز عبور فعلی', 'Current password');
+  String get newPassword => _t('رمز عبور جدید', 'New password');
+  String get savePassword => _t('ذخیره رمز عبور', 'Save password');
+  String get passwordChanged => _t('رمز عبور با موفقیت تغییر کرد', 'Password changed successfully');
+  String get helpAcceptCargoTitle => _t('پذیرش بار', 'Accepting cargo');
+  String get helpAcceptCargoBody => _t(
+        'از بخش بارها، بار مناسب را انتخاب و جزئیات آن را بررسی کنید. سپس با پذیرش بار، ماموریت در تب ماموریت‌ها نمایش داده می‌شود.',
+        'From Cargos, pick a suitable load and review its details. After accepting, the mission appears in the Missions tab.',
+      );
+  String get helpGpsTitle => _t('فعال‌سازی GPS', 'Enabling GPS');
+  String get helpGpsBody => _t(
+        'با فعال کردن GPS در صفحه بارها، پیشنهادهای نزدیک‌تر و متناسب‌تر دریافت می‌کنید.',
+        'Enable GPS on the Cargos page to receive closer and more relevant suggestions.',
+      );
+  String get helpVehicleTitle => _t('ثبت اطلاعات خودرو', 'Vehicle registration');
+  String get helpVehicleBody => _t(
+        'در پروفایل، اطلاعات خودرو و نوع بارگیر را ثبت کنید تا بارهای متناسب پیشنهاد شوند.',
+        'Add your vehicle and trailer type in Profile so matching cargos can be suggested.',
+      );
+
+  // Help — driver
+  String get helpDriverCargosTitle => _t('بارها', 'Cargos');
+  String get helpDriverCargosBody => _t(
+        'در تب بارها، لیست بارهای متناسب با نوع بارگیر خودروی شما نمایش داده می‌شود. با فعال‌سازی GPS، بارهای نزدیک‌تر در بالای لیست قرار می‌گیرند. روی هر بار بزنید تا جزئیات مبدا، مقصد، وزن و فاصله را ببینید.',
+        'In the Cargos tab, you see loads that match your trailer type. With GPS enabled, closer loads appear at the top. Tap a load to view origin, destination, weight, and distance.',
+      );
+  String get helpDriverGpsTitle => _t('GPS و پیشنهاد هوشمند', 'GPS & smart suggestions');
+  String get helpDriverGpsBody => _t(
+        'با روشن کردن GPS در بالای صفحه بارها، موقعیت شما شناسایی می‌شود و بارهای نزدیک‌تر با فاصله کیلومتری نمایش داده می‌شوند. بدون GPS فقط بارهای متناسب با نوع بارگیر نشان داده می‌شوند.',
+        'Turn on GPS at the top of the Cargos page to share your location. Nearby loads are shown with distance in km. Without GPS, only loads matching your trailer type are listed.',
+      );
+  String get helpDriverAcceptTitle => _t('پذیرش بار', 'Accepting cargo');
+  String get helpDriverAcceptBody => _t(
+        'در صفحه جزئیات بار، اطلاعات کامل شامل مبدا، مقصد، نوع کالا و متصدی را بررسی کنید. با زدن «پذیرش بار» و تأیید، این بار به ماموریت‌های فعال شما اضافه می‌شود.',
+        'On the cargo details screen, review origin, destination, goods type, and coordinator info. Tap Accept cargo and confirm to add it to your active missions.',
+      );
+  String get helpDriverMissionsTitle => _t('ماموریت‌ها', 'Missions');
+  String get helpDriverMissionsBody => _t(
+        'در تب ماموریت‌ها، بارهای پذیرفته‌شده را می‌بینید. با فیلترهای فعال، تکمیل‌شده و همه می‌توانید وضعیت ماموریت‌ها را جدا کنید. از هر ماموریت می‌توانید به صفحه مسیریابی بروید.',
+        'In the Missions tab, view accepted cargos. Use Active, Completed, and All filters to sort missions. From each mission you can open the navigation screen.',
+      );
+  String get helpDriverNavigationTitle => _t('مسیریابی', 'Navigation');
+  String get helpDriverNavigationBody => _t(
+        'در صفحه مسیریابی، مسیر تا مبدا و سپس تا مقصد نمایش داده می‌شود. پس از رسیدن به مبدا، می‌توانید ادامه مسیر تا مقصد را شروع کنید. اتصال به نقشه نشان در نسخه بعدی فعال می‌شود.',
+        'On the navigation screen, see the route to the origin and then to the destination. After arriving at the origin, continue to the destination. Neshan map integration is coming in the next version.',
+      );
+  String get helpDriverProfileTitle => _t('پروفایل و خودرو', 'Profile & vehicle');
+  String get helpDriverProfileBody => _t(
+        'در تب پروفایل، نام و اطلاعات حساب خود را می‌بینید. اطلاعات خودرو شامل پلاک، مدل، نوع بارگیر و ظرفیت را ثبت یا ویرایش کنید تا بارهای مناسب‌تر پیشنهاد شوند. از همین بخش می‌توانید از حساب خارج شوید.',
+        'In Profile, view your name and account info. Add or edit vehicle details — plate, model, trailer type, and capacity — for better cargo matches. You can also sign out from here.',
+      );
+  String get helpDriverMenuTitle => _t('منو و تنظیمات', 'Menu & settings');
+  String get helpDriverMenuBody => _t(
+        'از منوی کناری (آیکون همبرگر) به تنظیمات، تغییر رمز عبور، راهنما، پشتیبانی و درباره ما دسترسی دارید. در تنظیمات می‌توانید زبان (فارسی/انگلیسی) و حالت تاریک را تغییر دهید.',
+        'From the side menu (hamburger icon), open Settings, Change password, Help, Support, and About. In Settings you can switch language (Persian/English) and dark mode.',
+      );
+
+  // Help — coordinator
+  String get helpCoordinatorCargosTitle => _t('مدیریت بارها', 'Cargo management');
+  String get helpCoordinatorCargosBody => _t(
+        'در تب بارها، همه بارهای ثبت‌شده توسط شما نمایش داده می‌شوند. وضعیت هر بار (در انتظار، در حال حمل، تکمیل‌شده و ...) و راننده تخصیص‌یافته در کارت بار قابل مشاهده است. روی هر بار بزنید تا جزئیات کامل را ببینید.',
+        'In the Cargos tab, see all cargos you registered. Each card shows status (pending, in transit, completed, etc.) and the assigned driver. Tap a cargo for full details.',
+      );
+  String get helpCoordinatorAddCargoTitle => _t('ثبت بار جدید', 'Adding cargo');
+  String get helpCoordinatorAddCargoBody => _t(
+        'با دکمه «ثبت بار» در صفحه اصلی، فرم ثبت بار باز می‌شود. مبدا، مقصد، نوع بارگیر، نوع کالا و وزن را وارد کنید. با «برآورد قیمت» هزینه تقریبی محاسبه می‌شود و پس از ثبت، بار در لیست شما ظاهر می‌شود.',
+        'Tap Add cargo on the home screen to open the form. Enter origin, destination, trailer type, goods type, and weight. Use Estimate price for an approximate cost, then submit to add the cargo to your list.',
+      );
+  String get helpCoordinatorCargoDetailTitle => _t('جزئیات بار', 'Cargo details');
+  String get helpCoordinatorCargoDetailBody => _t(
+        'در صفحه جزئیات بار، مسیر، وزن، وضعیت حمل و اطلاعات راننده تخصیص‌یافته را می‌بینید. اگر راننده‌ای اختصاص نیافته باشد، می‌توانید از «مشاهده رانندگان نزدیک» رانندگان فعال نزدیک مبدا را ببینید.',
+        'On cargo details, view the route, weight, shipping progress, and assigned driver. If no driver is assigned yet, use View nearby drivers to see active drivers near the origin.',
+      );
+  String get helpCoordinatorDriversTitle => _t('رانندگان فعال', 'Active drivers');
+  String get helpCoordinatorDriversBody => _t(
+        'در تب رانندگان، لیست رانندگانی که در حال حاضر فعال هستند نمایش داده می‌شود. نام، پلاک خودرو، نوع بارگیر و تعداد سفرهای انجام‌شده هر راننده در این بخش قابل مشاهده است.',
+        'In the Drivers tab, see drivers who are currently active. Each entry shows name, license plate, trailer type, and completed trip count.',
+      );
+  String get helpCoordinatorNearbyTitle => _t('رانندگان نزدیک', 'Nearby drivers');
+  String get helpCoordinatorNearbyBody => _t(
+        'در تب نزدیک، رانندگان فعالی که به مبدا بار نزدیک‌تر هستند پیشنهاد می‌شوند. این بخش برای یافتن سریع راننده مناسب برای بارهای جدید مفید است.',
+        'In the Nearby tab, active drivers closer to the cargo origin are suggested. This helps you quickly find a suitable driver for new loads.',
+      );
+  String get helpCoordinatorProfileTitle => _t('پروفایل', 'Profile');
+  String get helpCoordinatorProfileBody => _t(
+        'در تب پروفایل، اطلاعات حساب کاربری شامل نام، شماره تماس و ایمیل نمایش داده می‌شود. از این بخش می‌توانید از حساب خود خارج شوید.',
+        'In Profile, view your account details including name, phone, and email. You can sign out from here.',
+      );
+  String get helpCoordinatorMenuTitle => _t('منو و تنظیمات', 'Menu & settings');
+  String get helpCoordinatorMenuBody => _t(
+        'از منوی کناری به تنظیمات، تغییر رمز عبور، راهنما، پشتیبانی و درباره ما دسترسی دارید. در تنظیمات زبان اپلیکیشن و حالت تاریک قابل تغییر است.',
+        'From the side menu, open Settings, Change password, Help, Support, and About. In Settings you can change the app language and dark mode.',
+      );
+
+  // Auth
+  String get loginTitle => _t('ورود به حساب کاربری', 'Sign in to your account');
+  String get userType => _t('نوع کاربری', 'User type');
+  String get phoneNumber => _t('شماره موبایل', 'Phone number');
+  String get password => _t('رمز عبور', 'Password');
+  String get login => _t('ورود', 'Sign in');
+  String get noAccount => _t('حساب کاربری ندارید؟', "Don't have an account?");
+  String get signup => _t('ثبت‌نام', 'Sign up');
+  String get signupTitle => _t('ثبت‌نام', 'Sign up');
+  String get fullName => _t('نام و نام خانوادگی', 'Full name');
+  String get emailOptional => _t('ایمیل (اختیاری)', 'Email (optional)');
+  String get confirmPassword => _t('تکرار رمز عبور', 'Confirm password');
+  String get haveAccount => _t('قبلاً ثبت‌نام کرده‌اید؟', 'Already have an account?');
+  String get phoneRequired => _t('شماره موبایل الزامی است', 'Phone number is required');
+  String get phoneInvalid => _t('شماره موبایل معتبر نیست', 'Invalid phone number');
+  String get passwordRequired => _t('رمز عبور الزامی است', 'Password is required');
+  String get passwordMinLength => _t('رمز عبور حداقل ۶ کاراکتر باشد', 'Password must be at least 6 characters');
+  String get nameRequired => _t('نام الزامی است', 'Name is required');
+  String get passwordsMismatch => _t('رمز عبور و تکرار آن یکسان نیست', 'Passwords do not match');
+  String get createAccount => _t('ایجاد حساب کاربری', 'Create an account');
+  String get personalInfo => _t('اطلاعات شخصی', 'Personal information');
+  String get securityInfo => _t('امنیت حساب', 'Account security');
+  String signupInApp(String appName) => _t('در $appName ثبت‌نام کنید', 'Sign up for $appName');
+  String get driverSignupHint => _t('مشاهده و پذیرش بار', 'View and accept cargos');
+  String get coordinatorSignupHint => _t('ثبت و مدیریت بار', 'Register and manage cargos');
+
+  // Roles
+  String roleLabel(String role) => role == 'driver'
+      ? _t('راننده', 'Driver')
+      : _t('متصدی حمل‌ونقل', 'Transport coordinator');
+
+  // Navigation
+  String get cargos => _t('بارها', 'Cargos');
+  String get missions => _t('ماموریت‌ها', 'Missions');
+  String get profile => _t('پروفایل', 'Profile');
+  String get drivers => _t('رانندگان', 'Drivers');
+  String get nearby => _t('نزدیک', 'Nearby');
+  String get addCargo => _t('ثبت بار', 'Add cargo');
+
+  // Driver home
+  String hello(String name) => _t('سلام $name!', 'Hello $name!');
+  String cargoTypeLabel(String type) => _t('نوع بارگیر: $type', 'Trailer type: $type');
+  String get notRegistered => _t('ثبت نشده', 'Not set');
+  String get gpsEnabled => _t('GPS فعال است', 'GPS is on');
+  String get gpsDisabled => _t('GPS غیرفعال است', 'GPS is off');
+  String get gpsEnabledHint => _t(
+        'بارهای نزدیک بر اساس موقعیت شما پیشنهاد می‌شوند',
+        'Nearby cargos are suggested based on your location',
+      );
+  String get gpsDisabledHint => _t(
+        'برای دریافت پیشنهاد هوشمند GPS را فعال کنید',
+        'Enable GPS for smart cargo suggestions',
+      );
+  String get loadingCargos => _t('در حال بارگذاری بارها...', 'Loading cargos...');
+  String get noCargoFound => _t('باری یافت نشد', 'No cargo found');
+  String get noMatchingCargo => _t(
+        'در حال حاضر باری متناسب با نوع بارگیر شما وجود ندارد',
+        'No cargo matches your trailer type right now',
+      );
+  String get enableGpsForNearby => _t(
+        'برای مشاهده بارهای نزدیک، GPS را فعال کنید',
+        'Enable GPS to see nearby cargos',
+      );
+  String get nearbyCargos => _t('بارهای نزدیک', 'Nearby cargos');
+  String get otherMatchingCargos => _t('سایر بارهای متناسب', 'Other matching cargos');
+  String get allMatchingCargos => _t('همه بارهای متناسب', 'All matching cargos');
+  String get kmAway => _t('کیلومتر', 'km');
+  String kmDistance(num km) => _t('$km کیلومتر', '$km km');
+
+  // Missions
+  String get myMissions => _t('ماموریت‌های من', 'My missions');
+  String activeMissionsCount(int count) => _t('$count ماموریت فعال', '$count active missions');
+  String get missionsSubtitle => _t(
+        'بارهای پذیرفته‌شده شما در این بخش نمایش داده می‌شوند',
+        'Accepted cargos appear in this section',
+      );
+  String get filterActive => _t('فعال', 'Active');
+  String get filterCompleted => _t('تکمیل‌شده', 'Completed');
+  String get filterAll => _t('همه', 'All');
+  String get loadingMissions => _t('در حال بارگذاری ماموریت‌ها...', 'Loading missions...');
+  String get noActiveMission => _t('ماموریت فعالی ندارید', 'No active missions');
+  String get noMissionFound => _t('ماموریتی یافت نشد', 'No missions found');
+  String get acceptCargoHint => _t(
+        'با پذیرش بار، ماموریت جدید اینجا نمایش داده می‌شود',
+        'Accept a cargo to see a new mission here',
+      );
+  String get navigation => _t('مسیریابی', 'Navigate');
+
+  // Profile
+  String get email => _t('ایمیل', 'Email');
+  String get logout => _t('خروج از حساب', 'Sign out');
+  String get vehicleInfo => _t('اطلاعات خودرو', 'Vehicle info');
+  String get edit => _t('ویرایش', 'Edit');
+  String get register => _t('ثبت', 'Add');
+  String get vehiclePlate => _t('پلاک خودرو', 'License plate');
+  String get vehicleModel => _t('مدل خودرو', 'Vehicle model');
+  String get trailerType => _t('نوع بارگیر', 'Trailer type');
+  String get capacity => _t('ظرفیت', 'Capacity');
+  String tons(num value) => _t('$value تن', '$value tons');
+  String get vehicleNotRegistered => _t('اطلاعات خودرو ثبت نشده', 'Vehicle info not set');
+  String get vehicleRegisterHint => _t(
+        'برای دریافت بارهای متناسب، اطلاعات خودرو را ثبت کنید',
+        'Add your vehicle info to receive matching cargos',
+      );
+  String get vehicleSaved => _t('اطلاعات خودرو ذخیره شد', 'Vehicle info saved');
+
+  // Coordinator
+  String get cargoManagement => _t('مدیریت بارها', 'Cargo management');
+  String get loading => _t('در حال بارگذاری...', 'Loading...');
+  String driverLabel(String name) => _t('راننده: $name', 'Driver: $name');
+  String get activeDrivers => _t('رانندگان فعال', 'Active drivers');
+  String get nearbyDrivers => _t('رانندگان نزدیک', 'Nearby drivers');
+  String get loadingDrivers => _t('در حال بارگذاری رانندگان...', 'Loading drivers...');
+  String get searchingNearbyDrivers => _t('جستجوی رانندگان نزدیک...', 'Searching nearby drivers...');
+  String get noDriversFound => _t('راننده‌ای یافت نشد', 'No drivers found');
+  String get noActiveDrivers => _t('راننده فعالی یافت نشد', 'No active drivers found');
+  String get noNearbyDrivers => _t('راننده نزدیکی یافت نشد', 'No nearby drivers found');
+  String get nearbyDriversHint => _t(
+        'رانندگان فعال نزدیک به مبدا بار به شما پیشنهاد می‌شوند',
+        'Active drivers near the cargo origin are suggested to you',
+      );
+  String get active => _t('فعال', 'Active');
+  String tripsCount(num count) => _t('$count سفر', '$count trips');
+
+  // Cargo details
+  String get cargoDetails => _t('جزئیات بار', 'Cargo details');
+  String get cargoStatusTitle => _t('وضعیت بار', 'Cargo status');
+  String get acceptCargo => _t('پذیرش بار', 'Accept cargo');
+  String acceptCargoConfirm(String title) =>
+      _t('آیا از پذیرش بار «$title» اطمینان دارید؟', 'Are you sure you want to accept "$title"?');
+  String get cargoAccepted => _t('بار با موفقیت پذیرفته شد', 'Cargo accepted successfully');
+  String get viewRoute => _t('مشاهده مسیر', 'View route');
+  String get origin => _t('مبدا', 'Origin');
+  String get destination => _t('مقصد', 'Destination');
+  String get distance => _t('فاصله', 'Distance');
+  String distanceKm(num km) => _t('$km کیلومتر', '$km km');
+  String get goodsType => _t('نوع کالا', 'Goods type');
+  String get weight => _t('وزن', 'Weight');
+  String get coordinator => _t('متصدی', 'Coordinator');
+  String nearbyCargoDistance(num km) =>
+      _t('این بار $km کیلومتر از شما فاصله دارد', 'This cargo is $km km away from you');
+  String get assignedDriver => _t('راننده تخصیص‌یافته', 'Assigned driver');
+  String get name => _t('نام', 'Name');
+  String get phone => _t('تلفن', 'Phone');
+  String get shippingProgress => _t('پیشرفت حمل', 'Shipping progress');
+  String get viewNearbyDrivers => _t('مشاهده رانندگان نزدیک', 'View nearby drivers');
+
+  // Route
+  String get routeTitle => _t('مسیریابی', 'Navigation');
+  String get loadingRoute => _t('در حال بارگذاری مسیر...', 'Loading route...');
+  String get routeNotFound => _t('مسیر یافت نشد', 'Route not found');
+  String get routeToOrigin => _t('مسیریابی به مبدا', 'Navigate to origin');
+  String get routeToDestination => _t('مسیریابی به مقصد', 'Navigate to destination');
+  String get neshanMap => _t('نقشه نشان', 'Neshan Map');
+  String get neshanApiNote => _t('اتصال به API نشان در نسخه بعدی', 'Neshan API integration in the next version');
+  String get cargoOriginPoint => _t('مبدا بار', 'Cargo origin');
+  String get cargoDestinationPoint => _t('مقصد بار', 'Cargo destination');
+  String get totalDistance => _t('فاصله کل', 'Total distance');
+  String get statusLabel => _t('وضعیت', 'Status');
+  String startNavigationTo(String destination) =>
+      _t('شروع مسیریابی به $destination', 'Start navigation to $destination');
+  String get arrivedAtOriginContinue => _t('رسیدم به مبدا — ادامه به مقصد', 'Arrived at origin — continue to destination');
+  String navigationToApi(String destination) =>
+      _t('مسیریابی به $destination (API نشان)', 'Navigation to $destination (Neshan API)');
+
+  // Add cargo
+  String get addNewCargo => _t('ثبت بار جدید', 'Add new cargo');
+  String get cargoTitle => _t('عنوان بار', 'Cargo title');
+  String get titleRequired => _t('عنوان الزامی است', 'Title is required');
+  String get originRequired => _t('مبدا الزامی است', 'Origin is required');
+  String get destinationRequired => _t('مقصد الزامی است', 'Destination is required');
+  String get weightRequired => _t('وزن الزامی است', 'Weight is required');
+  String get weightInvalid => _t('وزن معتبر نیست', 'Invalid weight');
+  String get weightTonsLabel => _t('وزن (تن)', 'Weight (tons)');
+  String get selectCargoAndGoods => _t('نوع بارگیر و کالا را انتخاب کنید', 'Select trailer and goods type');
+  String get fillRouteFields => _t(
+        'لطفاً مبدا، مقصد، نوع بارگیر و وزن را وارد کنید',
+        'Please enter origin, destination, trailer type, and weight',
+      );
+  String get cargoRegistered => _t('بار با موفقیت ثبت شد', 'Cargo registered successfully');
+  String get estimatePrice => _t('تخمین قیمت حمل', 'Shipping price estimate');
+  String get calculate => _t('محاسبه', 'Calculate');
+  String get priceEstimateHint => _t(
+        'بر اساس فاصله، نوع بار و شرایط مسیر',
+        'Based on distance, cargo type, and route conditions',
+      );
+  String get defaultCoordinatorName => _t('متصدی', 'Coordinator');
+
+  // Vehicle form
+  String get selectTrailerType => _t('نوع بارگیر را انتخاب کنید', 'Select a trailer type');
+  String get vehicleFormHint => _t(
+        'اطلاعات خودرو برای پیشنهاد بارهای متناسب استفاده می‌شود',
+        'Vehicle info is used to suggest matching cargos',
+      );
+  String get plateIncomplete => _t('لطفاً تمام بخش‌های پلاک را کامل کنید', 'Please complete all plate sections');
+  String get modelRequired => _t('مدل خودرو الزامی است', 'Vehicle model is required');
+  String get capacityTons => _t('ظرفیت (تن)', 'Capacity (tons)');
+  String get saveVehicleInfo => _t('ذخیره اطلاعات خودرو', 'Save vehicle info');
+  String get cancel => _t('انصراف', 'Cancel');
+  String get confirm => _t('تأیید', 'Confirm');
+
+  // Plate widget
+  String get plateNumber => _t('شماره پلاک', 'License plate number');
+  String get selectPlateLetter => _t('انتخاب حرف پلاک', 'Select plate letter');
+  String get cargoTitleHint => _t('حمل سیمان به اصفهان', 'Cement delivery to Isfahan');
+  String get originHint => _t('تهران، شهرک صنعتی', 'Tehran, industrial zone');
+  String get destinationHint => _t('اصفهان، شهرک صنعتی', 'Isfahan, industrial zone');
+  String get vehicleModelHint => _t('ولوو FH460', 'Volvo FH460');
+
+  // Cargo status
+  String cargoStatus(String status) {
+    switch (status) {
+      case 'در انتظار راننده':
+        return _t('در انتظار راننده', 'Awaiting driver');
+      case 'تخصیص یافته':
+        return _t('تخصیص یافته', 'Assigned');
+      case 'در حال حمل':
+        return _t('در حال حمل', 'In transit');
+      case 'تحویل شده':
+        return _t('تحویل شده', 'Delivered');
+      case 'لغو شده':
+        return _t('لغو شده', 'Cancelled');
+      default:
+        return status;
+    }
+  }
+
+  String cargoType(String type) {
+    final index = AppConstants.cargoTypes.indexOf(type);
+    if (index == -1) return type;
+    const enTypes = [
+      'Flatbed',
+      'Dump truck',
+      'Refrigerated',
+      'Tanker',
+      'Container',
+      'Bulk',
+      'Crane truck',
+    ];
+    return isFa ? type : enTypes[index];
+  }
+
+  String goodsTypeLabel(String type) {
+    final index = AppConstants.goodsTypes.indexOf(type);
+    if (index == -1) return type;
+    const enTypes = [
+      'Building materials',
+      'Food products',
+      'Agricultural products',
+      'Chemicals',
+      'Home appliances',
+      'Industrial parts',
+      'Other',
+    ];
+    return isFa ? type : enTypes[index];
+  }
+
+  String formatPrice(int price) {
+    final formatted = price.toString().replaceAllMapped(
+          RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
+          (m) => '${m[1]},',
+        );
+    if (isFa) {
+      return '$formatted تومان';
+    }
+    return 'IRR $formatted';
+  }
+
+  String get currencyToman => _t('تومان', 'IRR');
+}
+
+class AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {
+  const AppLocalizationsDelegate();
+
+  @override
+  bool isSupported(Locale locale) => ['fa', 'en'].contains(locale.languageCode);
+
+  @override
+  Future<AppLocalizations> load(Locale locale) async => AppLocalizations(locale);
+
+  @override
+  bool shouldReload(covariant LocalizationsDelegate<AppLocalizations> old) => false;
+}
+
+extension L10nContext on BuildContext {
+  AppLocalizations get l10n => AppLocalizations.of(this);
+}
