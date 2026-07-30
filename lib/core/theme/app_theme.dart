@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 @immutable
 class AppPalette extends ThemeExtension<AppPalette> {
@@ -57,6 +56,10 @@ extension AppPaletteContext on BuildContext {
 }
 
 class AppTheme {
+  static const String vazirFamily = 'Vazir';
+  static const String interFamily = 'Inter';
+  static const String brandFamily = 'Nasalization';
+
   static const Color primary = Color(0xFF0F766E);
   static const Color primaryLight = Color(0xFF14B8A6);
   static const Color primaryDark = Color(0xFF0D5C56);
@@ -97,7 +100,8 @@ class AppTheme {
         colors: [primary, primaryLight],
       );
 
-  static ThemeData light({bool useVazirmatn = true}) => _buildTheme(
+  /// Persian → bundled Vazir; English → bundled Inter (no Google Fonts).
+  static ThemeData light({bool useVazir = true}) => _buildTheme(
         brightness: Brightness.light,
         palette: AppPalette(
           surface: surface,
@@ -107,10 +111,10 @@ class AppTheme {
           divider: const Color(0xFFF1F5F9),
           cardShadow: cardShadowFor(Brightness.light),
         ),
-        useVazirmatn: useVazirmatn,
+        useVazir: useVazir,
       );
 
-  static ThemeData dark({bool useVazirmatn = true}) => _buildTheme(
+  static ThemeData dark({bool useVazir = true}) => _buildTheme(
         brightness: Brightness.dark,
         palette: AppPalette(
           surface: darkSurface,
@@ -120,18 +124,38 @@ class AppTheme {
           divider: const Color(0xFF334155),
           cardShadow: cardShadowFor(Brightness.dark),
         ),
-        useVazirmatn: useVazirmatn,
+        useVazir: useVazir,
       );
+
+  static TextStyle textStyle({
+    required String fontFamily,
+    double? fontSize,
+    FontWeight? fontWeight,
+    Color? color,
+    double? letterSpacing,
+    double? height,
+  }) {
+    return TextStyle(
+      fontFamily: fontFamily,
+      fontSize: fontSize,
+      fontWeight: fontWeight,
+      color: color,
+      letterSpacing: letterSpacing,
+      height: height,
+    );
+  }
 
   static ThemeData _buildTheme({
     required Brightness brightness,
     required AppPalette palette,
-    required bool useVazirmatn,
+    required bool useVazir,
   }) {
     final isDark = brightness == Brightness.dark;
+    final fontFamily = useVazir ? vazirFamily : interFamily;
     final base = ThemeData(
       useMaterial3: true,
       brightness: brightness,
+      fontFamily: fontFamily,
       colorScheme: ColorScheme.fromSeed(
         seedColor: primary,
         brightness: brightness,
@@ -143,18 +167,26 @@ class AppTheme {
       extensions: [palette],
     );
 
-    TextTheme textTheme = base.textTheme;
-    if (useVazirmatn) {
-      textTheme = GoogleFonts.vazirmatnTextTheme(textTheme);
-    } else {
-      textTheme = GoogleFonts.interTextTheme(textTheme);
-    }
-    textTheme = textTheme.apply(
+    final textTheme = base.textTheme.apply(
+      fontFamily: fontFamily,
       bodyColor: palette.textPrimary,
       displayColor: palette.textPrimary,
     );
 
-    final fontFamily = useVazirmatn ? GoogleFonts.vazirmatn : GoogleFonts.inter;
+    TextStyle style({
+      double? fontSize,
+      FontWeight? fontWeight,
+      Color? color,
+      double? letterSpacing,
+    }) {
+      return textStyle(
+        fontFamily: fontFamily,
+        fontSize: fontSize,
+        fontWeight: fontWeight,
+        color: color,
+        letterSpacing: letterSpacing,
+      );
+    }
 
     return base.copyWith(
       scaffoldBackgroundColor: palette.surface,
@@ -167,7 +199,7 @@ class AppTheme {
         backgroundColor: palette.surface,
         foregroundColor: palette.textPrimary,
         surfaceTintColor: Colors.transparent,
-        titleTextStyle: fontFamily(
+        titleTextStyle: style(
           fontSize: 17,
           fontWeight: FontWeight.w700,
           color: palette.textPrimary,
@@ -196,8 +228,8 @@ class AppTheme {
           borderSide: const BorderSide(color: primaryLight, width: 2),
         ),
         contentPadding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
-        labelStyle: fontFamily(color: palette.textSecondary),
-        hintStyle: fontFamily(color: palette.textSecondary.withValues(alpha: 0.7)),
+        labelStyle: style(color: palette.textSecondary),
+        hintStyle: style(color: palette.textSecondary.withValues(alpha: 0.7)),
       ),
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
@@ -207,7 +239,7 @@ class AppTheme {
           shadowColor: Colors.transparent,
           padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 16),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-          textStyle: fontFamily(fontSize: 16, fontWeight: FontWeight.w700),
+          textStyle: style(fontSize: 16, fontWeight: FontWeight.w700),
         ),
       ),
       outlinedButtonTheme: OutlinedButtonThemeData(
@@ -216,12 +248,12 @@ class AppTheme {
           padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 16),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
           side: BorderSide(color: isDark ? const Color(0xFF475569) : Colors.grey.shade300),
-          textStyle: fontFamily(fontSize: 16, fontWeight: FontWeight.w600),
+          textStyle: style(fontSize: 16, fontWeight: FontWeight.w600),
         ),
       ),
       chipTheme: ChipThemeData(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        labelStyle: fontFamily(fontSize: 13, fontWeight: FontWeight.w500),
+        labelStyle: style(fontSize: 13, fontWeight: FontWeight.w500),
         side: BorderSide.none,
         padding: const EdgeInsets.symmetric(horizontal: 4),
         backgroundColor: palette.cardBg,
@@ -233,7 +265,7 @@ class AppTheme {
         height: 72,
         labelTextStyle: WidgetStateProperty.resolveWith((states) {
           final selected = states.contains(WidgetState.selected);
-          return fontFamily(
+          return style(
             fontSize: 12,
             fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
             color: selected ? (isDark ? primaryLight : primary) : palette.textSecondary,
@@ -256,7 +288,25 @@ class AppTheme {
       switchTheme: SwitchThemeData(
         thumbColor: WidgetStateProperty.resolveWith((states) {
           if (states.contains(WidgetState.selected)) {
+            return Colors.white;
+          }
+          return isDark ? const Color(0xFFE2E8F0) : Colors.white;
+        }),
+        trackColor: WidgetStateProperty.resolveWith((states) {
+          if (states.contains(WidgetState.selected)) {
             return isDark ? primaryLight : primary;
+          }
+          return isDark ? const Color(0xFF475569) : const Color(0xFFCBD5E1);
+        }),
+        trackOutlineColor: WidgetStateProperty.resolveWith((states) {
+          if (states.contains(WidgetState.selected)) {
+            return Colors.transparent;
+          }
+          return isDark ? const Color(0xFF64748B) : const Color(0xFF94A3B8);
+        }),
+        overlayColor: WidgetStateProperty.resolveWith((states) {
+          if (states.contains(WidgetState.selected)) {
+            return (isDark ? primaryLight : primary).withValues(alpha: 0.12);
           }
           return null;
         }),

@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
 import '../../core/theme/app_theme.dart';
@@ -122,18 +121,6 @@ class _DriverProfileScreenState extends State<_DriverProfileScreen> {
               onEdit: () => setState(() => _editingVehicle = true),
               onCancel: () => setState(() => _editingVehicle = false),
               onSave: _saveVehicle,
-            ),
-            const SizedBox(height: 32),
-            OutlinedButton.icon(
-              onPressed: () {
-                context.read<AuthService>().logout();
-                context.go('/login');
-              },
-              icon: const Icon(Icons.logout, color: AppTheme.error),
-              label: Text(l10n.logout, style: const TextStyle(color: AppTheme.error)),
-              style: OutlinedButton.styleFrom(
-                side: const BorderSide(color: AppTheme.error),
-              ),
             ),
           ],
         ),
@@ -303,18 +290,6 @@ class _CoordinatorProfileScreen extends StatelessWidget {
                 title: l10n.email,
                 value: user!.email!,
               ),
-            const SizedBox(height: 32),
-            OutlinedButton.icon(
-              onPressed: () {
-                context.read<AuthService>().logout();
-                context.go('/login');
-              },
-              icon: const Icon(Icons.logout, color: AppTheme.error),
-              label: Text(l10n.logout, style: const TextStyle(color: AppTheme.error)),
-              style: OutlinedButton.styleFrom(
-                side: const BorderSide(color: AppTheme.error),
-              ),
-            ),
           ],
         ),
       ),

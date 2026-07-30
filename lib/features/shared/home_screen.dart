@@ -1,0 +1,751 @@
+import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
+import 'package:provider/provider.dart';
+
+import '../../core/theme/app_theme.dart';
+import '../../core/widgets/common_widgets.dart';
+import '../../core/widgets/modern_app_bar.dart';
+import '../../l10n/app_localizations.dart';
+import '../../models/cargo.dart';
+import '../../services/auth_service.dart';
+import '../../services/cargo_service.dart';
+
+class HomeScreen extends StatefulWidget {
+  const HomeScreen({super.key, required this.role});
+
+  final String role;
+
+  @override
+  State<HomeScreen> createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends State<HomeScreen> {
+  final _cargoService = CargoService();
+  bool _loading = true;
+
+  int _stat1 = 0;
+  int _stat2 = 0;
+  int _stat3 = 0;
+  List<Cargo> _recent = [];
+
+  bool get _isDriver => widget.role == 'driver';
+
+  @override
+  void initState() {
+    super.initState();
+    _cargoService.addListener(_load);
+    _load(showLoader: true);
+  }
+
+  @override
+  void dispose() {
+    _cargoService.removeListener(_load);
+    super.dispose();
+  }
+
+  Future<void> _load({bool showLoader = false}) async {
+    if (showLoader && mounted) setState(() => _loading = true);
+
+    final user = context.read<AuthService>().currentUser;
+    if (user == null) {
+      if (mounted) setState(() => _loading = false);
+      return;
+    }
+
+    if (_isDriver) {
+      final cargoType = user.vehicleInfo?.cargoType ?? 'کفی';
+      final nearby = await _cargoService.getNearbyCargos(cargoType: cargoType);
+      final available = await _cargoService.getCargosForDriver(cargoType);
+      final missions = await _cargoService.getDriverMissions(
+        driverPhone: user.phone,
+        driverName: user.fullName,
+      );
+      final active = missions
+          .where((c) => c.status == 'تخصیص یافته' || c.status == 'در حال حمل')
+          .length;
+      if (!mounted) return;
+      setState(() {
+        _stat1 = nearby.length;
+        _stat2 = available.length;
+        _stat3 = active;
+        _recent = [...nearby, ...available].take(3).toList();
+        _loading = false;
+      });
+    } else {
+      final cargos = await _cargoService.getCoordinatorCargos(user.fullName);
+      final allCargos = cargos.isEmpty ? await _cargoService.getAllCargos() : cargos;
+      final drivers = await _cargoService.getActiveDrivers();
+      final nearby = await _cargoService.getNearbyDrivers();
+      final pending = allCargos.where((c) => c.status == 'در انتظار راننده').length;
+      final inTransit = allCargos.where((c) => c.status == 'در حال حمل').length;
+      if (!mounted) return;
+      setState(() {
+        _stat1 = allCargos.length;
+        _stat2 = drivers.length;
+        _stat3 = nearby.length;
+        _pendingHint = pending;
+        _inTransitHint = inTransit;
+        _recent = allCargos.take(3).toList();
+        _loading = false;
+      });
+    }
+  }
+
+  int _pendingHint = 0;
+  int _inTransitHint = 0;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.l10n;
+    final palette = context.palette;
+    final user = context.watch<AuthService>().currentUser;
+    final name = user?.fullName ?? l10n.roleLabel(widget.role);
+
+    return Scaffold(
+      backgroundColor: palette.surface,
+      appBar: ModernAppBar(title: l10n.home),
+      body: AppRefreshIndicator(
+        onRefresh: () => _load(),
+        slivers: [
+          SliverPadding(
+            padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+            sliver: SliverToBoxAdapter(
+              child: _HomeHero(
+                greeting: l10n.hello(name),
+                subtitle: _isDriver
+                    ? l10n.homeDriverSubtitle
+                    : l10n.homeCoordinatorSubtitle,
+                roleLabel: l10n.roleLabel(widget.role),
+              ),
+            ),
+          ),
+          if (_loading)
+            const SliverFillRemaining(
+              hasScrollBody: false,
+              child: Center(child: CircularProgressIndicator()),
+            )
+          else ...[
+            SliverPadding(
+              padding: const EdgeInsets.fromLTRB(16, 20, 16, 0),
+              sliver: SliverToBoxAdapter(
+                child: _StatsRow(
+                  items: _isDriver
+                      ? [
+                          _StatData(
+                            label: l10n.homeStatNearby,
+                            value: '$_stat1',
+                            icon: Icons.near_me_rounded,
+                            color: AppTheme.accent,
+                          ),
+                          _StatData(
+                            label: l10n.homeStatAvailable,
+                            value: '$_stat2',
+                            icon: Icons.inventory_2_rounded,
+                            color: AppTheme.primary,
+                          ),
+                          _StatData(
+                            label: l10n.homeStatActiveMissions,
+                            value: '$_stat3',
+                            icon: Icons.local_shipping_rounded,
+                            color: AppTheme.success,
+                          ),
+                        ]
+                      : [
+                          _StatData(
+                            label: l10n.homeStatTotalCargos,
+                            value: '$_stat1',
+                            icon: Icons.list_alt_rounded,
+                            color: AppTheme.primary,
+                          ),
+                          _StatData(
+                            label: l10n.homeStatActiveDrivers,
+                            value: '$_stat2',
+                            icon: Icons.people_rounded,
+                            color: AppTheme.accent,
+                          ),
+                          _StatData(
+                            label: l10n.homeStatNearbyDrivers,
+                            value: '$_stat3',
+                            icon: Icons.near_me_rounded,
+                            color: AppTheme.success,
+                          ),
+                        ],
+                ),
+              ),
+            ),
+            if (!_isDriver)
+              SliverPadding(
+                padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+                sliver: SliverToBoxAdapter(
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: _MiniHintCard(
+                          icon: Icons.hourglass_top_rounded,
+                          label: l10n.homePendingCargos,
+                          value: '$_pendingHint',
+                          color: AppTheme.warning,
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: _MiniHintCard(
+                          icon: Icons.route_rounded,
+                          label: l10n.homeInTransit,
+                          value: '$_inTransitHint',
+                          color: AppTheme.primaryLight,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            SliverToBoxAdapter(
+              child: SectionHeader(title: l10n.homeQuickActions),
+            ),
+            SliverPadding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              sliver: SliverToBoxAdapter(
+                child: _QuickActionsGrid(
+                  actions: _isDriver
+                      ? [
+                          _QuickAction(
+                            icon: Icons.inventory_2_outlined,
+                            label: l10n.cargos,
+                            color: AppTheme.primary,
+                            onTap: () => context.go('/driver/cargos'),
+                          ),
+                          _QuickAction(
+                            icon: Icons.assignment_outlined,
+                            label: l10n.missions,
+                            color: AppTheme.accent,
+                            onTap: () => context.go('/driver/missions'),
+                          ),
+                          _QuickAction(
+                            icon: Icons.directions_car_outlined,
+                            label: l10n.vehicleInfo,
+                            color: AppTheme.success,
+                            onTap: () => context.go('/driver/profile?editVehicle=1'),
+                          ),
+                          _QuickAction(
+                            icon: Icons.help_outline_rounded,
+                            label: l10n.help,
+                            color: AppTheme.primaryLight,
+                            onTap: () => context.push('/driver/help'),
+                          ),
+                        ]
+                      : [
+                          _QuickAction(
+                            icon: Icons.add_box_outlined,
+                            label: l10n.addCargo,
+                            color: AppTheme.accent,
+                            onTap: () => context.push('/coordinator/add-cargo'),
+                          ),
+                          _QuickAction(
+                            icon: Icons.list_alt_outlined,
+                            label: l10n.cargos,
+                            color: AppTheme.primary,
+                            onTap: () => context.go('/coordinator/cargos'),
+                          ),
+                          _QuickAction(
+                            icon: Icons.people_outline,
+                            label: l10n.drivers,
+                            color: AppTheme.success,
+                            onTap: () => context.go('/coordinator/drivers'),
+                          ),
+                          _QuickAction(
+                            icon: Icons.near_me_outlined,
+                            label: l10n.nearbyDrivers,
+                            color: AppTheme.primaryLight,
+                            onTap: () => context.go('/coordinator/nearby-drivers'),
+                          ),
+                        ],
+                ),
+              ),
+            ),
+            SliverToBoxAdapter(
+              child: SectionHeader(
+                title: _isDriver ? l10n.homeSuggestedCargos : l10n.homeRecentCargos,
+                actionLabel: l10n.homeViewAll,
+                action: () => context.go(
+                  _isDriver ? '/driver/cargos' : '/coordinator/cargos',
+                ),
+              ),
+            ),
+            if (_recent.isEmpty)
+              SliverPadding(
+                padding: const EdgeInsets.fromLTRB(16, 0, 16, 100),
+                sliver: SliverToBoxAdapter(
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 28),
+                    decoration: BoxDecoration(
+                      color: palette.cardBg,
+                      borderRadius: BorderRadius.circular(20),
+                      boxShadow: palette.cardShadow,
+                    ),
+                    child: Column(
+                      children: [
+                        Icon(
+                          Icons.inventory_2_outlined,
+                          size: 40,
+                          color: AppTheme.primary.withValues(alpha: 0.45),
+                        ),
+                        const SizedBox(height: 12),
+                        Text(
+                          l10n.noCargoFound,
+                          style: TextStyle(
+                            fontWeight: FontWeight.w700,
+                            color: palette.textPrimary,
+                          ),
+                        ),
+                        if (_isDriver) ...[
+                          const SizedBox(height: 6),
+                          Text(
+                            l10n.noMatchingCargo,
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              fontSize: 13,
+                              color: palette.textSecondary,
+                              height: 1.4,
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
+                ),
+              )
+            else
+              SliverPadding(
+                padding: const EdgeInsets.fromLTRB(16, 0, 16, 100),
+                sliver: SliverList(
+                  delegate: SliverChildBuilderDelegate(
+                    (context, index) {
+                      final cargo = _recent[index];
+                      return Padding(
+                        padding: const EdgeInsets.only(bottom: 12),
+                        child: _HomeCargoTile(
+                          cargo: cargo,
+                          showNearby: _isDriver && cargo.isNearby,
+                          onTap: () => context.push(
+                            _isDriver
+                                ? '/driver/cargo/${cargo.id}'
+                                : '/coordinator/cargo/${cargo.id}',
+                          ),
+                        ),
+                      );
+                    },
+                    childCount: _recent.length,
+                  ),
+                ),
+              ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class _HomeHero extends StatelessWidget {
+  const _HomeHero({
+    required this.greeting,
+    required this.subtitle,
+    required this.roleLabel,
+  });
+
+  final String greeting;
+  final String subtitle;
+  final String roleLabel;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(22),
+      decoration: BoxDecoration(
+        gradient: AppTheme.primaryGradient,
+        borderRadius: BorderRadius.circular(24),
+        boxShadow: [
+          BoxShadow(
+            color: AppTheme.primary.withValues(alpha: 0.28),
+            blurRadius: 22,
+            offset: const Offset(0, 10),
+          ),
+        ],
+      ),
+      child: Stack(
+        children: [
+          Positioned(
+            left: -18,
+            bottom: -28,
+            child: Icon(
+              Icons.local_shipping_rounded,
+              size: 120,
+              color: Colors.white.withValues(alpha: 0.08),
+            ),
+          ),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.18),
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Text(
+                  roleLabel,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 14),
+              Text(
+                greeting,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 22,
+                  fontWeight: FontWeight.w800,
+                  letterSpacing: -0.4,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                subtitle,
+                style: TextStyle(
+                  color: Colors.white.withValues(alpha: 0.9),
+                  fontSize: 13.5,
+                  height: 1.45,
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _StatData {
+  const _StatData({
+    required this.label,
+    required this.value,
+    required this.icon,
+    required this.color,
+  });
+
+  final String label;
+  final String value;
+  final IconData icon;
+  final Color color;
+}
+
+class _StatsRow extends StatelessWidget {
+  const _StatsRow({required this.items});
+
+  final List<_StatData> items;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        for (var i = 0; i < items.length; i++) ...[
+          if (i > 0) const SizedBox(width: 10),
+          Expanded(child: _StatCard(data: items[i])),
+        ],
+      ],
+    );
+  }
+}
+
+class _StatCard extends StatelessWidget {
+  const _StatCard({required this.data});
+
+  final _StatData data;
+
+  @override
+  Widget build(BuildContext context) {
+    final palette = context.palette;
+
+    return Container(
+      padding: const EdgeInsets.fromLTRB(12, 14, 12, 14),
+      decoration: BoxDecoration(
+        color: palette.cardBg,
+        borderRadius: BorderRadius.circular(18),
+        boxShadow: palette.cardShadow,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            width: 36,
+            height: 36,
+            decoration: BoxDecoration(
+              color: data.color.withValues(alpha: 0.12),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Icon(data.icon, color: data.color, size: 20),
+          ),
+          const SizedBox(height: 12),
+          Text(
+            data.value,
+            style: TextStyle(
+              fontSize: 22,
+              fontWeight: FontWeight.w800,
+              color: palette.textPrimary,
+              letterSpacing: -0.5,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            data.label,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(
+              fontSize: 11.5,
+              height: 1.3,
+              fontWeight: FontWeight.w600,
+              color: palette.textSecondary,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _MiniHintCard extends StatelessWidget {
+  const _MiniHintCard({
+    required this.icon,
+    required this.label,
+    required this.value,
+    required this.color,
+  });
+
+  final IconData icon;
+  final String label;
+  final String value;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    final palette = context.palette;
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: color.withValues(alpha: 0.18)),
+      ),
+      child: Row(
+        children: [
+          Icon(icon, color: color, size: 20),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  value,
+                  style: TextStyle(
+                    fontWeight: FontWeight.w800,
+                    fontSize: 16,
+                    color: palette.textPrimary,
+                  ),
+                ),
+                Text(
+                  label,
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                    color: palette.textSecondary,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _QuickAction {
+  const _QuickAction({
+    required this.icon,
+    required this.label,
+    required this.color,
+    required this.onTap,
+  });
+
+  final IconData icon;
+  final String label;
+  final Color color;
+  final VoidCallback onTap;
+}
+
+class _QuickActionsGrid extends StatelessWidget {
+  const _QuickActionsGrid({required this.actions});
+
+  final List<_QuickAction> actions;
+
+  @override
+  Widget build(BuildContext context) {
+    return GridView.count(
+      crossAxisCount: 2,
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      mainAxisSpacing: 10,
+      crossAxisSpacing: 10,
+      childAspectRatio: 2.15,
+      children: actions.map((action) => _QuickActionTile(action: action)).toList(),
+    );
+  }
+}
+
+class _QuickActionTile extends StatelessWidget {
+  const _QuickActionTile({required this.action});
+
+  final _QuickAction action;
+
+  @override
+  Widget build(BuildContext context) {
+    final palette = context.palette;
+
+    return Material(
+      color: palette.cardBg,
+      borderRadius: BorderRadius.circular(18),
+      child: InkWell(
+        onTap: action.onTap,
+        borderRadius: BorderRadius.circular(18),
+        child: Ink(
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(18),
+            boxShadow: palette.cardShadow,
+          ),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+            child: Row(
+              children: [
+                Container(
+                  width: 40,
+                  height: 40,
+                  decoration: BoxDecoration(
+                    color: action.color.withValues(alpha: 0.12),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Icon(action.icon, color: action.color, size: 22),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    action.label,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      fontWeight: FontWeight.w700,
+                      fontSize: 13.5,
+                      color: palette.textPrimary,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _HomeCargoTile extends StatelessWidget {
+  const _HomeCargoTile({
+    required this.cargo,
+    required this.onTap,
+    this.showNearby = false,
+  });
+
+  final Cargo cargo;
+  final VoidCallback onTap;
+  final bool showNearby;
+
+  @override
+  Widget build(BuildContext context) {
+    final palette = context.palette;
+    final l10n = context.l10n;
+
+    return AppCard(
+      onTap: onTap,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  cargo.title,
+                  style: TextStyle(
+                    fontWeight: FontWeight.w800,
+                    fontSize: 15,
+                    color: palette.textPrimary,
+                  ),
+                ),
+              ),
+              if (showNearby && cargo.nearbyDistanceKm != null)
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: AppTheme.accent.withValues(alpha: 0.12),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Text(
+                    l10n.kmDistance(cargo.nearbyDistanceKm!),
+                    style: const TextStyle(
+                      color: AppTheme.accent,
+                      fontWeight: FontWeight.w700,
+                      fontSize: 12,
+                    ),
+                  ),
+                )
+              else
+                StatusChip(status: cargo.status),
+            ],
+          ),
+          const SizedBox(height: 10),
+          Row(
+            children: [
+              Icon(Icons.trip_origin, size: 14, color: palette.textSecondary),
+              const SizedBox(width: 6),
+              Expanded(
+                child: Text(
+                  cargo.origin,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(color: palette.textSecondary, fontSize: 13),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 4),
+          Row(
+            children: [
+              Icon(Icons.flag_outlined, size: 14, color: palette.textSecondary),
+              const SizedBox(width: 6),
+              Expanded(
+                child: Text(
+                  cargo.destination,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(color: palette.textSecondary, fontSize: 13),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}

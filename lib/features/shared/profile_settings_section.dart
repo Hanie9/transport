@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 
 import '../../core/theme/app_theme.dart';
 import '../../core/widgets/common_widgets.dart';
+import '../../core/widgets/dark_mode_toggle.dart';
 import '../../l10n/app_localizations.dart';
 import '../../services/settings_service.dart';
 
@@ -14,6 +15,7 @@ class ProfileSettingsSection extends StatelessWidget {
     final l10n = context.l10n;
     final settings = context.watch<SettingsService>();
     final palette = context.palette;
+    final isDark = settings.themeMode == ThemeMode.dark;
 
     return AppCard(
       padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 8),
@@ -31,13 +33,54 @@ class ProfileSettingsSection extends StatelessWidget {
               ),
             ),
           ),
-          SwitchListTile(
-            contentPadding: EdgeInsets.zero,
-            secondary: Icon(Icons.dark_mode_outlined, color: AppTheme.primaryLight),
-            title: Text(l10n.darkMode, style: TextStyle(color: palette.textPrimary)),
-            subtitle: Text(l10n.darkModeSubtitle, style: TextStyle(color: palette.textSecondary)),
-            value: settings.themeMode == ThemeMode.dark,
-            onChanged: settings.toggleDarkMode,
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 10),
+            child: Row(
+              children: [
+                AnimatedContainer(
+                  duration: const Duration(milliseconds: 280),
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(12),
+                    color: isDark
+                        ? AppTheme.primaryLight.withValues(alpha: 0.16)
+                        : AppTheme.warning.withValues(alpha: 0.14),
+                  ),
+                  child: Icon(
+                    isDark ? Icons.dark_mode_rounded : Icons.light_mode_rounded,
+                    color: isDark ? AppTheme.primaryLight : AppTheme.warning,
+                    size: 22,
+                  ),
+                ),
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        l10n.darkMode,
+                        style: TextStyle(
+                          fontWeight: FontWeight.w600,
+                          color: palette.textPrimary,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        l10n.darkModeSubtitle,
+                        style: TextStyle(
+                          fontSize: 12.5,
+                          color: palette.textSecondary,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                DarkModeToggle(
+                  value: isDark,
+                  onChanged: settings.toggleDarkMode,
+                ),
+              ],
+            ),
           ),
           Divider(height: 1, color: palette.divider),
           Padding(
@@ -62,7 +105,7 @@ class ProfileSettingsSection extends StatelessWidget {
                         ),
                       ),
                       const SizedBox(height: 10),
-                      ProfileLanguageDropdown(),
+                      const ProfileLanguageDropdown(),
                     ],
                   ),
                 ),
@@ -145,11 +188,22 @@ class _LanguageDropdown extends StatelessWidget {
                   entry.value,
                   style: TextStyle(
                     fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
-                    color: isSelected ? AppTheme.primary : palette.textPrimary,
+                    color: isSelected
+                        ? (Theme.of(context).brightness == Brightness.dark
+                            ? AppTheme.primaryLight
+                            : AppTheme.primary)
+                        : palette.textPrimary,
                   ),
                 ),
               ),
-              if (isSelected) const Icon(Icons.check_rounded, size: 18, color: AppTheme.primary),
+              if (isSelected)
+                Icon(
+                  Icons.check_rounded,
+                  size: 18,
+                  color: Theme.of(context).brightness == Brightness.dark
+                      ? AppTheme.primaryLight
+                      : AppTheme.primary,
+                ),
             ],
           ),
         );
@@ -164,6 +218,8 @@ class _LanguageDropdown extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final palette = context.palette;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final accent = isDark ? AppTheme.primaryLight : AppTheme.primary;
 
     return Material(
       color: Colors.transparent,
@@ -172,9 +228,11 @@ class _LanguageDropdown extends StatelessWidget {
         borderRadius: BorderRadius.circular(_radius),
         child: Ink(
           decoration: BoxDecoration(
-            color: palette.cardBg,
+            color: isDark ? const Color(0xFF0F172A).withValues(alpha: 0.55) : palette.surface,
             borderRadius: BorderRadius.circular(_radius),
-            border: Border.all(color: palette.divider),
+            border: Border.all(
+              color: isDark ? const Color(0xFF475569) : palette.divider,
+            ),
           ),
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
@@ -189,7 +247,7 @@ class _LanguageDropdown extends StatelessWidget {
                     ),
                   ),
                 ),
-                Icon(Icons.keyboard_arrow_down_rounded, color: palette.textSecondary),
+                Icon(Icons.keyboard_arrow_down_rounded, color: accent),
               ],
             ),
           ),

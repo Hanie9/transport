@@ -128,6 +128,7 @@ class MenuSectionCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final palette = context.palette;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Container(
       padding: padding,
@@ -135,6 +136,9 @@ class MenuSectionCard extends StatelessWidget {
         color: palette.cardBg,
         borderRadius: BorderRadius.circular(20),
         boxShadow: palette.cardShadow,
+        border: isDark
+            ? Border.all(color: const Color(0xFF334155).withValues(alpha: 0.9))
+            : null,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,

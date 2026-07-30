@@ -24,9 +24,10 @@ class _CoordinatorShellState extends State<CoordinatorShell> {
   final _scaffoldKey = GlobalKey<ScaffoldState>();
 
   int _indexFromLocation(String location) {
-    if (location.startsWith('/coordinator/drivers')) return 1;
-    if (location.startsWith('/coordinator/nearby-drivers')) return 2;
-    if (location.startsWith('/coordinator/profile')) return 3;
+    if (location.startsWith('/coordinator/cargos')) return 1;
+    if (location.startsWith('/coordinator/drivers')) return 2;
+    if (location.startsWith('/coordinator/nearby-drivers')) return 3;
+    if (location.startsWith('/coordinator/profile')) return 4;
     return 0;
   }
 
@@ -35,10 +36,12 @@ class _CoordinatorShellState extends State<CoordinatorShell> {
       case 0:
         context.go('/coordinator');
       case 1:
-        context.go('/coordinator/drivers');
+        context.go('/coordinator/cargos');
       case 2:
-        context.go('/coordinator/nearby-drivers');
+        context.go('/coordinator/drivers');
       case 3:
+        context.go('/coordinator/nearby-drivers');
+      case 4:
         context.go('/coordinator/profile');
     }
   }
@@ -56,7 +59,7 @@ class _CoordinatorShellState extends State<CoordinatorShell> {
         key: _scaffoldKey,
         drawer: const AppDrawer(role: 'coordinator'),
         body: widget.child,
-        floatingActionButton: index == 0 && !hideBottomNav
+        floatingActionButton: (index == 0 || index == 1) && !hideBottomNav
             ? FloatingActionButton.extended(
                 onPressed: () => context.push('/coordinator/add-cargo'),
                 icon: const Icon(Icons.add_rounded),
@@ -69,6 +72,11 @@ class _CoordinatorShellState extends State<CoordinatorShell> {
           currentIndex: index,
           onTap: _onTap,
           destinations: [
+            NavigationDestination(
+              icon: const Icon(Icons.home_outlined),
+              selectedIcon: const Icon(Icons.home_rounded),
+              label: l10n.home,
+            ),
             NavigationDestination(
               icon: const Icon(Icons.list_alt_outlined),
               selectedIcon: const Icon(Icons.list_alt),

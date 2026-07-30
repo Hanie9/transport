@@ -33,8 +33,14 @@ class HelpScreen extends StatelessWidget {
 
   static List<_HelpItemData> _driverItems(AppLocalizations l10n) => [
         _HelpItemData(
-          icon: Icons.inventory_2_outlined,
+          icon: Icons.home_outlined,
           color: AppTheme.primary,
+          title: l10n.helpDriverHomeTitle,
+          body: l10n.helpDriverHomeBody,
+        ),
+        _HelpItemData(
+          icon: Icons.inventory_2_outlined,
+          color: AppTheme.primaryLight,
           title: l10n.helpDriverCargosTitle,
           body: l10n.helpDriverCargosBody,
         ),
@@ -78,8 +84,14 @@ class HelpScreen extends StatelessWidget {
 
   static List<_HelpItemData> _coordinatorItems(AppLocalizations l10n) => [
         _HelpItemData(
-          icon: Icons.list_alt_outlined,
+          icon: Icons.home_outlined,
           color: AppTheme.primary,
+          title: l10n.helpCoordinatorHomeTitle,
+          body: l10n.helpCoordinatorHomeBody,
+        ),
+        _HelpItemData(
+          icon: Icons.list_alt_outlined,
+          color: AppTheme.primaryLight,
           title: l10n.helpCoordinatorCargosTitle,
           body: l10n.helpCoordinatorCargosBody,
         ),

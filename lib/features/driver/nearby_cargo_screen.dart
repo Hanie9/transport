@@ -8,7 +8,7 @@ class NearbyCargoScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (context.mounted) context.go('/driver');
+      if (context.mounted) context.go('/driver/cargos');
     });
     return const Scaffold(body: Center(child: CircularProgressIndicator()));
   }

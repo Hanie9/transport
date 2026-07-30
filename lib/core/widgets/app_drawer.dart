@@ -6,6 +6,7 @@ import 'package:provider/provider.dart';
 import '../../l10n/app_localizations.dart';
 import '../../services/auth_service.dart';
 import '../theme/app_theme.dart';
+import 'logout_dialog.dart';
 
 class AppDrawer extends StatelessWidget {
   const AppDrawer({super.key, required this.role});
@@ -129,6 +130,14 @@ class AppDrawer extends StatelessWidget {
                     title: l10n.aboutUs,
                     onTap: () => _navigate(context, '$_basePath/about'),
                   ),
+                  const Divider(height: 1, indent: 16, endIndent: 16),
+                  _DrawerTile(
+                    icon: Icons.logout_rounded,
+                    title: l10n.logout,
+                    iconColor: AppTheme.error,
+                    titleColor: AppTheme.error,
+                    onTap: () => confirmLogout(context),
+                  ),
                 ],
               ),
             ),
@@ -155,18 +164,28 @@ class _DrawerTile extends StatelessWidget {
     required this.icon,
     required this.title,
     required this.onTap,
+    this.iconColor,
+    this.titleColor,
   });
 
   final IconData icon;
   final String title;
   final VoidCallback onTap;
+  final Color? iconColor;
+  final Color? titleColor;
 
   @override
   Widget build(BuildContext context) {
     final palette = context.palette;
     return ListTile(
-      leading: Icon(icon, color: AppTheme.primaryLight),
-      title: Text(title, style: TextStyle(fontWeight: FontWeight.w600, color: palette.textPrimary)),
+      leading: Icon(icon, color: iconColor ?? AppTheme.primaryLight),
+      title: Text(
+        title,
+        style: TextStyle(
+          fontWeight: FontWeight.w600,
+          color: titleColor ?? palette.textPrimary,
+        ),
+      ),
       onTap: onTap,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 2),

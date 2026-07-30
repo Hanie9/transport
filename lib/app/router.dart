@@ -13,6 +13,7 @@ import '../features/driver/driver_home_screen.dart';
 import '../features/driver/nearby_cargo_screen.dart';
 import '../features/driver/route_screen.dart';
 import '../features/driver/vehicle_profile_screen.dart';
+import '../features/shared/home_screen.dart';
 import '../features/shared/profile_screen.dart';
 import '../features/shared/menu/about_screen.dart';
 import '../features/shared/menu/change_password_screen.dart';
@@ -48,7 +49,14 @@ class AppRouter {
         ShellRoute(
           builder: (_, __, child) => DriverShell(child: child),
           routes: [
-            GoRoute(path: '/driver', builder: (_, __) => const DriverHomeScreen()),
+            GoRoute(
+              path: '/driver',
+              builder: (_, __) => const HomeScreen(role: 'driver'),
+            ),
+            GoRoute(
+              path: '/driver/cargos',
+              builder: (_, __) => const DriverHomeScreen(),
+            ),
             GoRoute(path: '/driver/missions', builder: (_, __) => const DriverMissionsScreen()),
             GoRoute(path: '/driver/nearby', builder: (_, __) => const NearbyCargoScreen()),
             GoRoute(
@@ -86,6 +94,10 @@ class AppRouter {
           routes: [
             GoRoute(
               path: '/coordinator',
+              builder: (_, __) => const HomeScreen(role: 'coordinator'),
+            ),
+            GoRoute(
+              path: '/coordinator/cargos',
               builder: (_, __) => const CoordinatorHomeScreen(),
             ),
             GoRoute(

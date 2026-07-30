@@ -87,6 +87,11 @@ class AppLocalizations {
       );
 
   // Help — driver
+  String get helpDriverHomeTitle => _t('خانه', 'Home');
+  String get helpDriverHomeBody => _t(
+        'پس از ورود، ابتدا به صفحه خانه می‌روید. در این صفحه خلاصه وضعیت (بارهای نزدیک، بارهای موجود و ماموریت‌های فعال)، دسترسی سریع به بخش‌ها و چند بار پیشنهادی را می‌بینید. منوی همبرگر و نوار پایین هم همیشه در دسترس هستند.',
+        'After sign-in you land on Home. There you see a status summary (nearby cargos, available loads, and active missions), quick actions, and a few suggested cargos. The hamburger menu and bottom navigation stay available.',
+      );
   String get helpDriverCargosTitle => _t('بارها', 'Cargos');
   String get helpDriverCargosBody => _t(
         'در تب بارها، لیست بارهای متناسب با نوع بارگیر خودروی شما نمایش داده می‌شود. با فعال‌سازی GPS، بارهای نزدیک‌تر در بالای لیست قرار می‌گیرند. روی هر بار بزنید تا جزئیات مبدا، مقصد، وزن و فاصله را ببینید.',
@@ -109,8 +114,8 @@ class AppLocalizations {
       );
   String get helpDriverNavigationTitle => _t('مسیریابی', 'Navigation');
   String get helpDriverNavigationBody => _t(
-        'در صفحه مسیریابی، مسیر تا مبدا و سپس تا مقصد نمایش داده می‌شود. پس از رسیدن به مبدا، می‌توانید ادامه مسیر تا مقصد را شروع کنید. اتصال به نقشه نشان در نسخه بعدی فعال می‌شود.',
-        'On the navigation screen, see the route to the origin and then to the destination. After arriving at the origin, continue to the destination. Neshan map integration is coming in the next version.',
+        'در صفحه مسیریابی، نقشه نشان مسیر تا مبدا و سپس تا مقصد را نمایش می‌دهد. می‌توانید ناوبری را شروع کنید، موقعیت خود را روی نقشه ببینید و در صورت نیاز نقشه را در اپ نشان باز کنید.',
+        'On the navigation screen, Neshan Map shows the route to the origin and then to the destination. Start navigation, see your live position on the map, or open the route in the Neshan app.',
       );
   String get helpDriverProfileTitle => _t('پروفایل و خودرو', 'Profile & vehicle');
   String get helpDriverProfileBody => _t(
@@ -124,6 +129,11 @@ class AppLocalizations {
       );
 
   // Help — coordinator
+  String get helpCoordinatorHomeTitle => _t('خانه', 'Home');
+  String get helpCoordinatorHomeBody => _t(
+        'پس از ورود، ابتدا به صفحه خانه می‌روید. آمار کلی بارها و رانندگان، میانبر ثبت بار و آخرین بارها در این صفحه نمایش داده می‌شود. منوی همبرگر و نوار پایین نیز در دسترس هستند.',
+        'After sign-in you land on Home. See overall cargo and driver stats, a shortcut to add cargo, and your recent cargos. The hamburger menu and bottom navigation stay available.',
+      );
   String get helpCoordinatorCargosTitle => _t('مدیریت بارها', 'Cargo management');
   String get helpCoordinatorCargosBody => _t(
         'در تب بارها، همه بارهای ثبت‌شده توسط شما نمایش داده می‌شوند. وضعیت هر بار (در انتظار، در حال حمل، تکمیل‌شده و ...) و راننده تخصیص‌یافته در کارت بار قابل مشاهده است. روی هر بار بزنید تا جزئیات کامل را ببینید.',
@@ -166,6 +176,58 @@ class AppLocalizations {
   String get phoneNumber => _t('شماره موبایل', 'Phone number');
   String get password => _t('رمز عبور', 'Password');
   String get login => _t('ورود', 'Sign in');
+  String get rememberMe => _t('مرا به خاطر بسپار', 'Remember me');
+  String get loginBiometric => _t(
+        'ورود با اثر انگشت / پین / الگو',
+        'Sign in with fingerprint / PIN / pattern',
+      );
+  String get loginLoginFirst => _t(
+        'ابتدا یک‌بار با رمز عبور وارد شوید',
+        'Sign in with password once first',
+      );
+  String get loginAuthReason => _t(
+        'با اثر انگشت، پین یا الگوی دستگاه وارد شوید',
+        'Authenticate with fingerprint, PIN, or pattern',
+      );
+  String get loginAccountTitle => _t('ورود به حساب', 'Account sign-in');
+  String get loginBiometricHint => _t('انگشت خود را روی حسگر قرار دهید', 'Place your fingerprint');
+  String get loginBiometricNotRecognized => _t('اثر انگشت شناسایی نشد', 'Fingerprint not recognized');
+  String get loginBiometricRequired => _t('احراز هویت لازم است', 'Authentication required');
+  String get loginDeviceLockRequired => _t('قفل دستگاه لازم است', 'Device lock required');
+  String get loginEnableDeviceLock => _t(
+        'ابتدا قفل صفحه یا اثر انگشت را در تنظیمات دستگاه فعال کنید',
+        'Enable screen lock or fingerprint in device settings first',
+      );
+  String get loginGoToSettings => _t('تنظیمات', 'Settings');
+  String get loginNoAuthentication => _t(
+        'این دستگاه از احراز هویت پشتیبانی نمی‌کند',
+        'This device does not support authentication',
+      );
+  String get loginNeedPasswordFirst => _t(
+        'برای فعال‌سازی ورود سریع، ابتدا با شماره و رمز عبور وارد شوید',
+        'Sign in with phone and password first to enable quick login',
+      );
+  String get loginFingerprintError => _t('خطا در احراز هویت اثر انگشت', 'Fingerprint authentication error');
+  String get loginFingerprintNotAvailable => _t(
+        'حسگر اثر انگشت در دسترس نیست یا پشتیبانی نمی‌شود',
+        'Fingerprint sensor is unavailable or unsupported',
+      );
+  String get loginFingerprintNotEnrolled => _t(
+        'اثر انگشتی ثبت نشده است. ابتدا در تنظیمات دستگاه ثبت کنید',
+        'No fingerprints enrolled. Register one in device settings first',
+      );
+  String get loginFingerprintNotSet => _t(
+        'قفل صفحه روی این دستگاه تنظیم نشده است',
+        'No screen lock is set on this device',
+      );
+  String get loginFingerprintLockedOut => _t(
+        'به دلیل تلاش‌های ناموفق موقتاً قفل شده است',
+        'Temporarily locked due to too many failed attempts',
+      );
+  String get loginFingerprintPermanentlyLockedOut => _t(
+        'احراز هویت به‌طور دائم قفل شده است. از قفل دستگاه استفاده کنید',
+        'Authentication is permanently locked. Use device credentials',
+      );
   String get noAccount => _t('حساب کاربری ندارید؟', "Don't have an account?");
   String get signup => _t('ثبت‌نام', 'Sign up');
   String get signupTitle => _t('ثبت‌نام', 'Sign up');
@@ -192,6 +254,7 @@ class AppLocalizations {
       : _t('متصدی حمل‌ونقل', 'Transport coordinator');
 
   // Navigation
+  String get home => _t('خانه', 'Home');
   String get cargos => _t('بارها', 'Cargos');
   String get missions => _t('ماموریت‌ها', 'Missions');
   String get profile => _t('پروفایل', 'Profile');
@@ -199,7 +262,29 @@ class AppLocalizations {
   String get nearby => _t('نزدیک', 'Nearby');
   String get addCargo => _t('ثبت بار', 'Add cargo');
 
-  // Driver home
+  // Home dashboard
+  String get homeDriverSubtitle => _t(
+        'بارهای نزدیک و ماموریت‌های فعال را از اینجا پیگیری کنید',
+        'Track nearby cargos and active missions from here',
+      );
+  String get homeCoordinatorSubtitle => _t(
+        'بارها و رانندگان را یکجا مدیریت کنید',
+        'Manage cargos and drivers in one place',
+      );
+  String get homeQuickActions => _t('دسترسی سریع', 'Quick actions');
+  String get homeSuggestedCargos => _t('بارهای پیشنهادی', 'Suggested cargos');
+  String get homeRecentCargos => _t('آخرین بارها', 'Recent cargos');
+  String get homeViewAll => _t('مشاهده همه', 'View all');
+  String get homeStatNearby => _t('نزدیک', 'Nearby');
+  String get homeStatAvailable => _t('قابل پذیرش', 'Available');
+  String get homeStatActiveMissions => _t('ماموریت فعال', 'Active');
+  String get homeStatTotalCargos => _t('کل بارها', 'Total cargos');
+  String get homeStatActiveDrivers => _t('راننده فعال', 'Active drivers');
+  String get homeStatNearbyDrivers => _t('راننده نزدیک', 'Nearby drivers');
+  String get homePendingCargos => _t('در انتظار', 'Pending');
+  String get homeInTransit => _t('در حال حمل', 'In transit');
+
+  // Driver cargos
   String hello(String name) => _t('سلام $name!', 'Hello $name!');
   String cargoTypeLabel(String type) => _t('نوع بارگیر: $type', 'Trailer type: $type');
   String get notRegistered => _t('ثبت نشده', 'Not set');
@@ -251,6 +336,11 @@ class AppLocalizations {
   // Profile
   String get email => _t('ایمیل', 'Email');
   String get logout => _t('خروج از حساب', 'Sign out');
+  String get logoutConfirmTitle => _t('خروج از حساب', 'Sign out');
+  String get logoutConfirmMessage => _t(
+        'آیا مطمئن هستید که می‌خواهید از حساب کاربری خارج شوید؟',
+        'Are you sure you want to sign out?',
+      );
   String get vehicleInfo => _t('اطلاعات خودرو', 'Vehicle info');
   String get edit => _t('ویرایش', 'Edit');
   String get register => _t('ثبت', 'Add');
@@ -315,6 +405,32 @@ class AppLocalizations {
   String get routeToDestination => _t('مسیریابی به مقصد', 'Navigate to destination');
   String get neshanMap => _t('نقشه نشان', 'Neshan Map');
   String get neshanApiNote => _t('اتصال به API نشان در نسخه بعدی', 'Neshan API integration in the next version');
+  String get neshanMapLoadError => _t('بارگذاری نقشه ناموفق بود', 'Could not load map');
+  String get openInNeshanMaps => _t('باز کردن در نقشه نشان', 'Open in Neshan Maps');
+  String get returnToRoute => _t('بازگشت به مسیر', 'Return to route');
+  String get neshanErrorGeneric => _t('خطا در سرویس نشان', 'Neshan service error');
+  String get neshanErrorServiceList => _t(
+        'این سرویس‌ها را روی کلید نشان فعال کنید: Geocoding Plus، مسیریابی با ترافیک و نقشه استاتیک',
+        'Enable Geocoding Plus, Routing with traffic, and Static arc map on your Neshan key',
+      );
+  String get neshanErrorKeyType => _t('نوع کلید نشان نامعتبر است', 'Invalid Neshan API key type');
+  String get neshanErrorWhitelist => _t('محدودیت دامنه/پکیج کلید نشان', 'Neshan key scope mismatch');
+  String get neshanErrorBackendProxy => _t('پراکسی سرور نشان در دسترس نیست', 'Neshan server proxy is unavailable');
+  String get neshanErrorBackendUnauthorized => _t('نشست منقضی شده است', 'Session expired');
+  String get neshanErrorBackendFailed => _t('ارتباط با پراکسی نشان برقرار نشد', 'Could not reach Neshan proxy');
+  String get neshanErrorKeyNotFound => _t('کلید API نشان تنظیم نشده است', 'Neshan API key is missing');
+  String get neshanErrorLimit => _t('سقف استفاده از API نشان پر شده است', 'Neshan API usage limit exceeded');
+  String get neshanErrorRate => _t('درخواست‌های زیاد به API نشان', 'Too many Neshan API requests');
+  String get neshanErrorAddressEmpty => _t('آدرس خالی است', 'Address is empty');
+  String get neshanErrorGeocodingNotFound => _t('موقعیتی برای این آدرس یافت نشد', 'No location found for address');
+  String get neshanErrorGeocodingInvalid => _t('پاسخ آدرس‌یابی نامعتبر است', 'Invalid geocoding response');
+  String get neshanErrorGeocodingFailed => _t('خطا در آدرس‌یابی', 'Geocoding request failed');
+  String get neshanErrorRoutingNotFound => _t('مسیری یافت نشد', 'No route found');
+  String get neshanErrorRoutingInvalid => _t('پاسخ مسیریابی نامعتبر است', 'Invalid routing response');
+  String get neshanErrorRoutingNoLegs => _t('مسیر بخش معتبری ندارد', 'Route has no valid segments');
+  String get neshanErrorRoutingFailed => _t('خطا در مسیریابی', 'Routing request failed');
+  String get neshanErrorSdkResponse => _t('پاسخ خالی از SDK نشان', 'Empty response from Neshan SDK');
+  String get neshanErrorInvalidArgument => _t('پارامترهای درخواست نامعتبر است', 'Invalid request parameters');
   String get cargoOriginPoint => _t('مبدا بار', 'Cargo origin');
   String get cargoDestinationPoint => _t('مقصد بار', 'Cargo destination');
   String get totalDistance => _t('فاصله کل', 'Total distance');
@@ -322,6 +438,8 @@ class AppLocalizations {
   String startNavigationTo(String destination) =>
       _t('شروع مسیریابی به $destination', 'Start navigation to $destination');
   String get arrivedAtOriginContinue => _t('رسیدم به مبدا — ادامه به مقصد', 'Arrived at origin — continue to destination');
+  String get markDelivered => _t('بار را تحویل دادم', 'Mark as delivered');
+  String get cargoDelivered => _t('بار با موفقیت تحویل شد', 'Cargo delivered successfully');
   String navigationToApi(String destination) =>
       _t('مسیریابی به $destination (API نشان)', 'Navigation to $destination (Neshan API)');
 

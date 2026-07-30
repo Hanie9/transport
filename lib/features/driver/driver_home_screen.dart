@@ -11,6 +11,7 @@ import '../../core/widgets/modern_app_bar.dart';
 import '../../models/cargo.dart';
 import '../../services/auth_service.dart';
 import '../../services/cargo_service.dart';
+import '../../services/location_service.dart';
 
 class DriverShell extends StatefulWidget {
   const DriverShell({super.key, required this.child});
@@ -25,8 +26,13 @@ class _DriverShellState extends State<DriverShell> {
   final _scaffoldKey = GlobalKey<ScaffoldState>();
 
   int _indexFromLocation(String location) {
-    if (location.startsWith('/driver/missions')) return 1;
-    if (location.startsWith('/driver/profile') || location.startsWith('/driver/vehicle')) return 2;
+    if (location.startsWith('/driver/cargos') || location.startsWith('/driver/nearby')) {
+      return 1;
+    }
+    if (location.startsWith('/driver/missions')) return 2;
+    if (location.startsWith('/driver/profile') || location.startsWith('/driver/vehicle')) {
+      return 3;
+    }
     return 0;
   }
 
@@ -35,8 +41,10 @@ class _DriverShellState extends State<DriverShell> {
       case 0:
         context.go('/driver');
       case 1:
-        context.go('/driver/missions');
+        context.go('/driver/cargos');
       case 2:
+        context.go('/driver/missions');
+      case 3:
         context.go('/driver/profile');
     }
   }
@@ -60,6 +68,11 @@ class _DriverShellState extends State<DriverShell> {
           currentIndex: index,
           onTap: _onTap,
           destinations: [
+            NavigationDestination(
+              icon: const Icon(Icons.home_outlined),
+              selectedIcon: const Icon(Icons.home_rounded),
+              label: l10n.home,
+            ),
             NavigationDestination(
               icon: const Icon(Icons.inventory_2_outlined),
               selectedIcon: const Icon(Icons.inventory_2),
@@ -119,6 +132,16 @@ class _DriverHomeScreenState extends State<DriverHomeScreen> {
     final nearbyCargos = _gpsEnabled
         ? await _cargoService.getNearbyCargos(cargoType: cargoType)
         : <Cargo>[];
+
+    if (_gpsEnabled) {
+      final pos = await LocationService().getCurrentPosition();
+      if (pos != null) {
+        await _cargoService.reportDriverLocation(
+          lat: pos.latitude,
+          lng: pos.longitude,
+        );
+      }
+    }
 
     if (!mounted) return;
 

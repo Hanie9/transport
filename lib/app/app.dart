@@ -25,13 +25,13 @@ class LegesticApp extends StatelessWidget {
       ],
       child: Consumer<SettingsService>(
         builder: (context, settings, _) {
-          final useVazirmatn = !settings.isEnglish;
+          final useVazir = !settings.isEnglish;
 
           return MaterialApp.router(
             title: settings.isEnglish ? 'Legestic' : 'لجستیک',
             debugShowCheckedModeBanner: false,
-            theme: AppTheme.light(useVazirmatn: useVazirmatn),
-            darkTheme: AppTheme.dark(useVazirmatn: useVazirmatn),
+            theme: AppTheme.light(useVazir: useVazir),
+            darkTheme: AppTheme.dark(useVazir: useVazir),
             themeMode: settings.themeMode,
             locale: settings.locale,
             supportedLocales: AppLocalizations.supportedLocales,

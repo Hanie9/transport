@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:provider/provider.dart';
 
 import '../../core/theme/app_theme.dart';
 import '../../l10n/app_localizations.dart';
+import '../../models/user_role.dart';
+import '../../services/auth_service.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -25,9 +28,23 @@ class _SplashScreenState extends State<SplashScreen>
     );
     _fade = CurvedAnimation(parent: _controller, curve: Curves.easeIn);
     _controller.forward();
-    Future<void>.delayed(const Duration(seconds: 2), () {
-      if (mounted) context.go('/login');
-    });
+    WidgetsBinding.instance.addPostFrameCallback((_) => _boot());
+  }
+
+  Future<void> _boot() async {
+    final auth = context.read<AuthService>();
+    await Future.wait([
+      auth.restoreSession(),
+      Future<void>.delayed(const Duration(milliseconds: 1600)),
+    ]);
+    if (!mounted) return;
+
+    if (auth.isAuthenticated) {
+      final role = auth.currentUser?.role;
+      context.go(role == UserRole.driver ? '/driver' : '/coordinator');
+    } else {
+      context.go('/login');
+    }
   }
 
   @override
@@ -69,6 +86,7 @@ class _SplashScreenState extends State<SplashScreen>
                 style: Theme.of(context).textTheme.headlineMedium?.copyWith(
                       color: Colors.white,
                       fontWeight: FontWeight.bold,
+                      fontFamily: AppTheme.brandFamily,
                     ),
               ),
               const SizedBox(height: 8),

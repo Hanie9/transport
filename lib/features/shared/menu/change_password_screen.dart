@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
 import '../../../core/theme/app_theme.dart';
 import '../../../l10n/app_localizations.dart';
+import '../../../services/auth_service.dart';
 import 'widgets/menu_page_layout.dart';
 
 class ChangePasswordScreen extends StatefulWidget {
@@ -33,16 +35,21 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
     if (!_formKey.currentState!.validate()) return;
 
     setState(() => _saving = true);
-    await Future<void>.delayed(const Duration(milliseconds: 800));
+    final ok = await context.read<AuthService>().changePassword(
+          currentPassword: _currentController.text,
+          newPassword: _newController.text,
+        );
     if (!mounted) return;
 
     setState(() => _saving = false);
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(context.l10n.passwordChanged)),
-    );
-    _currentController.clear();
-    _newController.clear();
-    _confirmController.clear();
+    if (ok) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(context.l10n.passwordChanged)),
+      );
+      _currentController.clear();
+      _newController.clear();
+      _confirmController.clear();
+    }
   }
 
   @override

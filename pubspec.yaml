@@ -14,14 +14,77 @@ dependencies:
   cupertino_icons: ^1.0.8
   go_router: ^14.8.1
   provider: ^6.1.4
-  google_fonts: ^6.2.1
   intl: ^0.20.2
   shared_preferences: ^2.5.3
+  local_auth: ^2.3.0
+  local_auth_android: ^1.0.51
+  flutter_secure_storage: ^9.2.2
+  http: ^1.4.0
+  latlong2: ^0.9.1
+  geolocator: ^14.0.2
+  flutter_map: ^7.0.2
+  url_launcher: ^6.3.2
+  permission_handler: ^11.3.1
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_lints: ^6.0.0
+  flutter_launcher_icons: ^0.14.4
 
 flutter:
   uses-material-design: true
+  assets:
+    - assets/
+  fonts:
+    - family: Nasalization
+      fonts:
+        - asset: assets/fonts/Nasalization.otf
+    - family: Inter
+      fonts:
+        - asset: assets/fonts/InterFont/Inter Regular.otf
+        - asset: assets/fonts/InterFont/Inter Bold.otf
+          weight: 700
+        - asset: assets/fonts/InterFont/Inter Light.otf
+          weight: 300
+        - asset: assets/fonts/InterFont/Inter Medium.otf
+          weight: 500
+        - asset: assets/fonts/InterFont/Inter SemiBold.otf
+          weight: 600
+        - asset: assets/fonts/InterFont/Inter ExtraBold.otf
+          weight: 800
+        - asset: assets/fonts/InterFont/Inter Black.otf
+          weight: 900
+    - family: Vazir
+      fonts:
+        - asset: assets/fonts/vazir-font-v16.1.0/Vazir.ttf
+        - asset: assets/fonts/vazir-font-v16.1.0/Vazir-Bold.ttf
+          weight: 700
+        - asset: assets/fonts/vazir-font-v16.1.0/Vazir-Light.ttf
+          weight: 300
+        - asset: assets/fonts/vazir-font-v16.1.0/Vazir-Medium.ttf
+          weight: 500
+        - asset: assets/fonts/vazir-font-v16.1.0/Vazir-Thin.ttf
+          weight: 100
+
+flutter_launcher_icons:
+  android: true
+  ios: true
+  image_path: assets/app_icon.png
+  min_sdk_android: 21
+  remove_alpha_ios: true
+  adaptive_icon_background: "#FFFFFF"
+  adaptive_icon_foreground: assets/app_icon_foreground.png
+  adaptive_icon_foreground_inset: 0
+  web:
+    generate: true
+    image_path: assets/app_icon.png
+    background_color: "#FFFFFF"
+    theme_color: "#0F766E"
+  linux:
+    generate: true
+    image_path: assets/app_icon.png
+  windows:
+    generate: true
+    image_path: assets/app_icon.png
+    icon_size: 256
