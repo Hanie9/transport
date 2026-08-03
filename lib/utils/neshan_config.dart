@@ -1,16 +1,13 @@
 import 'package:legestic/generated/neshan_secrets.g.dart';
 
-/// Neshan service key (`service.xxx` from panel → سرویس‌ها).
-/// On Android SDK routing this key is passed to [NeshanDirection]; map auth uses
-/// [neshan.license] only (no separate Android API key in panel).
+/// Neshan API key from panel (`service.xxx` for REST).
 String get neshanApiKey {
   const fromDefine = String.fromEnvironment('NESHAN_API_KEY');
   if (fromDefine.trim().isNotEmpty) return fromDefine.trim();
   return embeddedNeshanApiKey.trim();
 }
 
-/// Neshan **Android** key (panel → ANDROID tab, package + SHA-1).
-/// Use for direct REST calls from the APK.
+/// Neshan **mobile** key (`mobile.xxx`) for MapLibre map tiles only — not REST.
 String get neshanAndroidApiKey {
   const fromDefine = String.fromEnvironment('NESHAN_ANDROID_KEY');
   if (fromDefine.trim().isNotEmpty) return fromDefine.trim();
@@ -20,7 +17,8 @@ String get neshanAndroidApiKey {
 String get neshanMapKey {
   const fromDefine = String.fromEnvironment('NESHAN_MAP_KEY');
   if (fromDefine.trim().isNotEmpty) return fromDefine.trim();
-  return embeddedNeshanMapKey.trim();
+  if (embeddedNeshanMapKey.trim().isNotEmpty) return embeddedNeshanMapKey.trim();
+  return neshanAndroidApiKey;
 }
 
 /// Geocoding Plus — matches «تبدیل آدرس به نقطه پلاس» in panel.
@@ -57,10 +55,14 @@ bool get hasNeshanApiKey => neshanApiKey.trim().isNotEmpty;
 
 bool get hasNeshanAndroidKey => neshanAndroidApiKey.trim().isNotEmpty;
 
-/// API key for routing REST/SDK calls (service key when no Android key exists).
+/// REST / services-sdk key — must be `service.xxx` (not `mobile.xxx`).
 String get neshanDirectApiKey {
-  if (hasNeshanAndroidKey) return neshanAndroidApiKey;
-  return neshanApiKey;
+  final service = neshanApiKey.trim();
+  if (service.startsWith('service.')) return service;
+  final android = neshanAndroidApiKey.trim();
+  // `mobile.*` is MapLibre-only (HTTP 483 on direction/geocode).
+  if (android.isNotEmpty && !android.startsWith('mobile.')) return android;
+  return service;
 }
 
 bool get hasDirectNeshanKey => neshanDirectApiKey.trim().isNotEmpty;

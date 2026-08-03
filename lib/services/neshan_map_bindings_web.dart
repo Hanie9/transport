@@ -14,7 +14,7 @@ class NeshanMapBindings {
   static Stream<dynamic> get events => _eventController.stream;
 
   static Object? get _bridge =>
-      js_util.getProperty(js_util.globalThis, 'LegesticNeshanMap');
+      js_util.getProperty(js_util.globalThis, 'LogisticsNeshanMap');
 
   static void _ensureEventHook() {
     if (_eventsHooked) return;
@@ -35,7 +35,7 @@ class NeshanMapBindings {
     _ensureEventHook();
     final bridge = _bridge;
     if (bridge == null) {
-      debugPrint('[LegesticNeshanMap] bridge not loaded');
+      debugPrint('[LogisticsNeshanMap] bridge not loaded');
       return;
     }
 
@@ -60,10 +60,10 @@ class NeshanMapBindings {
             arguments['enabled'] ?? false,
           ]);
         default:
-          debugPrint('[LegesticNeshanMap] unknown method: $method');
+          debugPrint('[LogisticsNeshanMap] unknown method: $method');
       }
     } catch (e) {
-      debugPrint('[LegesticNeshanMap] $method failed: $e');
+      debugPrint('[LogisticsNeshanMap] $method failed: $e');
     }
   }
 

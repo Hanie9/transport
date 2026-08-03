@@ -19,20 +19,33 @@ android {
         jvmTarget = JavaVersion.VERSION_17.toString()
     }
 
+    buildFeatures {
+        buildConfig = true
+    }
+
     defaultConfig {
-        // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
         applicationId = "com.example.legestic"
-        // You can update the following values to match your application needs.
-        // For more information, see: https://flutter.dev/to/review-gradle-config.
         minSdk = flutter.minSdkVersion
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName
+
+        // Neshan MapLibre SDK (platform.neshan.org/docs/sdk/android/installation)
+        // Prefer mobile.* key for map tiles (nsh://). Service key stays for REST.
+        val mapKey = (project.findProperty("NESHAN_MAP_KEY") as String?)
+            ?: System.getenv("NESHAN_MAP_KEY")
+            ?: "mobile.a4c96d24a3f9468e9a17a7b48047149f"
+        val serviceKey = (project.findProperty("NESHAN_API_KEY") as String?)
+            ?: System.getenv("NESHAN_API_KEY")
+            ?: "service.4af4be621653464b88ebc8b15f49e78f"
+
+        buildConfigField("String", "NESHAN_MAP_KEY", "\"$mapKey\"")
+        buildConfigField("String", "NESHAN_SERVICE_KEY", "\"$serviceKey\"")
+        manifestPlaceholders["NESHAN_MAP_KEY"] = mapKey
     }
 
     buildTypes {
         release {
-            // Neshan MapView + Carto JNI break when R8 strips SDK classes.
             isMinifyEnabled = false
             isShrinkResources = false
             signingConfig = signingConfigs.getByName("debug")
@@ -45,9 +58,13 @@ flutter {
 }
 
 dependencies {
-    implementation(files("libs/mobile-sdk-1.0.3.aar"))
+    // New Neshan Android SDK (MapLibre-based) — Maven Central
+    implementation("org.neshan.maplibre:android-sdk-opengl:13.4.1")
+
+    // Legacy services SDK for direction/search MethodChannel (REST alternative exists in Dart)
     implementation(files("libs/services-sdk-1.0.0.aar"))
     implementation(files("libs/common-sdk-0.0.3.aar"))
+
     implementation("com.squareup.retrofit2:retrofit:2.9.0")
     implementation("com.squareup.retrofit2:converter-gson:2.9.0")
     implementation("com.squareup.okhttp3:okhttp:4.12.0")

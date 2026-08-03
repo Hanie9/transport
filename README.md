@@ -1,4 +1,4 @@
-# لجستیک
+# لجستیک (Logistics)
 
 سامانه هوشمند مدیریت حمل‌ونقل بار جاده‌ای — اپلیکیشن موبایل Flutter برای اتصال **رانندگان** و **متصدیان حمل‌ونقل**.
 
@@ -36,7 +36,7 @@
 | ذخیره تنظیمات | shared_preferences |
 | فونت | محلی: Vazir / Inter / Nasalization (بدون Google Fonts) |
 | چندزبانه | flutter_localizations + AppLocalizations |
-| نقشه و مسیریابی | Neshan SDK + flutter_map |
+| نقشه و مسیریابی | Neshan MapLibre SDK (`org.neshan.maplibre`) + flutter_map fallback |
 | موقعیت مکانی | geolocator |
 
 ## پیش‌نیازها
@@ -50,7 +50,7 @@
 ```bash
 # کلون پروژه
 git clone <repository-url>
-cd legestic
+cd logistics
 
 # دریافت وابستگی‌ها
 flutter pub get

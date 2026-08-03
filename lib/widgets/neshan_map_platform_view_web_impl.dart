@@ -34,8 +34,8 @@ class _NeshanWebMapPlatformViewState extends State<NeshanWebMapPlatformView> {
   void initState() {
     super.initState();
     _viewId = _nextViewId++;
-    _containerId = 'legestic-neshan-map-$_viewId';
-    _viewType = 'legestic-neshan-map-$_viewId';
+    _containerId = 'logistics-neshan-map-$_viewId';
+    _viewType = 'logistics-neshan-map-$_viewId';
   }
 
   @override

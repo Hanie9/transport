@@ -53,7 +53,7 @@ class SupportScreen extends StatelessWidget {
           MenuContactTile(
             icon: Icons.mail_outline_rounded,
             label: l10n.email,
-            value: 'support@legestic.ir',
+            value: 'support@logistics.ir',
             iconColor: AppTheme.accent,
           ),
           const SizedBox(height: 12),

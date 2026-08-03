@@ -8,8 +8,8 @@ import '../services/auth_service.dart';
 import '../services/settings_service.dart';
 import 'router.dart';
 
-class LegesticApp extends StatelessWidget {
-  LegesticApp({super.key});
+class LogisticsApp extends StatelessWidget {
+  LogisticsApp({super.key});
 
   final AuthService _authService = AuthService();
   final SettingsService _settingsService = SettingsService();
@@ -28,7 +28,7 @@ class LegesticApp extends StatelessWidget {
           final useVazir = !settings.isEnglish;
 
           return MaterialApp.router(
-            title: settings.isEnglish ? 'Legestic' : 'لجستیک',
+            title: settings.isEnglish ? 'Logistics' : 'لجستیک',
             debugShowCheckedModeBanner: false,
             theme: AppTheme.light(useVazir: useVazir),
             darkTheme: AppTheme.dark(useVazir: useVazir),

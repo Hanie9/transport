@@ -11,7 +11,7 @@ import 'package:legestic/utils/navigation_bearing.dart';
 import 'package:legestic/utils/route_map_geometry.dart';
 import 'package:legestic/utils/route_progress.dart';
 
-/// Neshan native [MapView] on Android (license in res/raw/neshan.license).
+/// Neshan native [MapView] on Android (MapLibre SDK + API key in Manifest).
 class NeshanDriverMap extends StatefulWidget {
   final List<LatLng> routeCoordinates;
   final List<RouteMapSegment> routeSegments;

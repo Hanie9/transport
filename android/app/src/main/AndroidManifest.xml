@@ -8,6 +8,10 @@
         android:label="لجستیک"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
+        <!-- Neshan MapLibre SDK API key -->
+        <meta-data
+            android:name="org.maplibre.android.API_KEY"
+            android:value="${NESHAN_MAP_KEY}" />
         <activity
             android:name=".MainActivity"
             android:exported="true"

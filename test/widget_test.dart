@@ -7,7 +7,7 @@ void main() {
   testWidgets('App launches splash screen', (WidgetTester tester) async {
     await SettingsService().init();
 
-    await tester.pumpWidget(LegesticApp());
+    await tester.pumpWidget(LogisticsApp());
     await tester.pump();
 
     expect(find.text('لجستیک'), findsOneWidget);

@@ -20,7 +20,7 @@ class AppLocalizations {
 
   String _t(String fa, String en) => isFa ? fa : en;
 
-  String get appName => _t('لجستیک', 'Legestic');
+  String get appName => _t('لجستیک', 'Logistics');
   String get appTagline => _t(
         'سامانه هوشمند حمل‌ونقل بار جاده‌ای',
         'Smart road freight management system',
@@ -51,7 +51,7 @@ class AppLocalizations {
   String get changePassword => _t('تغییر رمز عبور', 'Change password');
   String get aboutDescription => _t(
         'لجستیک سامانه‌ای هوشمند برای مدیریت حمل‌ونقل بار جاده‌ای است که رانندگان و متصدیان حمل‌ونقل را به یکدیگر متصل می‌کند.',
-        'Legestic is a smart road freight platform that connects drivers and transport coordinators.',
+        'Logistics is a smart road freight platform that connects drivers and transport coordinators.',
       );
   String versionLabel(String version) => _t('نسخه $version', 'Version $version');
   String get supportTitle => _t('تماس با پشتیبانی', 'Contact support');

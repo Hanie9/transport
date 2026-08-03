@@ -173,7 +173,7 @@
     map.on('pitchstart', function (e) { if (e.originalEvent) onGesture(); });
   }
 
-  window.LegesticNeshanMap = {
+  window.LogisticsNeshanMap = {
     setEventCallback: function (cb) {
       eventCallback = cb;
     },
@@ -284,7 +284,7 @@
       const mapDark = !!params.mapDark;
 
       if (mapDark && !state.mapDark) {
-        window.LegesticNeshanMap.setMapStyle(viewId, true);
+        window.LogisticsNeshanMap.setMapStyle(viewId, true);
       }
 
       state.navigationFollowEnabled = true;
@@ -344,7 +344,7 @@
         const pos = state.lastNavPosition;
         const bearing = state.lastNavBearing;
         if (pos && bearing != null) {
-          window.LegesticNeshanMap.updateNavigationCamera(viewId, {
+          window.LogisticsNeshanMap.updateNavigationCamera(viewId, {
             lat: pos.lat,
             lng: pos.lng,
             bearing: bearing,
@@ -406,7 +406,7 @@
 
       const mapDark = !!params.mapDark;
       if (mapDark !== state.mapDark) {
-        window.LegesticNeshanMap.setMapStyle(viewId, mapDark);
+        window.LogisticsNeshanMap.setMapStyle(viewId, mapDark);
       }
 
       clearRouteLayers(state);
@@ -464,7 +464,7 @@
       }
 
       if (params.driver) {
-        window.LegesticNeshanMap.updateDriverMarker(viewId, {
+        window.LogisticsNeshanMap.updateDriverMarker(viewId, {
           lat: params.driver.lat,
           lng: params.driver.lng,
           bearing: params.driver.bearing,

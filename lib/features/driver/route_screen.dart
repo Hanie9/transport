@@ -88,17 +88,52 @@ class _RouteScreenState extends State<RouteScreen> {
         );
       }
 
-      final originGeo = await _routing.geocodeAddress(cargo.origin);
-      final destGeo = await _routing.geocodeAddress(cargo.destination);
-      final delivery = await _routing.getRouteWithTraffic(
-        origin: originGeo.location,
-        destination: destGeo.location,
-      );
+      NeshanLatLng originPoint;
+      NeshanLatLng destPoint;
+      try {
+        final originGeo = await _routing.geocodeAddress(cargo.origin);
+        originPoint = originGeo.location;
+      } catch (_) {
+        if (cargo.hasOriginCoords) {
+          originPoint = NeshanLatLng(
+            latitude: cargo.originLat!,
+            longitude: cargo.originLng!,
+          );
+        } else {
+          rethrow;
+        }
+      }
+      try {
+        final destGeo = await _routing.geocodeAddress(cargo.destination);
+        destPoint = destGeo.location;
+      } catch (_) {
+        if (cargo.destinationLat != null && cargo.destinationLng != null) {
+          destPoint = NeshanLatLng(
+            latitude: cargo.destinationLat!,
+            longitude: cargo.destinationLng!,
+          );
+        } else {
+          rethrow;
+        }
+      }
+
+      NeshanRoute delivery;
+      try {
+        delivery = await _routing.getRouteWithTraffic(
+          origin: originPoint,
+          destination: destPoint,
+        );
+      } catch (_) {
+        delivery = buildDegradedDirectRoute(
+          origin: originPoint,
+          destination: destPoint,
+        );
+      }
 
       if (!mounted) return;
       setState(() {
-        _originPoint = originGeo.location;
-        _destinationPoint = destGeo.location;
+        _originPoint = originPoint;
+        _destinationPoint = destPoint;
         _deliveryRoute = delivery;
         _loading = false;
       });
@@ -244,21 +279,30 @@ class _RouteScreenState extends State<RouteScreen> {
 
     if (_loading) {
       return Scaffold(
-        appBar: ModernAppBar(title: l10n.routeTitle),
+        appBar: ModernAppBar(
+          title: l10n.routeTitle,
+          leading: BackButton(onPressed: () => context.pop()),
+        ),
         body: LoadingOverlay(message: l10n.loadingRoute),
       );
     }
 
     if (_cargo == null) {
       return Scaffold(
-        appBar: ModernAppBar(title: l10n.routeTitle),
+        appBar: ModernAppBar(
+          title: l10n.routeTitle,
+          leading: BackButton(onPressed: () => context.pop()),
+        ),
         body: EmptyState(icon: Icons.map_outlined, title: l10n.routeNotFound),
       );
     }
 
     if (_error != null || _originPoint == null || _destinationPoint == null) {
       return Scaffold(
-        appBar: ModernAppBar(title: l10n.routeTitle),
+        appBar: ModernAppBar(
+          title: l10n.routeTitle,
+          leading: BackButton(onPressed: () => context.pop()),
+        ),
         body: EmptyState(
           icon: Icons.error_outline,
           title: l10n.neshanMap,
@@ -278,6 +322,7 @@ class _RouteScreenState extends State<RouteScreen> {
       backgroundColor: palette.surface,
       appBar: ModernAppBar(
         title: l10n.routeTitle,
+        leading: BackButton(onPressed: () => context.pop()),
         actions: [
           IconButton(
             tooltip: l10n.openInNeshanMaps,
@@ -434,31 +479,32 @@ class _RouteScreenState extends State<RouteScreen> {
                     ),
                   ],
                   const SizedBox(height: 14),
-                  ElevatedButton.icon(
-                    onPressed: () {
-                      final pos = _driverPosition;
-                      setState(() {
-                        _navigationActive = true;
-                        _mapCameraDetached = false;
-                      });
-                      if (pos != null) {
-                        _mapController.resumeNavigation(
-                          position: pos,
-                          heading: _driverHeading,
-                        );
-                      } else {
-                        _mapController.refitOverview();
-                      }
-                    },
-                    icon: const Icon(Icons.navigation_rounded),
-                    label: Text(
-                      l10n.startNavigationTo(
-                        _routeStep == 0 ? l10n.origin : l10n.destination,
+                  if (!_navigationActive)
+                    ElevatedButton.icon(
+                      onPressed: () {
+                        final pos = _driverPosition;
+                        setState(() {
+                          _navigationActive = true;
+                          _mapCameraDetached = false;
+                        });
+                        if (pos != null) {
+                          _mapController.resumeNavigation(
+                            position: pos,
+                            heading: _driverHeading,
+                          );
+                        } else {
+                          _mapController.refitOverview();
+                        }
+                      },
+                      icon: const Icon(Icons.navigation_rounded),
+                      label: Text(
+                        l10n.startNavigationTo(
+                          _routeStep == 0 ? l10n.origin : l10n.destination,
+                        ),
                       ),
                     ),
-                  ),
                   if (_routeStep == 0) ...[
-                    const SizedBox(height: 8),
+                    if (!_navigationActive) const SizedBox(height: 8),
                     OutlinedButton(
                       onPressed: () async {
                         await _cargoService.updateCargoStatus(
