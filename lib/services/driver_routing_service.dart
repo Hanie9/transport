@@ -426,6 +426,29 @@ class DriverRoutingService {
     bool avoidOddEvenZone = false,
     double? bearing,
   }) async {
+    // On Android the service key is usually package-scoped, so the native
+    // services SDK is the reliable path. Try it before backend/REST.
+    if (_android.isAvailable) {
+      try {
+        return await _android.getRoute(
+          origin: origin,
+          destination: destination,
+          vehicleType: vehicleType,
+          alternative: alternative,
+          waypoints: waypoints,
+          avoidTrafficZone: avoidTrafficZone,
+          avoidOddEvenZone: avoidOddEvenZone,
+        );
+      } catch (e) {
+        // Fall through to backend / direct REST.
+        assert(() {
+          // ignore: avoid_print
+          print('Android Neshan route failed: $e');
+          return true;
+        }());
+      }
+    }
+
     final fromBackend = await _tryBackend(
       (token) => _backend.getRoute(
         authToken: token,
@@ -441,22 +464,6 @@ class DriverRoutingService {
       ),
     );
     if (fromBackend != null) return fromBackend;
-
-    if (_android.isAvailable) {
-      try {
-        return await _android.getRoute(
-          origin: origin,
-          destination: destination,
-          vehicleType: vehicleType,
-          alternative: alternative,
-          waypoints: waypoints,
-          avoidTrafficZone: avoidTrafficZone,
-          avoidOddEvenZone: avoidOddEvenZone,
-        );
-      } on NeshanApiException {
-        // Fall through to direct REST.
-      }
-    }
 
     if (hasDirectNeshanKey) {
       return _neshan.getRoute(

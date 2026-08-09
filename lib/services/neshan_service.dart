@@ -483,7 +483,10 @@ class NeshanService {
   }
 
   bool _isUsableStep(NeshanRouteStep step) =>
-      step.instruction.isNotEmpty || step.isArrival;
+      step.instruction.isNotEmpty ||
+      step.isArrival ||
+      (step.polyline != null && step.polyline!.trim().isNotEmpty) ||
+      step.startLocation != null;
 
   NeshanRouteStep _parseStep(Map<String, dynamic> step) {
     final distance = step['distance'];

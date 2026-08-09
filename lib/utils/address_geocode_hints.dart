@@ -887,11 +887,18 @@ NeshanGeocodingExtent geocodeExtentAround(
   );
 }
 
+/// Plausible bounds for Iran — drops garbage fixes like (0,0) or US emulator defaults.
+bool isPlausibleIranLatLng(LatLng location) {
+  final lat = location.latitude;
+  final lng = location.longitude;
+  if (lat == 0 && lng == 0) return false;
+  return lat >= 24 && lat <= 40.5 && lng >= 43 && lng <= 64;
+}
+
 bool isPlausibleIranCoordinate(NeshanLatLng location) {
-  return location.latitude >= 24 &&
-      location.latitude <= 40 &&
-      location.longitude >= 44 &&
-      location.longitude <= 64;
+  return isPlausibleIranLatLng(
+    LatLng(location.latitude, location.longitude),
+  );
 }
 
 /// True when [result] title/address text overlaps the user-entered [address].

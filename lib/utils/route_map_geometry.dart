@@ -149,9 +149,15 @@ class RouteMapGeometry {
     for (var stepIndex = 0; stepIndex < leg.steps.length; stepIndex++) {
       final step = leg.steps[stepIndex];
       if (step.isArrival) continue;
-      if (step.distanceMeters <= 0 && step.durationSeconds <= 0) continue;
 
       var stepPoints = _pointsForStep(step);
+      final hasGeometry = stepPoints.length >= 2;
+      if (!hasGeometry &&
+          step.distanceMeters <= 0 &&
+          step.durationSeconds <= 0) {
+        continue;
+      }
+
       if (stepPoints.length < 2 && overview.length >= 2 && step.distanceMeters > 0) {
         stepPoints = slicePolylineByDistance(
           overview,

@@ -109,23 +109,26 @@ class NeshanMapPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
                 result.success(null)
             }
             "fitBounds" -> {
-                @Suppress("UNCHECKED_CAST")
-                val raw = call.argument<List<Map<String, Double>>>("points") ?: emptyList()
-                val points = raw.mapNotNull { p ->
-                    val la = p["lat"] ?: return@mapNotNull null
-                    val ln = p["lng"] ?: return@mapNotNull null
-                    LatLng(la, ln)
-                }
-                mapView.fitBounds(points)
+                val points = parseLatLngArgumentList(call.argument("points"))
+                val overview = call.argument<Boolean>("overview") ?: true
+                val bottomInsetRatio = call.argument<Double>("bottomInsetRatio") ?: 0.12
+                mapView.fitBounds(points, overview, bottomInsetRatio)
                 result.success(null)
             }
             "updateRoute" -> {
+                val segmentsRaw = call.argument<List<*>>("segments") ?: emptyList<Any>()
+                val segments = segmentsRaw.mapNotNull { item ->
+                    val map = item as? Map<*, *> ?: return@mapNotNull null
+                    buildMap<String, Any> {
+                        for ((k, v) in map) {
+                            if (k != null && v != null) put(k.toString(), v)
+                        }
+                    }.takeIf { it.isNotEmpty() }
+                }
+                val traveled = parseLatLngArgumentMaps(call.argument("traveled"))
+                val origin = parseLatLngArgumentMap(call.argument("origin"))
+                val destination = parseLatLngArgumentMap(call.argument("destination"))
                 @Suppress("UNCHECKED_CAST")
-                val segments = call.argument<List<Map<String, Any>>>("segments") ?: emptyList()
-                @Suppress("UNCHECKED_CAST")
-                val traveled = call.argument<List<Map<String, Double>>>("traveled") ?: emptyList()
-                val origin = call.argument<Map<String, Double>>("origin")
-                val destination = call.argument<Map<String, Double>>("destination")
                 val driver = call.argument<Map<String, Any>>("driver")
                 val mapDark = call.argument<Boolean>("mapDark") ?: false
                 val overviewMode = call.argument<Boolean>("overviewMode") ?: false
@@ -156,6 +159,35 @@ class NeshanMapPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
 
     companion object {
         const val VIEW_TYPE = "com.example.legestic/neshan_map_view"
+
+        private fun parseLatLngArgumentList(raw: Any?): List<LatLng> {
+            val list = raw as? List<*> ?: return emptyList()
+            return list.mapNotNull { parseLatLngArgument(it) }
+        }
+
+        private fun parseLatLngArgumentMaps(raw: Any?): List<Map<String, Double>> {
+            val list = raw as? List<*> ?: return emptyList()
+            return list.mapNotNull { item ->
+                val map = item as? Map<*, *> ?: return@mapNotNull null
+                val la = (map["lat"] as? Number)?.toDouble() ?: return@mapNotNull null
+                val ln = (map["lng"] as? Number)?.toDouble() ?: return@mapNotNull null
+                mapOf("lat" to la, "lng" to ln)
+            }
+        }
+
+        private fun parseLatLngArgumentMap(raw: Any?): Map<String, Double>? {
+            val map = raw as? Map<*, *> ?: return null
+            val la = (map["lat"] as? Number)?.toDouble() ?: return null
+            val ln = (map["lng"] as? Number)?.toDouble() ?: return null
+            return mapOf("lat" to la, "lng" to ln)
+        }
+
+        private fun parseLatLngArgument(raw: Any?): LatLng? {
+            val map = raw as? Map<*, *> ?: return null
+            val la = (map["lat"] as? Number)?.toDouble() ?: return null
+            val ln = (map["lng"] as? Number)?.toDouble() ?: return null
+            return LatLng(la, ln)
+        }
     }
 }
 
@@ -278,14 +310,15 @@ private class NeshanMapPlatformView(
                     navigationFollowEnabled = false
                     NeshanMapRegistry.emitEvent(
                         mapOf(
-                            "type" to "cameraDetached",
+                            // Matches Dart [NeshanDriverMap._onMapEvent].
+                            "type" to "userCameraGesture",
                             "viewId" to viewId,
                         ),
                     )
                 } else if (overviewGesturesEnabled) {
                     NeshanMapRegistry.emitEvent(
                         mapOf(
-                            "type" to "userGesture",
+                            "type" to "overviewCameraGesture",
                             "viewId" to viewId,
                         ),
                     )
@@ -296,12 +329,40 @@ private class NeshanMapPlatformView(
 
     fun setNavigationFollowEnabled(enabled: Boolean) {
         navigationFollowEnabled = enabled
+        if (enabled) {
+            applyNavigationCameraChrome()
+        } else if (!overviewGesturesEnabled) {
+            clearNavigationCameraChrome()
+        }
     }
 
     fun setOverviewGesturesEnabled(enabled: Boolean) {
         overviewGesturesEnabled = enabled
         map?.uiSettings?.isRotateGesturesEnabled = enabled
         map?.uiSettings?.isTiltGesturesEnabled = enabled
+        if (enabled) {
+            clearNavigationCameraChrome()
+        }
+    }
+
+    /**
+     * Puck in lower third + road ahead above (uzita NAV_FOCUS_OFFSET).
+     *
+     * MapLibre centers the camera in the *unpadded* region. Top padding pushes
+     * the target down the screen — same effect as Carto
+     * `setMapFocusPointOffset(0, -height * 0.30)`.
+     */
+    private fun applyNavigationCameraChrome() {
+        val m = map ?: return
+        val h = mapView.height.coerceAtLeast(1)
+        val top = (h * NAV_FOCUS_OFFSET).toInt()
+        m.setPadding(0, top, 0, 0)
+        m.uiSettings.isRotateGesturesEnabled = false
+        m.uiSettings.isTiltGesturesEnabled = false
+    }
+
+    private fun clearNavigationCameraChrome() {
+        map?.setPadding(0, 0, 0, 0)
     }
 
     fun moveCamera(
@@ -313,11 +374,13 @@ private class NeshanMapPlatformView(
     ) {
         runWhenReady {
             val m = map ?: return@runWhenReady
-            // MapLibre: pitch 0 = top-down, ~50 = navigation tilt
             val pitch = when {
                 tilt != null -> cartoTiltToPitch(tilt)
                 navigation -> NAV_PITCH
                 else -> 0.0
+            }
+            if (navigation) {
+                applyNavigationCameraChrome()
             }
             val builder = CameraPosition.Builder()
                 .target(position)
@@ -332,15 +395,15 @@ private class NeshanMapPlatformView(
         navigationFollowEnabled = true
         runWhenReady {
             val m = map ?: return@runWhenReady
-            m.uiSettings.isRotateGesturesEnabled = false
-            m.uiSettings.isTiltGesturesEnabled = false
+            applyNavigationCameraChrome()
             val cam = CameraPosition.Builder()
                 .target(position)
                 .zoom(NAV_ZOOM)
                 .bearing(bearing.toDouble())
                 .tilt(NAV_PITCH)
                 .build()
-            m.animateCamera(CameraUpdateFactory.newCameraPosition(cam), 600)
+            // Instant framing like uzita (animatePositionMs = 0).
+            m.moveCamera(CameraUpdateFactory.newCameraPosition(cam))
         }
     }
 
@@ -348,27 +411,85 @@ private class NeshanMapPlatformView(
         if (!navigationFollowEnabled) return
         runWhenReady {
             val m = map ?: return@runWhenReady
+            applyNavigationCameraChrome()
             val cam = CameraPosition.Builder()
                 .target(position)
                 .zoom(NAV_ZOOM)
                 .bearing(bearing.toDouble())
                 .tilt(NAV_PITCH)
                 .build()
-            m.animateCamera(CameraUpdateFactory.newCameraPosition(cam), 250)
+            // Instant heading-up updates — same feel as uzita NavigationCamera.
+            m.moveCamera(CameraUpdateFactory.newCameraPosition(cam))
         }
     }
 
-    fun fitBounds(points: List<LatLng>) {
+    fun fitBounds(points: List<LatLng>, overview: Boolean = true, bottomInsetRatio: Double = 0.12) {
         if (points.isEmpty()) return
         runWhenReady {
             val m = map ?: return@runWhenReady
+            // Overview = top-down, north-up (uzita-style).
+            if (overview) {
+                clearNavigationCameraChrome()
+                m.uiSettings.isRotateGesturesEnabled = true
+                m.uiSettings.isTiltGesturesEnabled = true
+            }
             if (points.size == 1) {
-                m.animateCamera(CameraUpdateFactory.newLatLngZoom(points.first(), 14.0), 500)
+                m.animateCamera(
+                    CameraUpdateFactory.newCameraPosition(
+                        CameraPosition.Builder()
+                            .target(points.first())
+                            .zoom(14.0)
+                            .tilt(0.0)
+                            .bearing(0.0)
+                            .build(),
+                    ),
+                    600,
+                )
                 return@runWhenReady
             }
+
+            val minLat = points.minOf { it.latitude }
+            val maxLat = points.maxOf { it.latitude }
+            val minLng = points.minOf { it.longitude }
+            val maxLng = points.maxOf { it.longitude }
+            // Extra geographic padding so the full road path sits in a higher overview.
+            val padFactor = if (overview) 0.32 else 0.18
+            val minPad = if (overview) 0.012 else 0.004
+            // Cap absolute padding so long Iran routes (Tehran↔Bandar Abbas)
+            // don't zoom out across the whole Middle East.
+            val maxPad = if (overview) 0.55 else 0.25
+            val latPad = maxOf((maxLat - minLat) * padFactor, minPad).coerceAtMost(maxPad)
+            val lngPad = maxOf((maxLng - minLng) * padFactor, minPad).coerceAtMost(maxPad)
+
             val builder = LatLngBounds.Builder()
+            builder.include(LatLng(minLat - latPad, minLng - lngPad))
+            builder.include(LatLng(maxLat + latPad, maxLng + lngPad))
             points.forEach { builder.include(it) }
-            m.animateCamera(CameraUpdateFactory.newLatLngBounds(builder.build(), 80), 600)
+
+            val view = mapView
+            val bottomInset = (view.height * bottomInsetRatio.coerceIn(0.04, 0.45)).toInt()
+            val edge = if (overview) 72 else 48
+            // Reset to north-up / top-down before framing the full route.
+            if (overview) {
+                m.moveCamera(
+                    CameraUpdateFactory.newCameraPosition(
+                        CameraPosition.Builder(m.cameraPosition)
+                            .tilt(0.0)
+                            .bearing(0.0)
+                            .build(),
+                    ),
+                )
+            }
+            m.animateCamera(
+                CameraUpdateFactory.newLatLngBounds(
+                    builder.build(),
+                    edge,
+                    edge,
+                    edge,
+                    edge + bottomInset,
+                ),
+                700,
+            )
         }
     }
 
@@ -409,17 +530,19 @@ private class NeshanMapPlatformView(
         routePolylines.clear()
         traveledPolyline?.let { m.removePolyline(it) }
         traveledPolyline = null
+        originMarker?.let { m.removeMarker(it) }
+        originMarker = null
+        destinationMarker?.let { m.removeMarker(it) }
+        destinationMarker = null
 
-        // Casing
+        val navigationMode = driver?.get("navigationMode") as? Boolean ?: !overviewMode
+        val coreWidth = if (navigationMode) 12f else 9f
+        val casingWidth = coreWidth + 4f
+
+        // White casing under the full route (matches Neshan / uzita look).
         val allPoints = mutableListOf<LatLng>()
         for (seg in segments) {
-            @Suppress("UNCHECKED_CAST")
-            val coords = seg["coordinates"] as? List<Map<String, Double>> ?: continue
-            for (c in coords) {
-                val la = c["lat"] ?: continue
-                val ln = c["lng"] ?: continue
-                allPoints.add(LatLng(la, ln))
-            }
+            allPoints.addAll(parseLatLngList(seg["points"] ?: seg["coordinates"]))
         }
         if (allPoints.size >= 2) {
             routePolylines.add(
@@ -427,64 +550,61 @@ private class NeshanMapPlatformView(
                     PolylineOptions()
                         .addAll(allPoints)
                         .color(Color.WHITE)
-                        .width(if (overviewMode) 10f else 12f),
+                        .width(casingWidth),
                 ),
             )
         }
 
+        // Per-segment traffic-coloured core — Dart sends `points` + string trafficLevel.
         for (seg in segments) {
-            @Suppress("UNCHECKED_CAST")
-            val coords = seg["coordinates"] as? List<Map<String, Double>> ?: continue
-            val level = (seg["trafficLevel"] as? Number)?.toInt() ?: 0
-            val points = coords.mapNotNull { c ->
-                val la = c["lat"] ?: return@mapNotNull null
-                val ln = c["lng"] ?: return@mapNotNull null
-                LatLng(la, ln)
-            }
+            val points = parseLatLngList(seg["points"] ?: seg["coordinates"])
             if (points.size < 2) continue
+            val level = seg["trafficLevel"]
+            val congested = seg["congested"] as? Boolean ?: false
             routePolylines.add(
                 m.addPolyline(
                     PolylineOptions()
                         .addAll(points)
-                        .color(trafficColor(level))
-                        .width(if (overviewMode) 6f else 8f),
+                        .color(trafficColor(level, congested))
+                        .width(coreWidth),
                 ),
             )
         }
 
-        val traveledPoints = traveled.mapNotNull { c ->
-            val la = c["lat"] ?: return@mapNotNull null
-            val ln = c["lng"] ?: return@mapNotNull null
-            LatLng(la, ln)
-        }
+        val traveledPoints = parseLatLngList(traveled)
         if (traveledPoints.size >= 2) {
             traveledPolyline = m.addPolyline(
                 PolylineOptions()
                     .addAll(traveledPoints)
                     .color(0xFF9CA3AF.toInt())
-                    .width(if (overviewMode) 6f else 8f),
+                    .width(7f),
             )
         }
 
-        origin?.let { o ->
-            val la = o["lat"] ?: return@let
-            val ln = o["lng"] ?: return@let
-            originMarker?.let { m.removeMarker(it) }
-            originMarker = m.addMarker(
-                MarkerOptions()
-                    .position(LatLng(la, ln))
-                    .title(if (pickupLeg) "مبدا" else "بارگیری"),
-            )
-        }
-        destination?.let { d ->
-            val la = d["lat"] ?: return@let
-            val ln = d["lng"] ?: return@let
-            destinationMarker?.let { m.removeMarker(it) }
-            destinationMarker = m.addMarker(
-                MarkerOptions()
-                    .position(LatLng(la, ln))
-                    .title("مقصد"),
-            )
+        // Overview: show both ends. Navigation: destination pin only (uzita model).
+        if (overviewMode && !navigationMode) {
+            if (!pickupLeg) {
+                parseLatLng(origin)?.let { pos ->
+                    originMarker = m.addMarker(
+                        MarkerOptions().position(pos).title("مبدا"),
+                    )
+                }
+            }
+            parseLatLng(destination)?.let { pos ->
+                destinationMarker = m.addMarker(
+                    MarkerOptions()
+                        .position(pos)
+                        .title(if (pickupLeg) "مبدا بار" else "مقصد"),
+                )
+            }
+        } else if (navigationMode) {
+            parseLatLng(destination)?.let { pos ->
+                destinationMarker = m.addMarker(
+                    MarkerOptions()
+                        .position(pos)
+                        .title(if (pickupLeg) "مبدا بار" else "مقصد"),
+                )
+            }
         }
 
         driver?.let { d ->
@@ -494,6 +614,19 @@ private class NeshanMapPlatformView(
             val nav = d["navigationMode"] as? Boolean ?: true
             updateDriverMarker(la, ln, bearing, nav)
         }
+    }
+
+    /** Robust parse for Flutter StandardMessageCodec maps (Number, not Double). */
+    private fun parseLatLngList(raw: Any?): List<LatLng> {
+        val list = raw as? List<*> ?: return emptyList()
+        return list.mapNotNull { parseLatLng(it) }
+    }
+
+    private fun parseLatLng(raw: Any?): LatLng? {
+        val map = raw as? Map<*, *> ?: return null
+        val la = (map["lat"] as? Number)?.toDouble() ?: return null
+        val ln = (map["lng"] as? Number)?.toDouble() ?: return null
+        return LatLng(la, ln)
     }
 
     fun updateDriverMarker(
@@ -506,7 +639,15 @@ private class NeshanMapPlatformView(
             val m = map ?: return@runWhenReady
             driverMarker?.let { m.removeMarker(it) }
             val icon = if (navigationMode) {
-                val bmp = NavArrowBitmap.create(bearing ?: 0f)
+                // Heading-up follow: map faces the route, puck points screen-up.
+                // Detached: rotate puck relative to current map bearing (uzita).
+                val absolute = bearing ?: m.cameraPosition.bearing.toFloat()
+                val relative = if (!navigationFollowEnabled) {
+                    normalizeBearingDegrees(absolute - m.cameraPosition.bearing.toFloat())
+                } else {
+                    0f
+                }
+                val bmp = NavArrowBitmap.create(relative)
                 IconFactory.getInstance(context).fromBitmap(bmp)
             } else {
                 IconFactory.getInstance(context).defaultMarker()
@@ -519,10 +660,19 @@ private class NeshanMapPlatformView(
         }
     }
 
-    private fun trafficColor(level: Int): Int = when (level) {
-        2 -> 0xFFFF9800.toInt()
-        3, 4 -> 0xFFF44336.toInt()
-        else -> 0xFF250ECD.toInt()
+    private fun normalizeBearingDegrees(degrees: Float): Float {
+        var v = degrees % 360f
+        if (v < 0f) v += 360f
+        return v
+    }
+
+    /** Matches Dart [NeshanRouteStyle] / [RouteTrafficLevel.name]. */
+    private fun trafficColor(level: Any?, congested: Boolean): Int = when (level) {
+        "heavy", 3, 4 -> 0xFFB71C1C.toInt()
+        "moderate", 2 -> 0xFFF44336.toInt()
+        "smooth", 1 -> 0xFFFF9800.toInt()
+        "clear", 0 -> 0xFF250ECD.toInt()
+        else -> if (congested) 0xFFB71C1C.toInt() else 0xFF250ECD.toInt()
     }
 
     /** Old Carto tilt 90=top-down / 0=horizon → MapLibre pitch 0=top-down / 60=tilted. */
@@ -545,7 +695,16 @@ private class NeshanMapPlatformView(
     }
 
     companion object {
+        /** Matches uzita NeshanMapPlugin.NAV_ZOOM. */
         private const val NAV_ZOOM = 17.5
-        private const val NAV_PITCH = 50.0
+
+        /**
+         * Carto/Neshan tilt 54 (uzita NAV_TILT): 90=top-down, 0=horizon.
+         * Converted to MapLibre pitch (0=top-down, 60=tilted).
+         */
+        private val NAV_PITCH = ((90.0 - 54.0) / 90.0 * 60.0).coerceIn(0.0, 60.0)
+
+        /** Matches uzita NAV_FOCUS_OFFSET — puck in the lower third. */
+        private const val NAV_FOCUS_OFFSET = 0.30
     }
 }

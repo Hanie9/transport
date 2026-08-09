@@ -155,24 +155,32 @@ class NeshanAndroidChannel {
       );
     }
 
-    final response = await _channel.invokeMapMethod<String, dynamic>(
-      'getRoute',
-      {
-        'apiKey': neshanDirectApiKey,
-        'originLat': origin.latitude,
-        'originLng': origin.longitude,
-        'destinationLat': destination.latitude,
-        'destinationLng': destination.longitude,
-        'vehicleType': vehicleType,
-        'alternative': alternative,
-        'avoidTrafficZone': avoidTrafficZone,
-        'avoidOddEvenZone': avoidOddEvenZone,
-        if (waypoints != null && waypoints.isNotEmpty)
-          'waypoints': waypoints
-              .map((p) => {'lat': p.latitude, 'lng': p.longitude})
-              .toList(),
-      },
-    );
+    late final Map<String, dynamic>? response;
+    try {
+      response = await _channel.invokeMapMethod<String, dynamic>(
+        'getRoute',
+        {
+          'apiKey': neshanDirectApiKey,
+          'originLat': origin.latitude,
+          'originLng': origin.longitude,
+          'destinationLat': destination.latitude,
+          'destinationLng': destination.longitude,
+          'vehicleType': vehicleType,
+          'alternative': alternative,
+          'avoidTrafficZone': avoidTrafficZone,
+          'avoidOddEvenZone': avoidOddEvenZone,
+          if (waypoints != null && waypoints.isNotEmpty)
+            'waypoints': waypoints
+                .map((p) => {'lat': p.latitude, 'lng': p.longitude})
+                .toList(),
+        },
+      );
+    } on PlatformException catch (e) {
+      throw NeshanApiException(
+        e.message ?? 'Routing failed',
+        neshanStatus: e.code,
+      );
+    }
 
     if (response == null) {
       throw const NeshanApiException(
@@ -252,7 +260,13 @@ class NeshanAndroidChannel {
             startLocation: startLocation,
           );
         })
-        .where((step) => step.instruction.isNotEmpty || step.isArrival)
+        .where(
+          (step) =>
+              step.instruction.isNotEmpty ||
+              step.isArrival ||
+              (step.polyline != null && step.polyline!.trim().isNotEmpty) ||
+              step.startLocation != null,
+        )
         .toList(growable: false);
   }
 

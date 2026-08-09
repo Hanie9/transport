@@ -13,14 +13,19 @@ import '../../l10n/app_localizations.dart';
 import '../../models/cargo.dart';
 import '../../services/cargo_service.dart';
 import '../../services/driver_routing_service.dart';
+import '../../services/location_service.dart';
 import '../../services/neshan_models.dart';
 import '../../services/neshan_service.dart';
+import '../../utils/address_geocode_hints.dart';
 import '../../utils/neshan_config.dart';
 import '../../utils/neshan_degraded_route.dart';
 import '../../utils/neshan_errors.dart';
+import '../../utils/route_maneuver.dart';
 import '../../utils/route_map_geometry.dart';
+import '../../utils/route_progress.dart';
 import '../../widgets/driver_map_controller.dart';
 import '../../widgets/driver_navigation_map.dart';
+import '../../widgets/neshan_return_to_route_button.dart';
 
 class RouteScreen extends StatefulWidget {
   const RouteScreen({super.key, required this.cargoId});
@@ -34,7 +39,17 @@ class RouteScreen extends StatefulWidget {
 class _RouteScreenState extends State<RouteScreen> {
   static const _routing = DriverRoutingService();
 
+  /// How far (m) from the planned path before counting as off-route.
+  static const double _offRouteThresholdMeters = 50;
+
+  /// Consecutive GPS fixes off-route before triggering a replacement route.
+  static const int _offRouteHitsRequired = 2;
+
+  /// Minimum gap between automatic reroutes.
+  static const Duration _rerouteCooldown = Duration(seconds: 12);
+
   final _cargoService = CargoService();
+  final _location = LocationService();
   final _mapController = DriverMapController();
 
   Cargo? _cargo;
@@ -51,9 +66,17 @@ class _RouteScreenState extends State<RouteScreen> {
   NeshanRoute? _pickupRoute;
   NeshanRoute? _deliveryRoute;
 
+  /// True after mid-trip delivery reroute (route starts at driver, not cargo origin).
+  bool _deliveryFromDriver = false;
+
   LatLng? _driverPosition;
   double? _driverHeading;
   StreamSubscription<Position>? _positionSub;
+  bool _pickupRouteLoading = false;
+  bool _rerouting = false;
+  int _offRouteHits = 0;
+  DateTime? _lastPickupRerouteAt;
+  DateTime? _lastRerouteAt;
 
   @override
   void initState() {
@@ -88,57 +111,100 @@ class _RouteScreenState extends State<RouteScreen> {
         );
       }
 
-      NeshanLatLng originPoint;
-      NeshanLatLng destPoint;
-      try {
-        final originGeo = await _routing.geocodeAddress(cargo.origin);
-        originPoint = originGeo.location;
-      } catch (_) {
-        if (cargo.hasOriginCoords) {
-          originPoint = NeshanLatLng(
-            latitude: cargo.originLat!,
-            longitude: cargo.originLng!,
+      final originPoint = await _resolveCargoPoint(
+        address: cargo.origin,
+        lat: cargo.originLat,
+        lng: cargo.originLng,
+      );
+      final destPoint = await _resolveCargoPoint(
+        address: cargo.destination,
+        lat: cargo.destinationLat,
+        lng: cargo.destinationLng,
+        sibling: originPoint.result,
+      );
+      if (!mounted) return;
+
+      final origin = originPoint.location;
+      final destination = destPoint.location;
+
+      // Use whatever GPS the device reports — no geographic filter.
+      final driverPos = await _location.getCurrentPosition();
+      if (!mounted) return;
+
+      NeshanRoute? pickup;
+      var pickupDegraded = false;
+
+      if (driverPos != null) {
+        setState(() => _driverPosition = driverPos);
+        final driverNeshan = NeshanLatLng(
+          latitude: driverPos.latitude,
+          longitude: driverPos.longitude,
+        );
+        try {
+          pickup = await _routing.getRouteWithTraffic(
+            origin: driverNeshan,
+            destination: origin,
           );
-        } else {
-          rethrow;
-        }
-      }
-      try {
-        final destGeo = await _routing.geocodeAddress(cargo.destination);
-        destPoint = destGeo.location;
-      } catch (_) {
-        if (cargo.destinationLat != null && cargo.destinationLng != null) {
-          destPoint = NeshanLatLng(
-            latitude: cargo.destinationLat!,
-            longitude: cargo.destinationLng!,
-          );
-        } else {
-          rethrow;
+        } catch (_) {
+          try {
+            pickup = await _routing.getRoute(
+              origin: driverNeshan,
+              destination: origin,
+            );
+          } catch (_) {
+            pickup = buildDegradedDirectRoute(
+              origin: driverNeshan,
+              destination: origin,
+            );
+            pickupDegraded = true;
+          }
         }
       }
 
       NeshanRoute delivery;
       try {
         delivery = await _routing.getRouteWithTraffic(
-          origin: originPoint,
-          destination: destPoint,
+          origin: origin,
+          destination: destination,
         );
       } catch (_) {
-        delivery = buildDegradedDirectRoute(
-          origin: originPoint,
-          destination: destPoint,
-        );
+        try {
+          delivery = await _routing.getRoute(
+            origin: origin,
+            destination: destination,
+          );
+        } catch (_) {
+          delivery = buildDegradedDirectRoute(
+            origin: origin,
+            destination: destination,
+          );
+        }
       }
 
       if (!mounted) return;
       setState(() {
-        _originPoint = originPoint;
-        _destinationPoint = destPoint;
+        _originPoint = origin;
+        _destinationPoint = destination;
+        _pickupRoute = pickup;
         _deliveryRoute = delivery;
         _loading = false;
+        if (pickup != null) _lastPickupRerouteAt = DateTime.now();
       });
-      await _startLocation();
-      await _loadPickupRoute();
+
+      await _startLocationStream();
+
+      final approximateMessage = context.l10n.routeApproximateFallback;
+      WidgetsBinding.instance.addPostFrameCallback((_) async {
+        if (!mounted || _navigationActive) return;
+        await Future<void>.delayed(const Duration(milliseconds: 350));
+        if (!mounted || _navigationActive) return;
+        await _mapController.refitOverview();
+        if (pickupDegraded && mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(approximateMessage)),
+          );
+        }
+      });
     } on NeshanApiException catch (e) {
       if (!mounted) return;
       setState(() {
@@ -154,52 +220,228 @@ class _RouteScreenState extends State<RouteScreen> {
     }
   }
 
-  Future<void> _loadPickupRoute() async {
-    final origin = _originPoint;
-    final driver = _driverPosition;
-    if (origin == null || driver == null) return;
+  /// Prefer stored cargo coords; otherwise geocode with cargo-aware bias.
+  Future<({NeshanLatLng location, NeshanGeocodingResult? result})>
+      _resolveCargoPoint({
+    required String address,
+    double? lat,
+    double? lng,
+    NeshanGeocodingResult? sibling,
+  }) async {
+    final hasStored = lat != null && lng != null;
+    if (hasStored) {
+      final stored = NeshanLatLng(latitude: lat, longitude: lng);
+      final hints = extractGeocodeHints(address);
+      return (
+        location: stored,
+        result: NeshanGeocodingResult(
+          location: stored,
+          city: hints.city,
+          province: hints.province,
+        ),
+      );
+    }
 
     try {
-      final route = await _routing.getRouteWithTraffic(
-        origin: NeshanLatLng(latitude: driver.latitude, longitude: driver.longitude),
-        destination: origin,
+      final geo = await _routing.resolveCargoAddress(
+        address,
+        siblingResult: sibling,
       );
-      if (!mounted) return;
-      setState(() => _pickupRoute = route);
+      return (location: geo.location, result: geo);
     } catch (_) {
-      if (!mounted || _driverPosition == null || _originPoint == null) return;
-      setState(() {
-        _pickupRoute = buildDegradedDirectRoute(
-          origin: NeshanLatLng(
-            latitude: _driverPosition!.latitude,
-            longitude: _driverPosition!.longitude,
+      final hints = extractGeocodeHints(address);
+      final centroid =
+          hints.city != null ? iranCityCentroids[hints.city] : null;
+      if (centroid != null) {
+        return (
+          location: centroid,
+          result: NeshanGeocodingResult(
+            location: centroid,
+            city: hints.city,
+            province: hints.province,
           ),
-          destination: _originPoint!,
         );
-      });
+      }
+      rethrow;
     }
   }
 
-  Future<void> _startLocation() async {
-    var permission = await Geolocator.checkPermission();
-    if (permission == LocationPermission.denied) {
-      permission = await Geolocator.requestPermission();
-    }
-    if (permission == LocationPermission.denied ||
-        permission == LocationPermission.deniedForever) {
+  Future<void> _loadPickupRoute({
+    bool force = false,
+    LatLng? fromDriver,
+  }) async {
+    final origin = _originPoint;
+    final driver = fromDriver ?? _driverPosition;
+    if (origin == null || driver == null) return;
+    if (_routeStep != 0) return;
+    if (_pickupRouteLoading) return;
+
+    final now = DateTime.now();
+    if (!force &&
+        _lastPickupRerouteAt != null &&
+        now.difference(_lastPickupRerouteAt!) < const Duration(seconds: 45)) {
       return;
     }
 
+    _pickupRouteLoading = true;
     try {
-      final current = await Geolocator.getCurrentPosition();
+      final route = await _routing.getRouteWithTraffic(
+        origin: NeshanLatLng(
+          latitude: driver.latitude,
+          longitude: driver.longitude,
+        ),
+        destination: origin,
+      );
       if (!mounted) return;
       setState(() {
-        _driverPosition = LatLng(current.latitude, current.longitude);
-        _driverHeading = current.heading >= 0 ? current.heading : null;
+        _pickupRoute = route;
+        _lastPickupRerouteAt = DateTime.now();
       });
-      await _loadPickupRoute();
-    } catch (_) {}
+    } catch (_) {
+      if (!mounted || _originPoint == null) return;
+      setState(() {
+        _pickupRoute = buildDegradedDirectRoute(
+          origin: NeshanLatLng(
+            latitude: driver.latitude,
+            longitude: driver.longitude,
+          ),
+          destination: _originPoint!,
+        );
+        _lastPickupRerouteAt = DateTime.now();
+      });
+    } finally {
+      _pickupRouteLoading = false;
+    }
+  }
 
+  Future<void> _loadDeliveryRouteFromDriver(LatLng driver) async {
+    final destination = _destinationPoint;
+    if (destination == null) return;
+
+    try {
+      final route = await _routing.getRouteWithTraffic(
+        origin: NeshanLatLng(
+          latitude: driver.latitude,
+          longitude: driver.longitude,
+        ),
+        destination: destination,
+      );
+      if (!mounted) return;
+      setState(() {
+        _deliveryRoute = route;
+        _deliveryFromDriver = true;
+      });
+    } catch (_) {
+      try {
+        final route = await _routing.getRoute(
+          origin: NeshanLatLng(
+            latitude: driver.latitude,
+            longitude: driver.longitude,
+          ),
+          destination: destination,
+        );
+        if (!mounted) return;
+        setState(() {
+          _deliveryRoute = route;
+          _deliveryFromDriver = true;
+        });
+      } catch (_) {
+        if (!mounted) return;
+        setState(() {
+          _deliveryRoute = buildDegradedDirectRoute(
+            origin: NeshanLatLng(
+              latitude: driver.latitude,
+              longitude: driver.longitude,
+            ),
+            destination: destination,
+          );
+          _deliveryFromDriver = true;
+        });
+      }
+    }
+  }
+
+  /// Off-route → recalculate an alternate path from the live GPS position.
+  void _maybeRerouteOffRoute(LatLng driver) {
+    if (!_navigationActive || _rerouting) return;
+    final route = _routeCoordinates;
+    if (route.length < 2) return;
+
+    final offBy = distanceToPolylineMeters(route, driver);
+    if (offBy <= _offRouteThresholdMeters) {
+      _offRouteHits = 0;
+      return;
+    }
+
+    _offRouteHits++;
+    if (_offRouteHits < _offRouteHitsRequired) return;
+
+    final now = DateTime.now();
+    if (_lastRerouteAt != null &&
+        now.difference(_lastRerouteAt!) < _rerouteCooldown) {
+      return;
+    }
+
+    _offRouteHits = 0;
+    _lastRerouteAt = now;
+    unawaited(_rerouteFromDriver(driver));
+  }
+
+  Future<void> _rerouteFromDriver(LatLng driver) async {
+    if (_rerouting) return;
+    _rerouting = true;
+
+    final messenger = mounted ? ScaffoldMessenger.of(context) : null;
+    final reroutingMsg = mounted ? context.l10n.routeRerouting : null;
+    final reroutedMsg = mounted ? context.l10n.routeRerouted : null;
+
+    if (messenger != null && reroutingMsg != null) {
+      messenger.hideCurrentSnackBar();
+      messenger.showSnackBar(
+        SnackBar(
+          content: Text(reroutingMsg),
+          duration: const Duration(seconds: 2),
+        ),
+      );
+    }
+
+    try {
+      if (_routeStep == 0) {
+        await _loadPickupRoute(force: true, fromDriver: driver);
+      } else {
+        await _loadDeliveryRouteFromDriver(driver);
+      }
+
+      if (!mounted) return;
+
+      if (reroutedMsg != null) {
+        messenger?.hideCurrentSnackBar();
+        messenger?.showSnackBar(
+          SnackBar(
+            content: Text(reroutedMsg),
+            duration: const Duration(seconds: 2),
+          ),
+        );
+      }
+
+      if (_navigationActive && !_mapCameraDetached) {
+        await _mapController.resumeNavigation(
+          position: _driverPosition ?? driver,
+          heading: _driverHeading,
+        );
+      } else if (!_navigationActive) {
+        await _mapController.refitOverview();
+      }
+    } finally {
+      _rerouting = false;
+    }
+  }
+
+  Future<void> _startLocationStream() async {
+    final ok = await _location.ensurePermission();
+    if (!ok) return;
+
+    _positionSub?.cancel();
     _positionSub = Geolocator.getPositionStream(
       locationSettings: const LocationSettings(
         accuracy: LocationAccuracy.high,
@@ -207,10 +449,27 @@ class _RouteScreenState extends State<RouteScreen> {
       ),
     ).listen((pos) {
       if (!mounted) return;
+      final next = LatLng(pos.latitude, pos.longitude);
+      final heading = pos.heading >= 0 ? pos.heading : _driverHeading;
+      final hadDriver = _driverPosition != null;
       setState(() {
-        _driverPosition = LatLng(pos.latitude, pos.longitude);
+        _driverPosition = next;
         if (pos.heading >= 0) _driverHeading = pos.heading;
       });
+
+      if (!hadDriver && _routeStep == 0 && _pickupRoute == null) {
+        unawaited(_loadPickupRoute(force: true, fromDriver: next));
+      }
+
+      if (_navigationActive) {
+        unawaited(
+          _mapController.tickNavigation(
+            position: next,
+            heading: heading,
+          ),
+        );
+        _maybeRerouteOffRoute(next);
+      }
     });
   }
 
@@ -229,26 +488,41 @@ class _RouteScreenState extends State<RouteScreen> {
           );
     }
     if (_pickupRoute != null) return _pickupRoute!;
-    if (_driverPosition != null && _originPoint != null) {
-      return buildDegradedDirectRoute(
-        origin: NeshanLatLng(
-          latitude: _driverPosition!.latitude,
-          longitude: _driverPosition!.longitude,
-        ),
-        destination: _originPoint!,
-      );
-    }
+    // No usable driver GPS yet — show cargo trip (origin→destination) roads.
+    if (_deliveryRoute != null) return _deliveryRoute!;
     return buildDegradedDirectRoute(
       origin: _originPoint!,
-      destination: _originPoint!,
+      destination: _destinationPoint ?? _originPoint!,
     );
   }
 
   RouteMapGeometry get _activeGeometry {
+    // Overview: prefer driver→origin when available, else cargo trip.
+    if (!_navigationActive) {
+      if (_routeStep == 0 &&
+          _pickupRoute != null &&
+          _driverPosition != null) {
+        return RouteMapGeometry.fromRoute(
+          _pickupRoute!,
+          origin: _driverPosition!,
+          destination: _originLatLng,
+        );
+      }
+      if (_deliveryRoute != null) {
+        return RouteMapGeometry.fromRoute(
+          _deliveryRoute!,
+          origin: _originLatLng,
+          destination: _destinationLatLng,
+        );
+      }
+    }
     if (_routeStep == 1) {
+      final origin = (_deliveryFromDriver && _driverPosition != null)
+          ? _driverPosition!
+          : _originLatLng;
       return RouteMapGeometry.fromRoute(
         _activeRoute,
-        origin: _originLatLng,
+        origin: origin,
         destination: _destinationLatLng,
       );
     }
@@ -260,15 +534,104 @@ class _RouteScreenState extends State<RouteScreen> {
     );
   }
 
+  List<NeshanRouteStep> get _steps =>
+      _activeRoute.primaryLeg?.steps ?? const [];
+
+  List<LatLng> get _routeCoordinates => _activeGeometry.fullPolyline;
+
+  int get _guidanceStepIndex {
+    final driver = _driverPosition;
+    final steps = _steps;
+    if (driver == null || steps.isEmpty) return 0;
+    return findNextGuidanceStepIndex(
+      steps: steps,
+      driver: driver,
+      routePolyline: _routeCoordinates,
+    );
+  }
+
+  NeshanRouteStep? get _guidanceStep {
+    final steps = _steps;
+    if (steps.isEmpty) return null;
+    return steps[_guidanceStepIndex.clamp(0, steps.length - 1)];
+  }
+
+  NeshanRouteStep? get _thenGuidanceStep {
+    final steps = _steps;
+    if (steps.isEmpty) return null;
+    final start = _guidanceStepIndex + 1;
+    if (start >= steps.length) return null;
+    for (var i = start; i < steps.length; i++) {
+      if (!isDepartOrContinueStep(steps[i]) || i == steps.length - 1) {
+        return steps[i];
+      }
+    }
+    return null;
+  }
+
+  double _distanceToGuidanceStepMeters() {
+    final driver = _driverPosition;
+    final step = _guidanceStep;
+    if (driver == null || step == null) return 0;
+    return distanceMetersToGuidanceStep(
+      driver: driver,
+      step: step,
+      routePolyline: _routeCoordinates,
+    );
+  }
+
+  int? get _traveledPolylineIndex {
+    final driver = _driverPosition;
+    if (!_navigationActive || driver == null || _routeCoordinates.length < 2) {
+      return null;
+    }
+    final snapped = snapPointToPolyline(_routeCoordinates, driver);
+    return findClosestPolylineIndex(_routeCoordinates, snapped);
+  }
+
   Future<void> _openInNeshan() async {
     final dest = _routeStep == 0 ? _originPoint : _destinationPoint;
     if (dest == null) return;
     final uri = Uri.parse(
-      'https://neshan.org/maps#@${dest.latitude},${dest.longitude},15z',
+      'https://neshan.org/maps/@${dest.latitude},${dest.longitude},15z',
     );
     if (await canLaunchUrl(uri)) {
       await launchUrl(uri, mode: LaunchMode.externalApplication);
     }
+  }
+
+  void _onMapCameraDetached(bool detached) {
+    if (!mounted) return;
+    if (_mapCameraDetached == detached) return;
+    setState(() => _mapCameraDetached = detached);
+  }
+
+  Future<void> _returnToRoute() async {
+    if (_navigationActive) {
+      final position = _driverPosition;
+      if (position == null) return;
+      setState(() => _mapCameraDetached = false);
+      await _mapController.resumeNavigation(
+        position: position,
+        heading: _driverHeading,
+      );
+    } else {
+      setState(() => _mapCameraDetached = false);
+      await _mapController.refitOverview();
+    }
+  }
+
+  Widget _returnToRouteButton({double bottom = 16}) {
+    if (!_navigationActive || !_mapCameraDetached) {
+      return const SizedBox.shrink();
+    }
+    return NeshanReturnToRouteButton(
+      label: context.l10n.returnToRoute,
+      onPressed: () {
+        unawaited(_returnToRoute());
+      },
+      bottom: bottom,
+    );
   }
 
   @override
@@ -317,6 +680,22 @@ class _RouteScreenState extends State<RouteScreen> {
         _routeStep == 0 ? l10n.routeToOrigin : l10n.routeToDestination;
     final targetLabel = _routeStep == 0 ? cargo.origin : cargo.destination;
     final leg = _activeRoute.primaryLeg;
+    // Overview markers: cargo origin & destination (uzita mission overview).
+    // Navigation: live driver → current target.
+    final LatLng mapOrigin;
+    final LatLng mapDestination;
+    if (!_navigationActive) {
+      mapOrigin = _originLatLng;
+      mapDestination = _destinationLatLng;
+    } else if (_routeStep == 0) {
+      mapOrigin = _driverPosition ?? _originLatLng;
+      mapDestination = _originLatLng;
+    } else {
+      mapOrigin = _deliveryFromDriver
+          ? (_driverPosition ?? _originLatLng)
+          : _originLatLng;
+      mapDestination = _destinationLatLng;
+    }
 
     return Scaffold(
       backgroundColor: palette.surface,
@@ -339,11 +718,8 @@ class _RouteScreenState extends State<RouteScreen> {
                 DriverNavigationMap(
                   routeCoordinates: geometry.fullPolyline,
                   routeSegments: geometry.segments,
-                  origin: _routeStep == 0
-                      ? (_driverPosition ?? _originLatLng)
-                      : _originLatLng,
-                  destination:
-                      _routeStep == 0 ? _originLatLng : _destinationLatLng,
+                  origin: mapOrigin,
+                  destination: mapDestination,
                   driverPosition: _driverPosition,
                   driverHeading: _driverHeading,
                   followDriver: _navigationActive && !_mapCameraDetached,
@@ -351,63 +727,76 @@ class _RouteScreenState extends State<RouteScreen> {
                   isDark: isDark,
                   overviewMode: !_navigationActive,
                   pickupLeg: _routeStep == 0,
+                  traveledFromIndex: _traveledPolylineIndex,
                   returnToRouteLabel: l10n.returnToRoute,
                   controller: _mapController,
-                  onCameraDetached: (detached) {
-                    if (!mounted) return;
-                    setState(() => _mapCameraDetached = detached);
-                  },
+                  onCameraDetached: _onMapCameraDetached,
                 ),
                 Positioned(
                   top: 12,
                   right: 12,
                   left: 12,
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 14,
-                      vertical: 10,
-                    ),
-                    decoration: BoxDecoration(
-                      color: palette.cardBg.withValues(alpha: 0.94),
-                      borderRadius: BorderRadius.circular(14),
-                      boxShadow: palette.cardShadow,
-                    ),
-                    child: Row(
-                      children: [
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      if (!_navigationActive)
                         Container(
                           padding: const EdgeInsets.symmetric(
-                            horizontal: 10,
-                            vertical: 5,
+                            horizontal: 14,
+                            vertical: 10,
                           ),
                           decoration: BoxDecoration(
-                            color: AppTheme.primary,
-                            borderRadius: BorderRadius.circular(8),
+                            color: palette.cardBg.withValues(alpha: 0.94),
+                            borderRadius: BorderRadius.circular(14),
+                            boxShadow: palette.cardShadow,
                           ),
-                          child: Text(
-                            stepLabel,
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 12,
-                              fontWeight: FontWeight.w700,
-                            ),
+                          child: Row(
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 10,
+                                  vertical: 5,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: AppTheme.primary,
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: Text(
+                                  stepLabel,
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 10),
+                              Expanded(
+                                child: Text(
+                                  targetLabel,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.w600,
+                                    color: palette.textPrimary,
+                                  ),
+                                ),
+                              ),
+                            ],
                           ),
                         ),
-                        const SizedBox(width: 10),
-                        Expanded(
-                          child: Text(
-                            targetLabel,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: TextStyle(
-                              fontWeight: FontWeight.w600,
-                              color: palette.textPrimary,
-                            ),
-                          ),
+                      if (_navigationActive && _guidanceStep != null)
+                        _NavigationGuidanceCard(
+                          step: _guidanceStep!,
+                          nextStep: _thenGuidanceStep,
+                          distanceMeters: _distanceToGuidanceStepMeters(),
+                          persian: l10n.isFa,
+                          thenLabel: l10n.routeThen,
                         ),
-                      ],
-                    ),
+                    ],
                   ),
                 ),
+                _returnToRouteButton(bottom: 20),
               ],
             ),
           ),
@@ -483,18 +872,39 @@ class _RouteScreenState extends State<RouteScreen> {
                     ElevatedButton.icon(
                       onPressed: () {
                         final pos = _driverPosition;
+                        if (pos == null) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text(l10n.locationRequiredForRoute),
+                            ),
+                          );
+                          return;
+                        }
+                        if (_routeStep == 0 && _pickupRoute == null) {
+                          unawaited(
+                            _loadPickupRoute(force: true, fromDriver: pos)
+                                .then((_) {
+                              if (!mounted) return;
+                              setState(() {
+                                _navigationActive = true;
+                                _mapCameraDetached = false;
+                              });
+                              _mapController.resumeNavigation(
+                                position: pos,
+                                heading: _driverHeading,
+                              );
+                            }),
+                          );
+                          return;
+                        }
                         setState(() {
                           _navigationActive = true;
                           _mapCameraDetached = false;
                         });
-                        if (pos != null) {
-                          _mapController.resumeNavigation(
-                            position: pos,
-                            heading: _driverHeading,
-                          );
-                        } else {
-                          _mapController.refitOverview();
-                        }
+                        _mapController.resumeNavigation(
+                          position: pos,
+                          heading: _driverHeading,
+                        );
                       },
                       icon: const Icon(Icons.navigation_rounded),
                       label: Text(
@@ -516,6 +926,12 @@ class _RouteScreenState extends State<RouteScreen> {
                           _routeStep = 1;
                           _navigationActive = false;
                           _mapCameraDetached = false;
+                          _deliveryFromDriver = false;
+                          _offRouteHits = 0;
+                        });
+                        WidgetsBinding.instance.addPostFrameCallback((_) {
+                          if (!mounted) return;
+                          unawaited(_mapController.refitOverview());
                         });
                       },
                       child: Text(l10n.arrivedAtOriginContinue),
@@ -542,6 +958,85 @@ class _RouteScreenState extends State<RouteScreen> {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _NavigationGuidanceCard extends StatelessWidget {
+  const _NavigationGuidanceCard({
+    required this.step,
+    required this.nextStep,
+    required this.distanceMeters,
+    required this.persian,
+    required this.thenLabel,
+  });
+
+  final NeshanRouteStep step;
+  final NeshanRouteStep? nextStep;
+  final double distanceMeters;
+  final bool persian;
+  final String thenLabel;
+
+  @override
+  Widget build(BuildContext context) {
+    final direction = persian ? TextDirection.rtl : TextDirection.ltr;
+    return Material(
+      elevation: 8,
+      borderRadius: BorderRadius.circular(12),
+      clipBehavior: Clip.antiAlias,
+      color: const Color(0xFF0F172A),
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(16, 14, 16, 16),
+        child: Row(
+          textDirection: direction,
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            maneuverIconWidget(step, rtl: persian),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    maneuverDistancePrefix(distanceMeters, persian: persian),
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 22,
+                      fontWeight: FontWeight.bold,
+                    ),
+                    textDirection: direction,
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    guidancePrimaryLabel(step),
+                    style: const TextStyle(
+                      color: Color(0xFF22D3EE),
+                      fontSize: 17,
+                      fontWeight: FontWeight.bold,
+                      height: 1.3,
+                    ),
+                    textDirection: direction,
+                  ),
+                  if (nextStep != null &&
+                      nextStep!.instruction.trim().isNotEmpty) ...[
+                    const SizedBox(height: 6),
+                    Text(
+                      '$thenLabel: ${nextStep!.instruction}',
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        color: Colors.white.withValues(alpha: 0.75),
+                        fontSize: 12,
+                      ),
+                      textDirection: direction,
+                    ),
+                  ],
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

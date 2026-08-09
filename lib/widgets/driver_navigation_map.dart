@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:legestic/utils/map_tile_config.dart';
+import 'package:legestic/utils/navigation_bearing.dart';
 import 'package:legestic/utils/neshan_route_style.dart';
 import 'package:legestic/utils/route_map_geometry.dart';
 import 'package:legestic/utils/route_progress.dart';
@@ -271,29 +272,46 @@ class _FlutterDriverNavigationMapState
     ];
     final route = _route;
     if (route.length >= 2) {
-      points.add(route.first);
-      if (route.length > 2) points.add(route[route.length ~/ 2]);
-      points.add(route.last);
+      const maxSamples = 24;
+      if (route.length <= maxSamples) {
+        points.addAll(route);
+      } else {
+        final step = (route.length - 1) / (maxSamples - 1);
+        for (var i = 0; i < maxSamples; i++) {
+          points.add(route[(i * step).round().clamp(0, route.length - 1)]);
+        }
+      }
     }
     if (points.isEmpty) return;
 
     final padding = widget.overviewMode
-        ? const EdgeInsets.fromLTRB(48, 100, 48, 340)
+        ? const EdgeInsets.fromLTRB(56, 120, 56, 280)
         : const EdgeInsets.fromLTRB(40, 40, 40, 40);
 
     _mapController.fitCamera(
       CameraFit.bounds(
         bounds: LatLngBounds.fromPoints(points),
         padding: padding,
+        maxZoom: widget.overviewMode ? 14.5 : 18,
       ),
     );
     _fittedInitialBounds = true;
   }
 
+  double? _lastFollowBearing;
+
   void _followDriverAt(LatLng position, double? heading) {
     const zoom = NeshanDriverMap.navZoom;
-    final bearing = heading ?? widget.driverHeading;
+    final routeBearing = widget.followDriver && _route.length >= 2
+        ? resolveRouteLockedNavigationBearing(
+            position: position,
+            routePolyline: _route,
+            lastKnownBearing: _lastFollowBearing,
+          )
+        : null;
+    final bearing = routeBearing ?? heading ?? widget.driverHeading;
     if (bearing != null) {
+      _lastFollowBearing = bearing;
       _mapController.moveAndRotate(position, zoom, bearing);
     } else {
       _mapController.move(position, zoom);

@@ -41,7 +41,7 @@ double blendBearingTowardRoute(
   return normalizeBearingDegrees(deviceBearing + delta * maxPull);
 }
 
-/// Bearing for heading-up navigation: locked to the route polyline.
+/// Bearing for heading-up navigation: locked to the route polyline (uzita/Neshan).
 ///
 /// The map keeps a stable angle like Neshan — it does not spin with GPS noise
 /// or phone rotation. Bearing only changes when the driver advances to the
@@ -121,6 +121,19 @@ double? resolveRouteLockedNavigationBearing({
   return blended;
 }
 
+/// Continuous curve-following variant (used when hugging sharp arcs).
+double? resolveCurveFollowingNavigationBearing({
+  required LatLng position,
+  List<LatLng> routePolyline = const [],
+  double? lastKnownBearing,
+}) {
+  return resolveRouteLockedNavigationBearing(
+    position: position,
+    routePolyline: routePolyline,
+    lastKnownBearing: lastKnownBearing,
+  );
+}
+
 /// Segment index with forward-only hysteresis (prevents GPS jitter near vertices).
 int resolveLockedRouteSegmentIndex(
   List<LatLng> routePolyline,
@@ -136,7 +149,7 @@ int resolveLockedRouteSegmentIndex(
   return raw;
 }
 
-/// Segment index paired with [resolveRouteLockedNavigationBearing].
+/// Segment index for overlay sync bookkeeping.
 int? routeSegmentIndexForPosition(List<LatLng> routePolyline, LatLng position) {
   if (routePolyline.length < 2) return null;
   return findClosestPolylineIndex(routePolyline, position).clamp(

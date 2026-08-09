@@ -69,6 +69,7 @@ class _NeshanDriverMapState extends State<NeshanDriverMap> {
   /// onto it. Larger deviations are treated as off-route (handled by reroute).
   static const double _maxSnapMeters = 45;
   static const double _overlayResyncMinMeters = 28;
+  /// Match uzita — avoid tiny bearing jitter on straight segments.
   static const double _cameraBearingMinDelta = 8;
   static const Duration _cameraUpdateMinInterval = Duration(milliseconds: 380);
 
@@ -128,12 +129,17 @@ class _NeshanDriverMapState extends State<NeshanDriverMap> {
       widget.destination,
       if (widget.driverPosition != null) widget.driverPosition!,
     ];
+    // Sample the full road polyline so overview framing covers the whole path.
     if (_route.length >= 2) {
-      points.add(_route.first);
-      if (_route.length > 2) {
-        points.add(_route[_route.length ~/ 2]);
+      const maxSamples = 24;
+      if (_route.length <= maxSamples) {
+        points.addAll(_route);
+      } else {
+        final step = (_route.length - 1) / (maxSamples - 1);
+        for (var i = 0; i < maxSamples; i++) {
+          points.add(_route[(i * step).round().clamp(0, _route.length - 1)]);
+        }
       }
-      points.add(_route.last);
     }
     return points;
   }
@@ -266,12 +272,12 @@ class _NeshanDriverMapState extends State<NeshanDriverMap> {
     if (!mounted) return;
 
     final type = event['type'];
-    if (type == 'userCameraGesture') {
+    if (type == 'userCameraGesture' || type == 'cameraDetached') {
       if (!widget.navigationMode) return;
       _detachFromRoute();
       return;
     }
-    if (type == 'overviewCameraGesture') {
+    if (type == 'overviewCameraGesture' || type == 'userGesture') {
       if (widget.navigationMode) return;
       if (!widget.overviewMode) return;
       _onOverviewCameraInteraction();
@@ -547,11 +553,15 @@ class _NeshanDriverMapState extends State<NeshanDriverMap> {
     final lastAt = _lastCameraUpdateAt;
     final lastBearing = _lastCameraBearing;
     final lastPos = _lastOverlaySyncPosition;
-    if (lastAt != null &&
+    final bearingDelta =
+        lastBearing == null ? 180.0 : bearingDeltaDegrees(lastBearing, bearing);
+    final forceForTurn = bearingDelta >= 8;
+    if (!forceForTurn &&
+        lastAt != null &&
         lastBearing != null &&
         lastPos != null &&
         now.difference(lastAt) < _cameraUpdateMinInterval &&
-        bearingDeltaDegrees(lastBearing, bearing) < _cameraBearingMinDelta &&
+        bearingDelta < _cameraBearingMinDelta &&
         distanceMeters(lastPos, position) < 2.5) {
       return;
     }
@@ -569,7 +579,7 @@ class _NeshanDriverMapState extends State<NeshanDriverMap> {
     return distanceMeters(raw, snapped) <= _maxSnapMeters ? snapped : raw;
   }
 
-  /// Heading-up: stable bearing locked to route segment (updates only at turns).
+  /// Heading-up: route-locked bearing like uzita/Neshan (stable, updates at turns).
   double _navHeading(LatLng navPos, double? heading) {
     if (!_isNavigationMode) {
       final resolved = resolveNavigationBearing(
@@ -585,14 +595,16 @@ class _NeshanDriverMapState extends State<NeshanDriverMap> {
           0.0;
     }
 
+    final poly =
+        _navigationPolyline.length >= 2 ? _navigationPolyline : _route;
     final segmentIndex = resolveLockedRouteSegmentIndex(
-      _route,
+      poly,
       navPos,
       _lockedRouteSegmentIndex,
     );
     final locked = resolveRouteLockedNavigationBearing(
       position: navPos,
-      routePolyline: _route,
+      routePolyline: poly,
       lastKnownBearing: _lastNavBearing,
       lastRouteSegmentIndex: _lockedRouteSegmentIndex,
     );
@@ -801,12 +813,17 @@ class _NeshanDriverMapState extends State<NeshanDriverMap> {
       await NeshanMapBindings.invokeMethod('fitBounds', {
         'viewId': id,
         'points': points.map(_point).toList(),
-        'overview': widget.overviewMode,
-        if (widget.overviewMode) 'bottomInsetRatio': 0.12,
+        'overview': true,
+        'bottomInsetRatio': 0.18,
       });
-      _fitted = true;
+      if (!mounted) return;
+      setState(() {
+        _fitted = true;
+        _overviewCameraDetached = false;
+      });
     } catch (_) {
       await _moveCamera(widget.origin, zoom: 12, navigation: false);
+      if (!mounted) return;
       _fitted = true;
     }
   }
@@ -855,6 +872,7 @@ class _NeshanDriverMapState extends State<NeshanDriverMap> {
               (s) => {
                 'points': s.points.map(_point).toList(),
                 'trafficLevel': s.trafficLevel.name,
+                'congested': s.congested,
               },
             )
             .toList(),

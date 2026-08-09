@@ -437,6 +437,8 @@ LatLng? pointAheadOnPolyline(
 }
 
 /// Heading-up bearing: direction from the driver toward upcoming route geometry.
+///
+/// Blends local tangent with a look-ahead point so heading hugs road arcs.
 double? bearingAheadOnPolyline(
   List<LatLng> polyline,
   LatLng point, {
@@ -445,13 +447,36 @@ double? bearingAheadOnPolyline(
   if (polyline.length < 2) return null;
 
   final snapped = snapPointToPolyline(polyline, point);
+  final tangent = bearingAlongPolyline(polyline, snapped);
   final ahead = pointAheadOnPolyline(polyline, point, meters: meters);
-  if (ahead == null) return bearingAlongPolyline(polyline, point);
+  if (ahead == null) return tangent;
 
   final leadMeters = distanceMeters(snapped, ahead);
-  if (leadMeters < 2) return bearingAlongPolyline(polyline, point);
+  if (leadMeters < 2) return tangent;
 
-  return _distance.bearing(snapped, ahead);
+  final lookBearing = _distance.bearing(snapped, ahead);
+  if (tangent == null) return lookBearing;
+
+  // On sharp bends, weight the local tangent more so the arrow hugs the arc.
+  var bend = (lookBearing - tangent).abs() % 360;
+  if (bend > 180) bend = 360 - bend;
+  final tangentWeight = bend >= 25
+      ? 0.55
+      : bend >= 12
+          ? 0.4
+          : 0.22;
+
+  var delta = tangent - lookBearing;
+  while (delta > 180) {
+    delta -= 360;
+  }
+  while (delta < -180) {
+    delta += 360;
+  }
+  var blended = lookBearing + delta * tangentWeight;
+  blended %= 360;
+  if (blended < 0) blended += 360;
+  return blended;
 }
 
 /// Route polyline from [point] forward (snapped position first, then ahead).

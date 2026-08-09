@@ -102,24 +102,99 @@ class DriverHomeScreen extends StatefulWidget {
   State<DriverHomeScreen> createState() => _DriverHomeScreenState();
 }
 
-class _DriverHomeScreenState extends State<DriverHomeScreen> {
+class _DriverHomeScreenState extends State<DriverHomeScreen>
+    with WidgetsBindingObserver {
   final _cargoService = CargoService();
+  final _location = LocationService();
   List<Cargo> _allCargos = [];
   List<Cargo> _nearbyCargos = [];
   bool _loading = true;
-  bool _gpsEnabled = true;
+  bool _gpsEnabled = false;
+  bool _gpsBusy = false;
 
   @override
   void initState() {
     super.initState();
-    _cargoService.addListener(_loadCargos);
-    _loadCargos(showLoader: true);
+    WidgetsBinding.instance.addObserver(this);
+    _cargoService.addListener(_onCargosChanged);
+    _syncGpsAndLoad(showLoader: true);
   }
 
   @override
   void dispose() {
-    _cargoService.removeListener(_loadCargos);
+    WidgetsBinding.instance.removeObserver(this);
+    _cargoService.removeListener(_onCargosChanged);
     super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      // After returning from system location settings, mirror real GPS state.
+      _syncGpsAndLoad();
+    }
+  }
+
+  void _onCargosChanged() => _syncGpsAndLoad();
+
+  /// Mirror the device GPS/permission state onto the cargos-page toggle.
+  Future<void> _syncGpsAndLoad({bool showLoader = false}) async {
+    final ready = await _location.isGpsReady();
+    if (!mounted) return;
+    setState(() => _gpsEnabled = ready);
+    await _loadCargos(showLoader: showLoader);
+  }
+
+  Future<void> _onGpsChanged(bool enabled) async {
+    if (_gpsBusy) return;
+    setState(() => _gpsBusy = true);
+
+    try {
+      if (!enabled) {
+        await _location.disableGps(openSettings: true);
+        if (!mounted) return;
+        // Re-check real device state after settings (user may leave GPS on).
+        final stillReady = await _location.isGpsReady();
+        if (!mounted) return;
+        setState(() {
+          _gpsEnabled = stillReady;
+          if (!stillReady) _nearbyCargos = [];
+          _gpsBusy = false;
+        });
+        if (!stillReady) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(context.l10n.gpsDisabledSystemHint)),
+          );
+        } else {
+          await _loadCargos();
+        }
+        return;
+      }
+
+      // Request permission + open system location settings if GPS is off.
+      final pos = await _location.enableGps();
+      if (!mounted) return;
+
+      final ready = pos != null && await _location.isGpsReady();
+      if (!mounted) return;
+
+      if (!ready) {
+        setState(() {
+          _gpsEnabled = false;
+          _nearbyCargos = [];
+          _gpsBusy = false;
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(context.l10n.gpsEnableFailed)),
+        );
+        return;
+      }
+
+      setState(() => _gpsEnabled = true);
+      await _loadCargos();
+    } finally {
+      if (mounted) setState(() => _gpsBusy = false);
+    }
   }
 
   Future<void> _loadCargos({bool showLoader = false}) async {
@@ -129,13 +204,18 @@ class _DriverHomeScreenState extends State<DriverHomeScreen> {
     final cargoType = user?.vehicleInfo?.cargoType ?? 'کفی';
 
     final allCargos = await _cargoService.getCargosForDriver(cargoType);
-    final nearbyCargos = _gpsEnabled
-        ? await _cargoService.getNearbyCargos(cargoType: cargoType)
-        : <Cargo>[];
 
-    if (_gpsEnabled) {
-      final pos = await LocationService().getCurrentPosition();
+    // Always align toggle with real device GPS before deciding nearby list.
+    final gpsOn = await _location.isGpsReady();
+    var nearbyCargos = <Cargo>[];
+
+    if (gpsOn) {
+      final pos = await _location.getCurrentPosition(requestIfNeeded: false);
       if (pos != null) {
+        nearbyCargos = await _cargoService.getNearbyCargos(
+          cargoType: cargoType,
+          driverPosition: pos,
+        );
         await _cargoService.reportDriverLocation(
           lat: pos.latitude,
           lng: pos.longitude,
@@ -148,6 +228,7 @@ class _DriverHomeScreenState extends State<DriverHomeScreen> {
     setState(() {
       _allCargos = allCargos;
       _nearbyCargos = nearbyCargos;
+      _gpsEnabled = gpsOn;
       _loading = false;
     });
   }
@@ -185,10 +266,8 @@ class _DriverHomeScreenState extends State<DriverHomeScreen> {
           SliverToBoxAdapter(
             child: _GpsBanner(
               enabled: _gpsEnabled,
-              onChanged: (v) {
-                setState(() => _gpsEnabled = v);
-                _loadCargos();
-              },
+              busy: _gpsBusy,
+              onChanged: _onGpsChanged,
             ),
           ),
           if (_loading)
@@ -264,10 +343,15 @@ class _DriverHomeScreenState extends State<DriverHomeScreen> {
 }
 
 class _GpsBanner extends StatelessWidget {
-  const _GpsBanner({required this.enabled, required this.onChanged});
+  const _GpsBanner({
+    required this.enabled,
+    required this.onChanged,
+    this.busy = false,
+  });
 
   final bool enabled;
   final ValueChanged<bool> onChanged;
+  final bool busy;
 
   @override
   Widget build(BuildContext context) {
@@ -290,7 +374,20 @@ class _GpsBanner extends StatelessWidget {
               color: color.withValues(alpha: 0.15),
               borderRadius: BorderRadius.circular(10),
             ),
-            child: Icon(enabled ? Icons.gps_fixed : Icons.gps_off, color: color, size: 20),
+            child: busy
+                ? SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: color,
+                    ),
+                  )
+                : Icon(
+                    enabled ? Icons.gps_fixed : Icons.gps_off,
+                    color: color,
+                    size: 20,
+                  ),
           ),
           const SizedBox(width: 12),
           Expanded(
@@ -299,7 +396,10 @@ class _GpsBanner extends StatelessWidget {
               children: [
                 Text(
                   enabled ? l10n.gpsEnabled : l10n.gpsDisabled,
-                  style: TextStyle(fontWeight: FontWeight.w700, color: palette.textPrimary),
+                  style: TextStyle(
+                    fontWeight: FontWeight.w700,
+                    color: palette.textPrimary,
+                  ),
                 ),
                 Text(
                   enabled ? l10n.gpsEnabledHint : l10n.gpsDisabledHint,
@@ -310,8 +410,8 @@ class _GpsBanner extends StatelessWidget {
           ),
           Switch.adaptive(
             value: enabled,
-            activeColor: AppTheme.success,
-            onChanged: onChanged,
+            activeThumbColor: AppTheme.success,
+            onChanged: busy ? null : onChanged,
           ),
         ],
       ),

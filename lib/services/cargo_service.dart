@@ -220,18 +220,23 @@ class CargoService extends ChangeNotifier {
         .toList();
   }
 
-  /// Nearby cargos using device GPS distance to cargo origin.
+  /// Nearby cargos using the driver's real GPS distance to cargo origin.
+  /// Returns an empty list when [driverPosition] / device GPS is unavailable —
+  /// never falls back to a fake city centre.
   Future<List<Cargo>> getNearbyCargos({
     String? cargoType,
     double radiusKm = nearbyRadiusKm,
+    LatLng? driverPosition,
   }) async {
+    final pos = driverPosition ?? await _location.getCurrentPosition();
+    if (pos == null) return const [];
+
     if (!ApiConfig.shouldUseMock) {
-      final pos = await _location.getCurrentPosition();
       final data = await _api.get(
         ApiConfig.nearbyCargosPath,
         query: {
-          if (pos != null) 'lat': '${pos.latitude}',
-          if (pos != null) 'lng': '${pos.longitude}',
+          'lat': '${pos.latitude}',
+          'lng': '${pos.longitude}',
           'radius_km': '$radiusKm',
           if (cargoType != null) 'cargo_type': cargoType,
         },
@@ -243,12 +248,10 @@ class CargoService extends ChangeNotifier {
             .map((e) => Cargo.fromJson(Map<String, dynamic>.from(e)))
             .toList();
       }
+      return const [];
     }
 
     await Future<void>.delayed(const Duration(milliseconds: 350));
-    final pos = await _location.getCurrentPosition();
-    // Fallback center (Tehran) when GPS unavailable — still ranks by distance.
-    final center = pos ?? const LatLng(35.6892, 51.3890);
 
     final results = <Cargo>[];
     for (final cargo in _cargos) {
@@ -257,7 +260,7 @@ class CargoService extends ChangeNotifier {
       if (!cargo.hasOriginCoords) continue;
 
       final km = _location.distanceKm(
-        center,
+        pos,
         LatLng(cargo.originLat!, cargo.originLng!),
       );
       if (km <= radiusKm) {
@@ -332,13 +335,13 @@ class CargoService extends ChangeNotifier {
     }
 
     await Future<void>.delayed(const Duration(milliseconds: 350));
-    LatLng center;
+    final LatLng? center;
     if (originLat != null && originLng != null) {
       center = LatLng(originLat, originLng);
     } else {
-      center = await _location.getCurrentPosition() ??
-          const LatLng(35.6892, 51.3890);
+      center = await _location.getCurrentPosition();
     }
+    if (center == null) return const [];
 
     final results = <DriverProfile>[];
     for (final driver in _drivers) {

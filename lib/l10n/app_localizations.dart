@@ -298,6 +298,18 @@ class AppLocalizations {
         'برای دریافت پیشنهاد هوشمند GPS را فعال کنید',
         'Enable GPS for smart cargo suggestions',
       );
+  String get gpsUnavailable => _t(
+        'موقعیت GPS در دسترس نیست. دسترسی موقعیت را بررسی کنید.',
+        'GPS location is unavailable. Check location permission.',
+      );
+  String get gpsEnableFailed => _t(
+        'فعال‌سازی موقعیت انجام نشد. دسترسی و سرویس مکان را بررسی کنید.',
+        'Could not enable location. Check permission and location services.',
+      );
+  String get gpsDisabledSystemHint => _t(
+        'برای خاموش کردن موقعیت دستگاه، آن را در تنظیمات خاموش کنید',
+        'Turn off device location in system settings if needed',
+      );
   String get loadingCargos => _t('در حال بارگذاری بارها...', 'Loading cargos...');
   String get noCargoFound => _t('باری یافت نشد', 'No cargo found');
   String get noMatchingCargo => _t(
@@ -400,7 +412,23 @@ class AppLocalizations {
   // Route
   String get routeTitle => _t('مسیریابی', 'Navigation');
   String get loadingRoute => _t('در حال بارگذاری مسیر...', 'Loading route...');
+  String get locationRequiredForRoute => _t(
+        'برای مسیریابی از موقعیت شما تا مبدا بار، دسترسی به GPS لازم است',
+        'GPS access is required to route from your location to the cargo origin',
+      );
+  String get driverRouteGpsTooFar => _t(
+        'موقعیت GPS از این بار خیلی دور است. در شبیه‌ساز Location را نزدیک مسیر تنظیم کنید.',
+        'GPS is too far from this trip. In the emulator set Location near the route.',
+      );
+  String get routeApproximateFallback => _t(
+        'مسیر جاده‌ای در دسترس نبود؛ مسیر تقریبی نمایش داده شد',
+        'Road route unavailable; showing an approximate path',
+      );
   String get routeNotFound => _t('مسیر یافت نشد', 'Route not found');
+  String get routeLoadFailed => _t(
+        'مسیر جاده‌ای دریافت نشد. اتصال اینترنت و کلید نشان را بررسی کنید و دوباره تلاش کنید.',
+        'Could not load the road route. Check internet and Neshan key, then try again.',
+      );
   String get routeToOrigin => _t('مسیریابی به مبدا', 'Navigate to origin');
   String get routeToDestination => _t('مسیریابی به مقصد', 'Navigate to destination');
   String get neshanMap => _t('نقشه نشان', 'Neshan Map');
@@ -408,6 +436,9 @@ class AppLocalizations {
   String get neshanMapLoadError => _t('بارگذاری نقشه ناموفق بود', 'Could not load map');
   String get openInNeshanMaps => _t('باز کردن در نقشه نشان', 'Open in Neshan Maps');
   String get returnToRoute => _t('بازگشت به مسیر', 'Return to route');
+  String get routeThen => _t('سپس', 'Then');
+  String get routeRerouting => _t('در حال یافتن مسیر جایگزین...', 'Finding an alternative route...');
+  String get routeRerouted => _t('مسیر جایگزین نمایش داده شد', 'Alternative route shown');
   String get neshanErrorGeneric => _t('خطا در سرویس نشان', 'Neshan service error');
   String get neshanErrorServiceList => _t(
         'این سرویس‌ها را روی کلید نشان فعال کنید: Geocoding Plus، مسیریابی با ترافیک و نقشه استاتیک',
