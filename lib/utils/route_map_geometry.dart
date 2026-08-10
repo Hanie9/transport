@@ -54,12 +54,19 @@ class RouteMapGeometry {
   }) {
     final segments = _buildStepSegments(route);
     final overview = _decodeOverview(route.overviewPolyline);
+    final fromSteps =
+        segments.isNotEmpty ? _concatSegments(segments) : const <LatLng>[];
 
+    // Prefer detailed step polylines (streets/alleys) over a coarse overview.
     List<LatLng> full;
-    if (overview.length >= 2) {
+    final stepDetail = fromSteps.length >= 2 &&
+        segments.any((s) => s.points.length > 2);
+    if (stepDetail && fromSteps.length >= overview.length) {
+      full = fromSteps;
+    } else if (overview.length >= 2) {
       full = overview;
-    } else if (segments.isNotEmpty) {
-      full = _concatSegments(segments);
+    } else if (fromSteps.length >= 2) {
+      full = fromSteps;
     } else {
       full = _polylineFromStepLocations(route);
     }
@@ -225,8 +232,14 @@ class RouteMapGeometry {
     if (polyline.isEmpty) return polyline;
 
     final result = List<LatLng>.from(polyline);
-    result[0] = origin;
-    result[result.length - 1] = destination;
+    // Only snap when the pin is close to the road — otherwise a far pin
+    // creates a long straight chord that cuts across streets.
+    if (distanceMeters(result.first, origin) <= 250) {
+      result[0] = origin;
+    }
+    if (distanceMeters(result.last, destination) <= 250) {
+      result[result.length - 1] = destination;
+    }
     return result;
   }
 
@@ -372,8 +385,9 @@ List<RouteMapSegment> compactSegmentsForMap(
 }) {
   if (segments.isEmpty) return segments;
 
-  final segmentCap = maxSegments ?? (navigationMode ? 160 : 96);
-  final pointCap = maxPointsPerSegment ?? (navigationMode ? 160 : 96);
+  final segmentCap = maxSegments ?? (navigationMode ? 320 : 220);
+  // Keep dense geometry so long Iran routes still follow streets/alleys.
+  final pointCap = maxPointsPerSegment ?? (navigationMode ? 720 : 900);
 
   final merged = <RouteMapSegment>[];
   for (final segment in segments) {

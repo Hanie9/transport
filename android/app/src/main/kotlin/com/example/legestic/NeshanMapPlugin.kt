@@ -581,28 +581,38 @@ private class NeshanMapPlatformView(
             )
         }
 
-        // Overview: show both ends. Navigation: destination pin only (uzita model).
+        // Overview: always show cargo origin (blue) + destination (orange).
+        // Navigation: show the current target pin (blue = pickup origin).
+        val bluePin = 0xFF2563EB.toInt()
+        val orangePin = 0xFFEA580C.toInt()
+        val iconFactory = IconFactory.getInstance(context)
+
         if (overviewMode && !navigationMode) {
-            if (!pickupLeg) {
-                parseLatLng(origin)?.let { pos ->
-                    originMarker = m.addMarker(
-                        MarkerOptions().position(pos).title("مبدا"),
-                    )
-                }
+            parseLatLng(origin)?.let { pos ->
+                originMarker = m.addMarker(
+                    MarkerOptions()
+                        .position(pos)
+                        .title("مبدا بار")
+                        .icon(iconFactory.fromBitmap(LocationPinBitmap.create(bluePin))),
+                )
             }
             parseLatLng(destination)?.let { pos ->
                 destinationMarker = m.addMarker(
                     MarkerOptions()
                         .position(pos)
-                        .title(if (pickupLeg) "مبدا بار" else "مقصد"),
+                        .title("مقصد")
+                        .icon(iconFactory.fromBitmap(LocationPinBitmap.create(orangePin))),
                 )
             }
         } else if (navigationMode) {
             parseLatLng(destination)?.let { pos ->
+                val color = if (pickupLeg) bluePin else orangePin
+                val title = if (pickupLeg) "مبدا بار" else "مقصد"
                 destinationMarker = m.addMarker(
                     MarkerOptions()
                         .position(pos)
-                        .title(if (pickupLeg) "مبدا بار" else "مقصد"),
+                        .title(title)
+                        .icon(iconFactory.fromBitmap(LocationPinBitmap.create(color))),
                 )
             }
         }

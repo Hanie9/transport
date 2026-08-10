@@ -870,7 +870,7 @@ class _RouteScreenState extends State<RouteScreen> {
                   const SizedBox(height: 14),
                   if (!_navigationActive)
                     ElevatedButton.icon(
-                      onPressed: () {
+                      onPressed: () async {
                         final pos = _driverPosition;
                         if (pos == null) {
                           ScaffoldMessenger.of(context).showSnackBar(
@@ -880,28 +880,18 @@ class _RouteScreenState extends State<RouteScreen> {
                           );
                           return;
                         }
-                        if (_routeStep == 0 && _pickupRoute == null) {
-                          unawaited(
-                            _loadPickupRoute(force: true, fromDriver: pos)
-                                .then((_) {
-                              if (!mounted) return;
-                              setState(() {
-                                _navigationActive = true;
-                                _mapCameraDetached = false;
-                              });
-                              _mapController.resumeNavigation(
-                                position: pos,
-                                heading: _driverHeading,
-                              );
-                            }),
-                          );
-                          return;
+                        // Refresh a real road route before heading-up navigation.
+                        if (_routeStep == 0) {
+                          await _loadPickupRoute(force: true, fromDriver: pos);
+                        } else if (_destinationPoint != null) {
+                          await _loadDeliveryRouteFromDriver(pos);
                         }
+                        if (!mounted) return;
                         setState(() {
                           _navigationActive = true;
                           _mapCameraDetached = false;
                         });
-                        _mapController.resumeNavigation(
+                        await _mapController.resumeNavigation(
                           position: pos,
                           heading: _driverHeading,
                         );
