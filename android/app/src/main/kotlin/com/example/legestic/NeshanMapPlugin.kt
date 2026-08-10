@@ -2,6 +2,7 @@ package com.example.legestic
 
 import android.content.Context
 import android.graphics.Color
+import android.graphics.PointF
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
@@ -26,6 +27,8 @@ import org.maplibre.android.geometry.LatLngBounds
 import org.maplibre.android.maps.MapLibreMap
 import org.maplibre.android.maps.MapView
 import org.maplibre.android.maps.Style
+import org.maplibre.android.style.layers.Property
+import org.maplibre.android.style.layers.PropertyFactory
 import java.util.concurrent.ConcurrentHashMap
 
 /// Neshan MapLibre MapView platform view
@@ -246,6 +249,23 @@ private class NeshanMapPlatformView(
     private var mapDark = isDark
     private var pendingActions = mutableListOf<() -> Unit>()
 
+    /** Last route payload — used to recolor from traffic tiles after they load. */
+    private var lastRouteSegments: List<Map<String, Any>> = emptyList()
+    private var lastTraveled: List<Map<String, Double>> = emptyList()
+    private var lastOrigin: Map<String, Double>? = null
+    private var lastDestination: Map<String, Double>? = null
+    private var lastDriver: Map<String, Any>? = null
+    private var lastOverviewMode: Boolean = false
+    private var lastPickupLeg: Boolean = false
+    private var trafficRecolorPass: Boolean = false
+
+    /** Frozen route colours — must not change when the user zooms (tiles vanish below layer minzoom). */
+    private var routeColorFingerprint: String = ""
+    private var lockedSegmentColors: MutableList<Int?> = mutableListOf()
+
+    private val mainHandler = Handler(Looper.getMainLooper())
+    private val trafficRecolorRunnable = Runnable { recolorRouteFromTrafficTiles() }
+
     init {
         container.addView(
             mapView,
@@ -289,9 +309,24 @@ private class NeshanMapPlatformView(
         val m = map ?: return
         mapDark = dark
         styleReady = false
-        m.setStyle(Style.Builder().fromUri(styleUri(dark))) {
+        m.setStyle(Style.Builder().fromUri(styleUri(dark))) { style ->
+            enableLiveTrafficLayers(style)
             styleReady = true
             onReady?.invoke()
+        }
+    }
+
+    /** Neshan style ships traffic tiles hidden (`visibility: none`) — turn them on. */
+    private fun enableLiveTrafficLayers(style: Style) {
+        for (id in TRAFFIC_LAYER_IDS) {
+            val layer = style.getLayer(id) ?: continue
+            // Style hides minor traffic until z14, so zooming out looks like a
+            // different traffic model. Tiles exist from z1 — keep layers visible earlier.
+            val minZoom = if (id == "traffic-minor") 7.0f else 6.0f
+            layer.setMinZoom(minZoom)
+            layer.setProperties(
+                PropertyFactory.visibility(Property.VISIBLE),
+            )
         }
     }
 
@@ -324,6 +359,42 @@ private class NeshanMapPlatformView(
                     )
                 }
             }
+        }
+        // Fill missing locked colours after tiles load / user zooms in.
+        // Never overwrite existing locks — zoom-out must not change the model.
+        mapLibreMap.addOnCameraIdleListener {
+            if (lockedSegmentColors.any { it == null }) {
+                scheduleTrafficRecolor()
+            }
+        }
+    }
+
+    private fun scheduleTrafficRecolor() {
+        if (trafficRecolorPass || lastRouteSegments.isEmpty()) return
+        // Only keep trying while some segments still lack a locked tile colour.
+        if (lockedSegmentColors.isNotEmpty() && lockedSegmentColors.all { it != null }) return
+        mainHandler.removeCallbacks(trafficRecolorRunnable)
+        mainHandler.postDelayed(trafficRecolorRunnable, 400)
+        mainHandler.postDelayed(trafficRecolorRunnable, 1400)
+    }
+
+    private fun recolorRouteFromTrafficTiles() {
+        val m = map ?: return
+        if (!styleReady || lastRouteSegments.isEmpty()) return
+        trafficRecolorPass = true
+        try {
+            drawRoute(
+                m,
+                lastRouteSegments,
+                lastTraveled,
+                lastOrigin,
+                lastDestination,
+                lastDriver,
+                lastOverviewMode,
+                lastPickupLeg,
+            )
+        } finally {
+            trafficRecolorPass = false
         }
     }
 
@@ -526,6 +597,22 @@ private class NeshanMapPlatformView(
         overviewMode: Boolean,
         pickupLeg: Boolean,
     ) {
+        lastRouteSegments = segments
+        lastTraveled = traveled
+        lastOrigin = origin
+        lastDestination = destination
+        lastDriver = driver
+        lastOverviewMode = overviewMode
+        lastPickupLeg = pickupLeg
+
+        val fingerprint = routeSegmentsFingerprint(segments)
+        if (fingerprint != routeColorFingerprint) {
+            routeColorFingerprint = fingerprint
+            lockedSegmentColors = MutableList(segments.size) { null }
+        } else if (lockedSegmentColors.size != segments.size) {
+            lockedSegmentColors = MutableList(segments.size) { null }
+        }
+
         routePolylines.forEach { m.removePolyline(it) }
         routePolylines.clear()
         traveledPolyline?.let { m.removePolyline(it) }
@@ -539,7 +626,7 @@ private class NeshanMapPlatformView(
         val coreWidth = if (navigationMode) 12f else 9f
         val casingWidth = coreWidth + 4f
 
-        // White casing under the full route (matches Neshan / uzita look).
+        // White casing under the full route.
         val allPoints = mutableListOf<LatLng>()
         for (seg in segments) {
             allPoints.addAll(parseLatLngList(seg["points"] ?: seg["coordinates"]))
@@ -555,20 +642,36 @@ private class NeshanMapPlatformView(
             )
         }
 
-        // Per-segment traffic-coloured core — Dart sends `points` + string trafficLevel.
-        for (seg in segments) {
+        // Lock colours from traffic tiles once available. Zoom must not switch
+        // to the Dart ETA model just because minor tiles stop rendering.
+        for ((index, seg) in segments.withIndex()) {
             val points = parseLatLngList(seg["points"] ?: seg["coordinates"])
             if (points.size < 2) continue
-            val level = seg["trafficLevel"]
-            val congested = seg["congested"] as? Boolean ?: false
+            val locked = lockedSegmentColors.getOrNull(index)
+            val color = if (locked != null) {
+                locked
+            } else {
+                val tileTraffic = sampleTrafficTileLevel(m, points)
+                if (tileTraffic != null) {
+                    val fromTile = colorFromTrafficTile(tileTraffic)
+                    lockedSegmentColors[index] = fromTile
+                    fromTile
+                } else {
+                    routeTrafficColor(seg["trafficLevel"])
+                }
+            }
             routePolylines.add(
                 m.addPolyline(
                     PolylineOptions()
                         .addAll(points)
-                        .color(trafficColor(level, congested))
+                        .color(color)
                         .width(coreWidth),
                 ),
             )
+        }
+
+        if (!trafficRecolorPass) {
+            scheduleTrafficRecolor()
         }
 
         val traveledPoints = parseLatLngList(traveled)
@@ -676,13 +779,92 @@ private class NeshanMapPlatformView(
         return v
     }
 
-    /** Matches Dart [NeshanRouteStyle] / [RouteTrafficLevel.name]. */
-    private fun trafficColor(level: Any?, congested: Boolean): Int = when (level) {
-        "heavy", 3, 4 -> 0xFFB71C1C.toInt()
-        "moderate", 2 -> 0xFFF44336.toInt()
-        "smooth", 1 -> 0xFFFF9800.toInt()
-        "clear", 0 -> 0xFF250ECD.toInt()
-        else -> if (congested) 0xFFB71C1C.toInt() else 0xFF250ECD.toInt()
+    private fun routeSegmentsFingerprint(segments: List<Map<String, Any>>): String {
+        val sb = StringBuilder(segments.size * 24)
+        for (seg in segments) {
+            val points = parseLatLngList(seg["points"] ?: seg["coordinates"])
+            sb.append(points.size).append(':')
+            if (points.isNotEmpty()) {
+                val first = points.first()
+                val last = points.last()
+                sb.append(first.latitude).append(',').append(first.longitude).append('>')
+                sb.append(last.latitude).append(',').append(last.longitude)
+            }
+            sb.append('#').append(seg["trafficLevel"]).append('|')
+        }
+        return sb.toString()
+    }
+
+    /**
+     * Samples Neshan style property `traffic` under the segment:
+     * 1=سبز خلوت, 2/5=نارنجی روان, 3=قرمز نیمه‌سنگین, 4=قرمز تیره سنگین.
+     */
+    private fun sampleTrafficTileLevel(m: MapLibreMap, points: List<LatLng>): Int? {
+        if (points.isEmpty()) return null
+        // Below ~z6 rendered traffic is too coarse / often empty — skip sampling
+        // so we do not lock a bad colour; keep Dart fallback until tiles appear.
+        if (m.cameraPosition.zoom < 6.5) return null
+        val samples = ArrayList<Int>(16)
+        val step = (points.size / 10).coerceAtLeast(1)
+        var i = 0
+        while (i < points.size) {
+            val screen = m.projection.toScreenLocation(points[i])
+            // Skip points outside the viewport — they cannot hit rendered features.
+            if (screen.x < -80 || screen.y < -80 ||
+                screen.x > mapView.width + 80 || screen.y > mapView.height + 80
+            ) {
+                i += step
+                continue
+            }
+            val features = m.queryRenderedFeatures(
+                PointF(screen.x, screen.y),
+                *TRAFFIC_LAYER_IDS.toTypedArray(),
+            )
+            for (feature in features) {
+                val raw = feature.getNumberProperty("traffic") ?: continue
+                samples.add(raw.toInt())
+            }
+            i += step
+        }
+        if (points.size >= 2) {
+            val a = points.first()
+            val b = points.last()
+            val mid = LatLng((a.latitude + b.latitude) / 2.0, (a.longitude + b.longitude) / 2.0)
+            val screen = m.projection.toScreenLocation(mid)
+            if (screen.x >= -80 && screen.y >= -80 &&
+                screen.x <= mapView.width + 80 && screen.y <= mapView.height + 80
+            ) {
+                val features = m.queryRenderedFeatures(
+                    PointF(screen.x, screen.y),
+                    *TRAFFIC_LAYER_IDS.toTypedArray(),
+                )
+                for (feature in features) {
+                    val raw = feature.getNumberProperty("traffic") ?: continue
+                    samples.add(raw.toInt())
+                }
+            }
+        }
+        if (samples.isEmpty()) return null
+        samples.sort()
+        return samples[samples.size / 2]
+    }
+
+    /** Tile levels → app palette (آبی روان / نارنجی نیمه‌سنگین / قرمز سنگین). */
+    private fun colorFromTrafficTile(tileTraffic: Int): Int {
+        return when (tileTraffic) {
+            3 -> ROUTE_TRAFFIC_MODERATE
+            4 -> ROUTE_TRAFFIC_HEAVY
+            else -> ROUTE_NESHAN_BLUE // 1, 2, 5 — خلوت / روان
+        }
+    }
+
+    /** آبی = روان، نارنجی = نیمه‌سنگین، قرمز = سنگین. */
+    private fun routeTrafficColor(level: Any?): Int {
+        return when (level?.toString()?.lowercase()) {
+            "heavy", "3", "4" -> ROUTE_TRAFFIC_HEAVY
+            "moderate", "2" -> ROUTE_TRAFFIC_MODERATE
+            else -> ROUTE_NESHAN_BLUE
+        }
     }
 
     /** Old Carto tilt 90=top-down / 0=horizon → MapLibre pitch 0=top-down / 60=tilted. */
@@ -694,6 +876,7 @@ private class NeshanMapPlatformView(
     override fun getView(): View = container
 
     override fun dispose() {
+        mainHandler.removeCallbacks(trafficRecolorRunnable)
         NeshanMapRegistry.remove(viewId)
         try {
             mapView.onPause()
@@ -705,6 +888,21 @@ private class NeshanMapPlatformView(
     }
 
     companion object {
+        private val TRAFFIC_LAYER_IDS = listOf(
+            "traffic-minor",
+            "traffic-primary",
+            "traffic-highway",
+        )
+
+        /** روان (`#250ECD`). */
+        private const val ROUTE_NESHAN_BLUE = 0xFF250ECD.toInt()
+
+        /** نیمه‌سنگین — matches Neshan traffic tile level 2. */
+        private const val ROUTE_TRAFFIC_MODERATE = 0xFFF8830B.toInt()
+
+        /** سنگین — matches Neshan traffic tile level 3. */
+        private const val ROUTE_TRAFFIC_HEAVY = 0xFFFF0C00.toInt()
+
         /** Matches uzita NeshanMapPlugin.NAV_ZOOM. */
         private const val NAV_ZOOM = 17.5
 

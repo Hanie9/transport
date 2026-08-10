@@ -43,6 +43,11 @@ class NeshanServicesPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
             .build()
     }
 
+    companion object {
+        /** Whitelisted Referer for the scoped service.* key (matches uzita proxy). */
+        private const val NESHAN_API_REFERER = "https://device-control.liara.run/"
+    }
+
     override fun onAttachedToEngine(binding: FlutterPlugin.FlutterPluginBinding) {
         channel = MethodChannel(binding.binaryMessenger, "com.example.legestic/neshan_services")
         channel.setMethodCallHandler(this)
@@ -57,6 +62,8 @@ class NeshanServicesPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
             "geocodeAddress" -> searchAddress(call, result)
             "searchAddress" -> searchAddress(call, result)
             "getRoute" -> getRoute(call, result)
+            "getRouteNoTraffic" -> getRoute(call, result, mode = "no-traffic")
+            "getRouteTypical" -> getRoute(call, result, mode = "typical")
             else -> result.notImplemented()
         }
     }
@@ -133,7 +140,11 @@ class NeshanServicesPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
         return region.split("،").firstOrNull()?.trim().orEmpty()
     }
 
-    private fun getRoute(call: MethodCall, result: MethodChannel.Result) {
+    private fun getRoute(
+        call: MethodCall,
+        result: MethodChannel.Result,
+        mode: String = "live",
+    ) {
         var apiKey = call.argument<String>("apiKey")?.trim().orEmpty()
         if (apiKey.isEmpty()) {
             apiKey = BuildConfig.NESHAN_SERVICE_KEY.trim()
@@ -165,11 +176,18 @@ class NeshanServicesPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
             if (lat != null && lng != null) LatLng(lat, lng) else null
         }.orEmpty()
 
-        // Prefer v4 HTTP for long domestic routes (SDK default timeout is too short).
+        val directionUrl = when (mode) {
+            "no-traffic" -> "https://api.neshan.org/v4/direction/no-traffic"
+            "typical" -> "https://api.neshan.org/v4/direction/typical"
+            else -> "https://api.neshan.org/v4/direction"
+        }
+
+        // Prefer v4 HTTP (with Referer) — required for scoped service keys.
         ioExecutor.execute {
             try {
                 val mapped = fetchRouteV4Http(
                     apiKey = apiKey,
+                    directionUrl = directionUrl,
                     originLat = originLat,
                     originLng = originLng,
                     destLat = destLat,
@@ -182,7 +200,17 @@ class NeshanServicesPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
                 )
                 mainHandler.post { result.success(mapped) }
             } catch (httpError: Throwable) {
-                // Fall back to legacy AAR SDK (v2/direction).
+                if (mode != "live") {
+                    mainHandler.post {
+                        result.error(
+                            "neshan_error",
+                            httpError.message ?: "Routing failed",
+                            null,
+                        )
+                    }
+                    return@execute
+                }
+                // Live only: fall back to legacy AAR SDK.
                 fetchRouteViaSdk(
                     apiKey = apiKey,
                     origin = LatLng(originLat, originLng),
@@ -200,6 +228,7 @@ class NeshanServicesPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
 
     private fun fetchRouteV4Http(
         apiKey: String,
+        directionUrl: String,
         originLat: Double,
         originLng: Double,
         destLat: Double,
@@ -210,7 +239,7 @@ class NeshanServicesPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
         avoidOddEvenZone: Boolean,
         waypoints: List<LatLng>,
     ): Map<String, Any?> {
-        val urlBuilder = "https://api.neshan.org/v4/direction".toHttpUrl().newBuilder()
+        val urlBuilder = directionUrl.toHttpUrl().newBuilder()
             .addQueryParameter("type", vehicleType)
             .addQueryParameter("origin", "$originLat,$originLng")
             .addQueryParameter("destination", "$destLat,$destLng")
@@ -226,6 +255,8 @@ class NeshanServicesPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
         val request = Request.Builder()
             .url(urlBuilder.build())
             .header("Api-Key", apiKey)
+            // Same scoped-key Referer used by uzita's Django Neshan proxy.
+            .header("Referer", NESHAN_API_REFERER)
             .get()
             .build()
 

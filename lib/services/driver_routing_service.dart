@@ -318,7 +318,8 @@ class DriverRoutingService {
     return const NeshanLatLng(latitude: 35.6892, longitude: 51.3890);
   }
 
-  /// Live route with a typical/no-traffic baseline fetched in parallel (for map colours).
+  /// Live route + free-flow baseline so the polyline can be coloured:
+  /// آبی = روان، نارنجی = نیمه‌سنگین، قرمز = سنگین.
   Future<NeshanRoute> getRouteWithTraffic({
     required NeshanLatLng origin,
     required NeshanLatLng destination,
@@ -353,7 +354,7 @@ class DriverRoutingService {
     final live = await liveFuture;
     NeshanRoute? baseline;
     try {
-      baseline = await baselineFuture.timeout(const Duration(seconds: 8));
+      baseline = await baselineFuture.timeout(const Duration(seconds: 12));
     } catch (_) {
       baseline = null;
     }
@@ -426,8 +427,7 @@ class DriverRoutingService {
     bool avoidOddEvenZone = false,
     double? bearing,
   }) async {
-    // On Android the service key is usually package-scoped, so the native
-    // services SDK is the reliable path. Try it before backend/REST.
+    // Prefer native OkHttp v4 (sends whitelisted Referer) for real road geometry.
     if (_android.isAvailable) {
       try {
         return await _android.getRoute(
@@ -440,10 +440,31 @@ class DriverRoutingService {
           avoidOddEvenZone: avoidOddEvenZone,
         );
       } catch (e) {
-        // Fall through to backend / direct REST.
         assert(() {
           // ignore: avoid_print
           print('Android Neshan route failed: $e');
+          return true;
+        }());
+      }
+    }
+
+    // Direct REST with the same Referer header (Dart http).
+    if (hasDirectNeshanKey) {
+      try {
+        return await _neshan.getRoute(
+          origin: origin,
+          destination: destination,
+          vehicleType: vehicleType,
+          alternative: alternative,
+          waypoints: waypoints,
+          avoidTrafficZone: avoidTrafficZone,
+          avoidOddEvenZone: avoidOddEvenZone,
+          bearing: bearing,
+        );
+      } catch (e) {
+        assert(() {
+          // ignore: avoid_print
+          print('Direct Neshan route failed: $e');
           return true;
         }());
       }
@@ -465,22 +486,9 @@ class DriverRoutingService {
     );
     if (fromBackend != null) return fromBackend;
 
-    if (hasDirectNeshanKey) {
-      return _neshan.getRoute(
-        origin: origin,
-        destination: destination,
-        vehicleType: vehicleType,
-        alternative: alternative,
-        waypoints: waypoints,
-        avoidTrafficZone: avoidTrafficZone,
-        avoidOddEvenZone: avoidOddEvenZone,
-        bearing: bearing,
-      );
-    }
-
     throw const NeshanApiException(
-      'Neshan API key is not configured',
-      neshanStatus: 'KeyNotFound',
+      'Neshan routing failed',
+      neshanStatus: 'RoutingRequestFailed',
     );
   }
 
@@ -496,6 +504,22 @@ class DriverRoutingService {
     double? bearing,
   }) async {
     final attempts = <Future<NeshanRoute?> Function()>[
+      if (_android.isAvailable)
+        () async {
+          try {
+            return await _android.getNoTrafficRoute(
+              origin: origin,
+              destination: destination,
+              vehicleType: vehicleType,
+              alternative: alternative,
+              waypoints: waypoints,
+              avoidTrafficZone: avoidTrafficZone,
+              avoidOddEvenZone: avoidOddEvenZone,
+            );
+          } catch (_) {
+            return null;
+          }
+        },
       () => _tryBackendNoTraffic(
         origin: origin,
         destination: destination,
@@ -519,6 +543,22 @@ class DriverRoutingService {
               avoidTrafficZone: avoidTrafficZone,
               avoidOddEvenZone: avoidOddEvenZone,
               bearing: bearing,
+            );
+          } catch (_) {
+            return null;
+          }
+        },
+      if (_android.isAvailable)
+        () async {
+          try {
+            return await _android.getTypicalRoute(
+              origin: origin,
+              destination: destination,
+              vehicleType: vehicleType,
+              alternative: alternative,
+              waypoints: waypoints,
+              avoidTrafficZone: avoidTrafficZone,
+              avoidOddEvenZone: avoidOddEvenZone,
             );
           } catch (_) {
             return null;

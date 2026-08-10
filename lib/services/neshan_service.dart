@@ -29,6 +29,8 @@ class NeshanService {
   Map<String, String> _headersFor(String apiKey) => {
     'Api-Key': apiKey,
     'Content-Type': 'application/json',
+    // Scoped service keys require a whitelisted Referer (uzita proxy domain).
+    if (neshanApiReferer.trim().isNotEmpty) 'Referer': neshanApiReferer.trim(),
   };
 
   void _ensureDirectApiKey() {

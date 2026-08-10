@@ -40,6 +40,13 @@ bool get neshanSearchEnabled {
 /// Routing with live traffic — matches «مسیریابی با ترافیک» in panel.
 const String neshanDirectionBaseUrl = 'https://api.neshan.org/v4/direction';
 
+/// Domain Referer required by the scoped `service.*` key (same as uzita proxy).
+/// Without this header Neshan returns 484 ApiWhiteListError from the device.
+const String neshanApiReferer = String.fromEnvironment(
+  'NESHAN_API_REFERER',
+  defaultValue: 'https://device-control.liara.run/',
+);
+
 /// Routing without live traffic — baseline for segment traffic coloring.
 const String neshanNoTrafficDirectionBaseUrl =
     'https://api.neshan.org/v4/direction/no-traffic';

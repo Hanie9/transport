@@ -51,9 +51,10 @@ RouteTrafficLevel trafficLevelForStep(
   );
 }
 
-/// Scales step baseline to the live leg so route-wide traffic does not paint
-/// every segment red when comparing live traffic to no-traffic.
-double _calibratedBaselineSeconds({
+/// Absorbs only part of corridor-wide live/free-flow gap so urban routes
+/// are not painted entirely red against optimistic no-traffic baselines,
+/// while still preserving steps that are clearly worse than neighbors.
+double _softCalibratedBaselineSeconds({
   required double stepBaselineSeconds,
   required NeshanRouteLeg liveLeg,
   required NeshanRouteLeg baselineLeg,
@@ -62,7 +63,9 @@ double _calibratedBaselineSeconds({
     return stepBaselineSeconds;
   }
   final legScale = liveLeg.durationSeconds / baselineLeg.durationSeconds;
-  return stepBaselineSeconds * legScale;
+  if (legScale <= 1.0) return stepBaselineSeconds;
+  final softScale = 1.0 + (legScale - 1.0).clamp(0.0, 2.0) * 0.4;
+  return stepBaselineSeconds * softScale;
 }
 
 RouteTrafficLevel _trafficLevelFromComparison({
@@ -72,24 +75,36 @@ RouteTrafficLevel _trafficLevelFromComparison({
   required NeshanRouteLeg baselineLeg,
   required double distanceMeters,
 }) {
-  final calibrated = _calibratedBaselineSeconds(
+  if (baselineSeconds <= 0) return RouteTrafficLevel.clear;
+
+  final calibrated = _softCalibratedBaselineSeconds(
     stepBaselineSeconds: baselineSeconds,
     liveLeg: liveLeg,
     baselineLeg: baselineLeg,
   );
   if (calibrated <= 0) return RouteTrafficLevel.clear;
 
+  // Live ETA (v4/direction) vs free-flow (no-traffic) — real congestion signal.
   final delay = liveSeconds - calibrated;
   final ratio = liveSeconds / calibrated;
 
-  // Short steps are noisy — require a stronger signal.
+  // Short steps are noisy — high ratios with tiny delays are not "heavy".
   if (distanceMeters > 0 && distanceMeters < kMinTrafficStepMeters) {
-    if (delay < 12 && ratio < 1.15) return RouteTrafficLevel.clear;
+    if (delay < 20 && ratio < 1.25) return RouteTrafficLevel.clear;
   }
 
-  if (delay >= 55 || ratio >= 1.40) return RouteTrafficLevel.heavy;
-  if (delay >= 25 || ratio >= 1.22) return RouteTrafficLevel.moderate;
-  if (delay >= 10 || ratio >= 1.10) return RouteTrafficLevel.smooth;
+  // سنگین: نیاز به تأخیر مطلق معنادار — نسبت alone روی گام کوتاه قرمز جعلی می‌سازد.
+  // (وقتی تایل ترافیک نقشه لود باشد، رنگ مسیر از خود لایهٔ traffic خوانده می‌شود.)
+  if ((delay >= 75 && ratio >= 1.45) || delay >= 120) {
+    return RouteTrafficLevel.heavy;
+  }
+  // نیمه‌سنگین
+  if ((delay >= 35 && ratio >= 1.28) ||
+      delay >= 55 ||
+      (ratio >= 1.45 && delay >= 28)) {
+    return RouteTrafficLevel.moderate;
+  }
+  // روان
   return RouteTrafficLevel.clear;
 }
 
@@ -130,16 +145,13 @@ double? _proportionalBaselineDuration(
     return null;
   }
 
+  // Prefer distance share only — time share of the live step circularly
+  // hides congestion and can also invent it when pairing fails.
   if (liveLeg.distanceMeters > 0 &&
       baselineLeg.distanceMeters > 0 &&
       live.distanceMeters > 0) {
     final distanceShare = live.distanceMeters / liveLeg.distanceMeters;
     return baselineLeg.durationSeconds * distanceShare;
-  }
-
-  if (liveLeg.durationSeconds > 0 && live.durationSeconds > 0) {
-    final timeShare = live.durationSeconds / liveLeg.durationSeconds;
-    return baselineLeg.durationSeconds * timeShare;
   }
 
   return null;
@@ -164,11 +176,16 @@ NeshanRouteStep? _matchingBaselineStep(
 }) {
   final sameStepCount = liveLeg.steps.length == baselineLeg.steps.length;
 
+  // Same step count → trust index pairing (live vs no-traffic usually align).
+  // Nearest-location fallback can latch onto the wrong baseline step and paint
+  // false red when free-flow duration is far too low.
   if (stepIndex != null &&
       stepIndex >= 0 &&
       stepIndex < baselineLeg.steps.length) {
     final atIndex = baselineLeg.steps[stepIndex];
     if (!atIndex.isArrival && atIndex.durationSeconds > 0) {
+      if (sameStepCount) return atIndex;
+
       final liveLoc = live.startLocation;
       final baseLoc = atIndex.startLocation;
       if (liveLoc != null && baseLoc != null) {
@@ -177,8 +194,6 @@ NeshanRouteStep? _matchingBaselineStep(
           LatLng(baseLoc.latitude, baseLoc.longitude),
         );
         if (dist <= kMaxStepLocationMismatchMeters) return atIndex;
-      } else if (sameStepCount) {
-        return atIndex;
       }
     }
   }

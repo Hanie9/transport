@@ -1,33 +1,30 @@
 import 'package:flutter/material.dart';
 import 'package:legestic/utils/route_map_geometry.dart';
 
-/// Official Neshan route styling.
-///
-/// Matches the Neshan traffic-layer palette on the route line:
-/// blue (خلوت), orange (روان), red (نیمه‌سنگین), dark red (سنگین).
+/// Route-line colours from live vs free-flow congestion:
+/// آبی = روان، نارنجی = نیمه‌سنگین، قرمز = سنگین.
 abstract final class NeshanRouteStyle {
-  /// Neshan Direction API draw-route colour (`#250ECD`) — free-flowing segments.
+  /// روان / خلوت (`#250ECD`).
   static const Color routeLine = Color(0xFF250ECD);
 
   static const int routeLineArgb = 0xFF250ECD;
 
-  /// Neshan traffic layer — smooth flowing (نارنجی / ترافیک روان).
-  static const Color trafficSmooth = Color(0xFFFF9800);
+  /// نیمه‌سنگین (نارنجی).
+  static const Color trafficModerate = Color(0xFFF8830B);
 
-  /// Neshan traffic layer — semi-heavy (قرمز).
-  static const Color trafficModerate = Color(0xFFF44336);
+  /// سنگین (قرمز).
+  static const Color trafficHeavy = Color(0xFFFF0C00);
 
-  /// Neshan traffic layer — heavy (قرمز تیره).
-  static const Color trafficHeavy = Color(0xFFB71C1C);
+  static const int trafficModerateArgb = 0xFFF8830B;
+  static const int trafficHeavyArgb = 0xFFFF0C00;
 
-  static const int trafficSmoothArgb = 0xFFFF9800;
-  static const int trafficModerateArgb = 0xFFF44336;
-  static const int trafficHeavyArgb = 0xFFB71C1C;
+  /// Kept for API compatibility — treated as روان (blue).
+  static const Color trafficSmooth = routeLine;
+  static const int trafficSmoothArgb = routeLineArgb;
 
   static const Color routeCasing = Color(0xFFFFFFFF);
   static const int routeCasingArgb = 0xFFFFFFFF;
 
-  /// Slightly transparent route for web-style overlays.
   static const Color routeLineTranslucent = Color(0xCC250ECD);
 
   static Color colorForTrafficLevel(RouteTrafficLevel level) {
@@ -37,7 +34,6 @@ abstract final class NeshanRouteStyle {
       case RouteTrafficLevel.moderate:
         return trafficModerate;
       case RouteTrafficLevel.smooth:
-        return trafficSmooth;
       case RouteTrafficLevel.clear:
         return routeLine;
     }
@@ -50,7 +46,6 @@ abstract final class NeshanRouteStyle {
       case RouteTrafficLevel.moderate:
         return trafficModerateArgb;
       case RouteTrafficLevel.smooth:
-        return trafficSmoothArgb;
       case RouteTrafficLevel.clear:
         return routeLineArgb;
     }

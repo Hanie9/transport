@@ -147,6 +147,67 @@ class NeshanAndroidChannel {
     List<NeshanLatLng>? waypoints,
     bool avoidTrafficZone = false,
     bool avoidOddEvenZone = false,
+  }) =>
+      _invokeRoute(
+        method: 'getRoute',
+        origin: origin,
+        destination: destination,
+        vehicleType: vehicleType,
+        alternative: alternative,
+        waypoints: waypoints,
+        avoidTrafficZone: avoidTrafficZone,
+        avoidOddEvenZone: avoidOddEvenZone,
+      );
+
+  Future<NeshanRoute> getNoTrafficRoute({
+    required NeshanLatLng origin,
+    required NeshanLatLng destination,
+    String vehicleType = 'car',
+    bool alternative = false,
+    List<NeshanLatLng>? waypoints,
+    bool avoidTrafficZone = false,
+    bool avoidOddEvenZone = false,
+  }) =>
+      _invokeRoute(
+        method: 'getRouteNoTraffic',
+        origin: origin,
+        destination: destination,
+        vehicleType: vehicleType,
+        alternative: alternative,
+        waypoints: waypoints,
+        avoidTrafficZone: avoidTrafficZone,
+        avoidOddEvenZone: avoidOddEvenZone,
+      );
+
+  Future<NeshanRoute> getTypicalRoute({
+    required NeshanLatLng origin,
+    required NeshanLatLng destination,
+    String vehicleType = 'car',
+    bool alternative = false,
+    List<NeshanLatLng>? waypoints,
+    bool avoidTrafficZone = false,
+    bool avoidOddEvenZone = false,
+  }) =>
+      _invokeRoute(
+        method: 'getRouteTypical',
+        origin: origin,
+        destination: destination,
+        vehicleType: vehicleType,
+        alternative: alternative,
+        waypoints: waypoints,
+        avoidTrafficZone: avoidTrafficZone,
+        avoidOddEvenZone: avoidOddEvenZone,
+      );
+
+  Future<NeshanRoute> _invokeRoute({
+    required String method,
+    required NeshanLatLng origin,
+    required NeshanLatLng destination,
+    String vehicleType = 'car',
+    bool alternative = false,
+    List<NeshanLatLng>? waypoints,
+    bool avoidTrafficZone = false,
+    bool avoidOddEvenZone = false,
   }) async {
     if (!hasDirectNeshanKey && !hasNeshanApiKey) {
       throw const NeshanApiException(
@@ -158,7 +219,7 @@ class NeshanAndroidChannel {
     late final Map<String, dynamic>? response;
     try {
       response = await _channel.invokeMapMethod<String, dynamic>(
-        'getRoute',
+        method,
         {
           'apiKey': neshanDirectApiKey,
           'originLat': origin.latitude,
@@ -189,6 +250,10 @@ class NeshanAndroidChannel {
       );
     }
 
+    return _parseRouteResponse(response);
+  }
+
+  NeshanRoute _parseRouteResponse(Map<String, dynamic> response) {
     final legsRaw = response['legs'];
     if (legsRaw is! List || legsRaw.isEmpty) {
       throw const NeshanApiException(
