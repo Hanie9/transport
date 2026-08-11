@@ -51,10 +51,10 @@ RouteTrafficLevel trafficLevelForStep(
   );
 }
 
-/// Absorbs only part of corridor-wide live/free-flow gap so urban routes
-/// are not painted entirely red against optimistic no-traffic baselines,
-/// while still preserving steps that are clearly worse than neighbors.
-double _softCalibratedBaselineSeconds({
+/// Scales step baseline to the live leg so route-wide free-flow optimism does
+/// not paint every urban segment red. Result is relative congestion along the
+/// route — stable at every map zoom.
+double _calibratedBaselineSeconds({
   required double stepBaselineSeconds,
   required NeshanRouteLeg liveLeg,
   required NeshanRouteLeg baselineLeg,
@@ -63,9 +63,8 @@ double _softCalibratedBaselineSeconds({
     return stepBaselineSeconds;
   }
   final legScale = liveLeg.durationSeconds / baselineLeg.durationSeconds;
-  if (legScale <= 1.0) return stepBaselineSeconds;
-  final softScale = 1.0 + (legScale - 1.0).clamp(0.0, 2.0) * 0.4;
-  return stepBaselineSeconds * softScale;
+  if (legScale <= 0) return stepBaselineSeconds;
+  return stepBaselineSeconds * legScale;
 }
 
 RouteTrafficLevel _trafficLevelFromComparison({
@@ -77,14 +76,13 @@ RouteTrafficLevel _trafficLevelFromComparison({
 }) {
   if (baselineSeconds <= 0) return RouteTrafficLevel.clear;
 
-  final calibrated = _softCalibratedBaselineSeconds(
+  final calibrated = _calibratedBaselineSeconds(
     stepBaselineSeconds: baselineSeconds,
     liveLeg: liveLeg,
     baselineLeg: baselineLeg,
   );
   if (calibrated <= 0) return RouteTrafficLevel.clear;
 
-  // Live ETA (v4/direction) vs free-flow (no-traffic) — real congestion signal.
   final delay = liveSeconds - calibrated;
   final ratio = liveSeconds / calibrated;
 
@@ -93,15 +91,14 @@ RouteTrafficLevel _trafficLevelFromComparison({
     if (delay < 20 && ratio < 1.25) return RouteTrafficLevel.clear;
   }
 
-  // سنگین: نیاز به تأخیر مطلق معنادار — نسبت alone روی گام کوتاه قرمز جعلی می‌سازد.
-  // (وقتی تایل ترافیک نقشه لود باشد، رنگ مسیر از خود لایهٔ traffic خوانده می‌شود.)
-  if ((delay >= 75 && ratio >= 1.45) || delay >= 120) {
+  // سنگین — needs real absolute delay, not ratio alone.
+  if ((delay >= 55 && ratio >= 1.35) || delay >= 90) {
     return RouteTrafficLevel.heavy;
   }
   // نیمه‌سنگین
-  if ((delay >= 35 && ratio >= 1.28) ||
-      delay >= 55 ||
-      (ratio >= 1.45 && delay >= 28)) {
+  if ((delay >= 22 && ratio >= 1.20) ||
+      delay >= 40 ||
+      (ratio >= 1.35 && delay >= 18)) {
     return RouteTrafficLevel.moderate;
   }
   // روان
