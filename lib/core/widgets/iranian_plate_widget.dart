@@ -254,18 +254,25 @@ class _PlateFrame extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final radius = _PlateStyle.radius;
+    final border = _PlateStyle.borderWidth;
+    final innerRadius = (radius - border).clamp(0.0, radius);
+
     return Container(
       height: height,
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(_PlateStyle.radius),
-        border: Border.all(color: borderColor, width: _PlateStyle.borderWidth),
+        borderRadius: BorderRadius.circular(radius),
+        border: Border.all(color: borderColor, width: border),
       ),
-      clipBehavior: Clip.antiAlias,
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        textDirection: TextDirection.ltr,
-        children: children,
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(innerRadius),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          textDirection: TextDirection.ltr,
+          children: children,
+        ),
       ),
     );
   }
@@ -369,45 +376,52 @@ class _PlateIranBand extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final stripeH = height * 0.14;
-    final stripeW = width * 0.22;
-    final iranFontSize = height * 0.15;
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final bandHeight = constraints.maxHeight.isFinite && constraints.maxHeight > 0
+            ? constraints.maxHeight
+            : height;
+        final stripeH = bandHeight * 0.14;
+        final stripeW = width * 0.22;
+        final iranFontSize = bandHeight * 0.15;
 
-    return Container(
-      width: width,
-      alignment: Alignment.center,
-      decoration: const BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: [Color(0xFF1D4ED8), Color(0xFF1E3A8A)],
-        ),
-      ),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Row(
+        return Container(
+          width: width,
+          alignment: Alignment.center,
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [Color(0xFF1D4ED8), Color(0xFF1E3A8A)],
+            ),
+          ),
+          child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             mainAxisSize: MainAxisSize.min,
             children: [
-              _flagStripe(const Color(0xFF16A34A), stripeW, stripeH),
-              _flagStripe(Colors.white, stripeW, stripeH),
-              _flagStripe(const Color(0xFFDC2626), stripeW, stripeH),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  _flagStripe(const Color(0xFF16A34A), stripeW, stripeH),
+                  _flagStripe(Colors.white, stripeW, stripeH),
+                  _flagStripe(const Color(0xFFDC2626), stripeW, stripeH),
+                ],
+              ),
+              SizedBox(height: bandHeight * 0.04),
+              Text(
+                'ایران',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: iranFontSize.clamp(8, 11),
+                  fontWeight: FontWeight.w800,
+                  height: 1,
+                ),
+              ),
             ],
           ),
-          SizedBox(height: height * 0.04),
-          Text(
-            'ایران',
-            style: TextStyle(
-              color: Colors.white,
-              fontSize: iranFontSize.clamp(8, 11),
-              fontWeight: FontWeight.w800,
-              height: 1,
-            ),
-          ),
-        ],
-      ),
+        );
+      },
     );
   }
 

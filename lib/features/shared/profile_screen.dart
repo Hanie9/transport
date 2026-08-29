@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 
 import '../../core/theme/app_theme.dart';
 import '../../core/widgets/common_widgets.dart';
+import '../../core/widgets/fade_slide_in.dart';
 import '../../core/widgets/iranian_plate_widget.dart';
 import '../../core/widgets/modern_app_bar.dart';
 import '../../l10n/app_localizations.dart';
@@ -59,7 +60,6 @@ class _DriverProfileScreenState extends State<_DriverProfileScreen> {
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
-    final palette = context.palette;
     final user = context.watch<AuthService>().currentUser;
     final vehicle = user?.vehicleInfo;
 
@@ -69,58 +69,40 @@ class _DriverProfileScreenState extends State<_DriverProfileScreen> {
         padding: const EdgeInsets.all(16),
         child: Column(
           children: [
-            CircleAvatar(
-              radius: 48,
-              backgroundColor: AppTheme.primary.withValues(alpha: 0.15),
-              child: Text(
-                user?.fullName.substring(0, 1) ?? '?',
-                style: const TextStyle(
-                  fontSize: 32,
-                  fontWeight: FontWeight.bold,
-                  color: AppTheme.primary,
-                ),
+            FadeSlideIn(
+              child: ProfileHeroHeader(
+                name: user?.fullName ?? '',
+                roleLabel: l10n.roleLabel('driver'),
               ),
             ),
-            const SizedBox(height: 16),
-            Text(
-              user?.fullName ?? '',
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-                color: palette.textPrimary,
-              ),
-            ),
-            const SizedBox(height: 4),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-              decoration: BoxDecoration(
-                color: AppTheme.primary.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Text(
-                l10n.roleLabel('driver'),
-                style: const TextStyle(color: AppTheme.primary, fontSize: 13),
-              ),
-            ),
-            const SizedBox(height: 24),
-            _ProfileTile(
+            const SizedBox(height: 20),
+            FadeSlideIn(
+              delay: const Duration(milliseconds: 80),
+              child: _ProfileTile(
               icon: Icons.phone_outlined,
               title: l10n.phoneNumber,
               value: user?.phone ?? '',
+              ),
             ),
             if (user?.email != null)
-              _ProfileTile(
-                icon: Icons.email_outlined,
-                title: l10n.email,
-                value: user!.email!,
+              FadeSlideIn(
+                delay: const Duration(milliseconds: 120),
+                child: _ProfileTile(
+                  icon: Icons.email_outlined,
+                  title: l10n.email,
+                  value: user!.email!,
+                ),
               ),
             const SizedBox(height: 8),
-            _VehicleSection(
+            FadeSlideIn(
+              delay: const Duration(milliseconds: 160),
+              child: _VehicleSection(
               vehicle: vehicle,
               editing: _editingVehicle,
               onEdit: () => setState(() => _editingVehicle = true),
               onCancel: () => setState(() => _editingVehicle = false),
               onSave: _saveVehicle,
+              ),
             ),
           ],
         ),
@@ -185,6 +167,7 @@ class _VehicleSection extends StatelessWidget {
           else if (vehicle == null)
             EmptyState(
               icon: Icons.local_shipping_outlined,
+              useIllustration: true,
               title: l10n.vehicleNotRegistered,
               subtitle: l10n.vehicleRegisterHint,
             )
@@ -236,7 +219,6 @@ class _CoordinatorProfileScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
-    final palette = context.palette;
     final user = context.watch<AuthService>().currentUser;
 
     return Scaffold(
@@ -245,50 +227,29 @@ class _CoordinatorProfileScreen extends StatelessWidget {
         padding: const EdgeInsets.all(16),
         child: Column(
           children: [
-            CircleAvatar(
-              radius: 48,
-              backgroundColor: AppTheme.primary.withValues(alpha: 0.15),
-              child: Text(
-                user?.fullName.substring(0, 1) ?? '?',
-                style: const TextStyle(
-                  fontSize: 32,
-                  fontWeight: FontWeight.bold,
-                  color: AppTheme.primary,
-                ),
+            FadeSlideIn(
+              child: ProfileHeroHeader(
+                name: user?.fullName ?? '',
+                roleLabel: l10n.roleLabel('coordinator'),
               ),
             ),
-            const SizedBox(height: 16),
-            Text(
-              user?.fullName ?? '',
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-                color: palette.textPrimary,
-              ),
-            ),
-            const SizedBox(height: 4),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-              decoration: BoxDecoration(
-                color: AppTheme.primary.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Text(
-                l10n.roleLabel('coordinator'),
-                style: const TextStyle(color: AppTheme.primary, fontSize: 13),
-              ),
-            ),
-            const SizedBox(height: 24),
-            _ProfileTile(
+            const SizedBox(height: 20),
+            FadeSlideIn(
+              delay: const Duration(milliseconds: 80),
+              child: _ProfileTile(
               icon: Icons.phone_outlined,
               title: l10n.phoneNumber,
               value: user?.phone ?? '',
+              ),
             ),
             if (user?.email != null)
-              _ProfileTile(
-                icon: Icons.email_outlined,
-                title: l10n.email,
-                value: user!.email!,
+              FadeSlideIn(
+                delay: const Duration(milliseconds: 120),
+                child: _ProfileTile(
+                  icon: Icons.email_outlined,
+                  title: l10n.email,
+                  value: user!.email!,
+                ),
               ),
           ],
         ),

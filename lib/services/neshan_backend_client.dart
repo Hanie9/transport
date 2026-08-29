@@ -29,7 +29,7 @@ class NeshanBackendClient {
       if (searchExtent != null) 'extent': searchExtent.toJson(),
     };
 
-    final uri = Uri.parse('$apiBaseUrl/transport/neshan/geocode').replace(
+    final uri = Uri.parse('$apiBaseUrl${ApiConfig.neshanGeocodePath}').replace(
       queryParameters: {'json': jsonEncode(requestBody)},
     );
 
@@ -62,7 +62,7 @@ class NeshanBackendClient {
       );
     }
 
-    final uri = Uri.parse('$apiBaseUrl/transport/neshan/search').replace(
+    final uri = Uri.parse('$apiBaseUrl${ApiConfig.neshanSearchPath}').replace(
       queryParameters: {
         'term': trimmed,
         'lat': center.latitude.toString(),
@@ -118,7 +118,7 @@ class NeshanBackendClient {
       params['bearing'] = bearing.clamp(0, 360).round().toString();
     }
 
-    final uri = Uri.parse('$apiBaseUrl/transport/neshan/route').replace(
+    final uri = Uri.parse('$apiBaseUrl${ApiConfig.neshanRoutePath}').replace(
       queryParameters: params,
     );
 

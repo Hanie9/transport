@@ -7,6 +7,8 @@ import '../../l10n/app_localizations.dart';
 import '../../core/widgets/app_drawer.dart';
 import '../../core/widgets/shell_scope.dart';
 import '../../core/widgets/common_widgets.dart';
+import '../../core/widgets/fade_slide_in.dart';
+import '../../core/widgets/location_access_dialog.dart';
 import '../../core/widgets/modern_app_bar.dart';
 import '../../models/cargo.dart';
 import '../../services/auth_service.dart';
@@ -137,9 +139,10 @@ class _DriverHomeScreenState extends State<DriverHomeScreen>
 
   void _onCargosChanged() => _syncGpsAndLoad();
 
-  /// Mirror the device GPS/permission state onto the cargos-page toggle.
+  /// Mirror nearby GPS preference and device state onto the cargos-page toggle.
   Future<void> _syncGpsAndLoad({bool showLoader = false}) async {
-    final ready = await _location.isGpsReady();
+    await _location.initializeNearbyPreferenceFromDevice();
+    final ready = await _location.isNearbyGpsActive();
     if (!mounted) return;
     setState(() => _gpsEnabled = ready);
     await _loadCargos(showLoader: showLoader);
@@ -151,34 +154,28 @@ class _DriverHomeScreenState extends State<DriverHomeScreen>
 
     try {
       if (!enabled) {
-        await _location.disableGps(openSettings: true);
-        if (!mounted) return;
-        // Re-check real device state after settings (user may leave GPS on).
-        final stillReady = await _location.isGpsReady();
+        await _location.disableGps();
         if (!mounted) return;
         setState(() {
-          _gpsEnabled = stillReady;
-          if (!stillReady) _nearbyCargos = [];
+          _gpsEnabled = false;
+          _nearbyCargos = [];
           _gpsBusy = false;
         });
-        if (!stillReady) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(context.l10n.gpsDisabledSystemHint)),
-          );
-        } else {
-          await _loadCargos();
-        }
+        await _loadCargos();
+        if (!mounted) return;
+        await showNearbyGpsDisabledDialog(context);
         return;
       }
 
-      // Request permission + open system location settings if GPS is off.
-      final pos = await _location.enableGps();
-      if (!mounted) return;
-
-      final ready = pos != null && await _location.isGpsReady();
+      final ready = await requestLocationAccessWithDialog(
+        context,
+        title: context.l10n.locationEnableTitle,
+        message: context.l10n.locationEnableNearbyMessage,
+      );
       if (!mounted) return;
 
       if (!ready) {
+        _location.setNearbyGpsEnabled(false);
         setState(() {
           _gpsEnabled = false;
           _nearbyCargos = [];
@@ -190,6 +187,7 @@ class _DriverHomeScreenState extends State<DriverHomeScreen>
         return;
       }
 
+      _location.setNearbyGpsEnabled(true);
       setState(() => _gpsEnabled = true);
       await _loadCargos();
     } finally {
@@ -205,8 +203,8 @@ class _DriverHomeScreenState extends State<DriverHomeScreen>
 
     final allCargos = await _cargoService.getCargosForDriver(cargoType);
 
-    // Always align toggle with real device GPS before deciding nearby list.
-    final gpsOn = await _location.isGpsReady();
+    // Respect the user's nearby-GPS preference, not only device GPS state.
+    final gpsOn = await _location.isNearbyGpsActive();
     var nearbyCargos = <Cargo>[];
 
     if (gpsOn) {
@@ -255,19 +253,24 @@ class _DriverHomeScreenState extends State<DriverHomeScreen>
           SliverPadding(
             padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
             sliver: SliverToBoxAdapter(
-              child: GradientHeaderCard(
-                title: l10n.hello(user?.fullName ?? l10n.roleLabel('driver')),
-                subtitle: l10n.cargoTypeLabel(
-                  cargoType ?? l10n.notRegistered,
+              child: FadeSlideIn(
+                child: GradientHeaderCard(
+                  title: l10n.hello(user?.fullName ?? l10n.roleLabel('driver')),
+                  subtitle: l10n.cargoTypeLabel(
+                    cargoType ?? l10n.notRegistered,
+                  ),
                 ),
               ),
             ),
           ),
           SliverToBoxAdapter(
-            child: _GpsBanner(
+            child: FadeSlideIn(
+              delay: const Duration(milliseconds: 80),
+              child: _GpsBanner(
               enabled: _gpsEnabled,
               busy: _gpsBusy,
               onChanged: _onGpsChanged,
+            ),
             ),
           ),
           if (_loading)
@@ -280,9 +283,10 @@ class _DriverHomeScreenState extends State<DriverHomeScreen>
           else if (isEmpty)
             SliverFillRemaining(
               hasScrollBody: false,
-              child: SizedBox.expand(
+                child: SizedBox.expand(
                 child: EmptyState(
                   icon: Icons.inventory_2_outlined,
+                  useIllustration: true,
                   title: l10n.noCargoFound,
                   subtitle: _gpsEnabled ? l10n.noMatchingCargo : l10n.enableGpsForNearby,
                 ),
@@ -408,10 +412,38 @@ class _GpsBanner extends StatelessWidget {
               ],
             ),
           ),
-          Switch.adaptive(
-            value: enabled,
-            activeThumbColor: AppTheme.success,
-            onChanged: busy ? null : onChanged,
+          SwitchTheme(
+            data: SwitchTheme.of(context).copyWith(
+              thumbColor: WidgetStateProperty.resolveWith((states) {
+                if (states.contains(WidgetState.disabled)) {
+                  return Colors.white.withValues(alpha: 0.6);
+                }
+                return Colors.white;
+              }),
+              trackColor: WidgetStateProperty.resolveWith((states) {
+                if (states.contains(WidgetState.selected)) {
+                  return AppTheme.success;
+                }
+                if (states.contains(WidgetState.disabled)) {
+                  return palette.divider.withValues(alpha: 0.5);
+                }
+                return Theme.of(context).brightness == Brightness.dark
+                    ? const Color(0xFF334155)
+                    : const Color(0xFFCBD5E1);
+              }),
+              trackOutlineColor: WidgetStateProperty.resolveWith((states) {
+                if (states.contains(WidgetState.selected)) {
+                  return AppTheme.success.withValues(alpha: 0.35);
+                }
+                return Theme.of(context).brightness == Brightness.dark
+                    ? const Color(0xFF64748B)
+                    : const Color(0xFF94A3B8);
+              }),
+            ),
+            child: Switch.adaptive(
+              value: enabled,
+              onChanged: busy ? null : onChanged,
+            ),
           ),
         ],
       ),

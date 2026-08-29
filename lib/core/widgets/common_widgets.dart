@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 
 import '../theme/app_theme.dart';
 import '../../l10n/app_localizations.dart';
+import 'app_illustrations.dart';
+import 'fade_slide_in.dart';
+import 'scale_tap.dart';
 
 class AppCard extends StatelessWidget {
   const AppCard({
@@ -24,18 +27,24 @@ class AppCard extends StatelessWidget {
       gradient: gradient,
       color: gradient == null ? palette.cardBg : null,
       borderRadius: BorderRadius.circular(20),
+      border: Border.all(
+        color: palette.divider.withValues(alpha: gradient == null ? 0.65 : 0),
+      ),
       boxShadow: palette.cardShadow,
     );
 
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(20),
-        child: Ink(
-          decoration: decoration,
-          child: Padding(padding: padding, child: child),
-        ),
+    final content = Padding(padding: padding, child: child);
+
+    if (onTap == null) {
+      return DecoratedBox(decoration: decoration, child: content);
+    }
+
+    return ScaleTap(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(20),
+      child: DecoratedBox(
+        decoration: decoration,
+        child: content,
       ),
     );
   }
@@ -172,11 +181,13 @@ class EmptyState extends StatelessWidget {
     required this.icon,
     required this.title,
     this.subtitle,
+    this.useIllustration = false,
   });
 
   final IconData icon;
   final String title;
   final String? subtitle;
+  final bool useIllustration;
 
   @override
   Widget build(BuildContext context) {
@@ -187,14 +198,17 @@ class EmptyState extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Container(
-              padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                color: AppTheme.primary.withValues(alpha: 0.08),
-                shape: BoxShape.circle,
+            if (useIllustration)
+              const EmptyCargoIllustration()
+            else
+              Container(
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  color: AppTheme.primary.withValues(alpha: 0.08),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(icon, size: 48, color: AppTheme.primary.withValues(alpha: 0.5)),
               ),
-              child: Icon(icon, size: 48, color: AppTheme.primary.withValues(alpha: 0.5)),
-            ),
             const SizedBox(height: 20),
             Text(
               title,
@@ -289,6 +303,180 @@ class InfoRow extends StatelessWidget {
                   value,
                   style: TextStyle(fontWeight: FontWeight.w600, color: palette.textPrimary),
                 ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class StaggeredItem extends StatelessWidget {
+  const StaggeredItem({
+    super.key,
+    required this.index,
+    required this.child,
+    this.baseDelayMs = 60,
+  });
+
+  final int index;
+  final Widget child;
+  final int baseDelayMs;
+
+  @override
+  Widget build(BuildContext context) {
+    return FadeSlideIn(
+      delay: Duration(milliseconds: baseDelayMs * index),
+      child: child,
+    );
+  }
+}
+
+class InfoBanner extends StatelessWidget {
+  const InfoBanner({
+    super.key,
+    required this.message,
+    this.icon = Icons.info_outline_rounded,
+    this.color = AppTheme.primary,
+  });
+
+  final String message;
+  final IconData icon;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    final palette = context.palette;
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [
+            color.withValues(alpha: 0.1),
+            color.withValues(alpha: 0.04),
+          ],
+        ),
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: color.withValues(alpha: 0.18)),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: color.withValues(alpha: 0.14),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Icon(icon, color: color, size: 20),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              message,
+              style: TextStyle(
+                fontSize: 13,
+                height: 1.45,
+                color: palette.textSecondary,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class ProfileHeroHeader extends StatelessWidget {
+  const ProfileHeroHeader({
+    super.key,
+    required this.name,
+    required this.roleLabel,
+    this.subtitle,
+  });
+
+  final String name;
+  final String roleLabel;
+  final String? subtitle;
+
+  @override
+  Widget build(BuildContext context) {
+    final initial = name.isNotEmpty ? name.substring(0, 1) : '?';
+
+    return Container(
+      padding: const EdgeInsets.all(22),
+      decoration: BoxDecoration(
+        gradient: AppTheme.primaryGradient,
+        borderRadius: BorderRadius.circular(24),
+        boxShadow: [
+          BoxShadow(
+            color: AppTheme.primary.withValues(alpha: 0.28),
+            blurRadius: 22,
+            offset: const Offset(0, 10),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 72,
+            height: 72,
+            decoration: BoxDecoration(
+              color: Colors.white.withValues(alpha: 0.18),
+              borderRadius: BorderRadius.circular(22),
+              border: Border.all(color: Colors.white.withValues(alpha: 0.28)),
+            ),
+            alignment: Alignment.center,
+            child: Text(
+              initial,
+              style: const TextStyle(
+                fontSize: 30,
+                fontWeight: FontWeight.w800,
+                color: Colors.white,
+              ),
+            ),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.18),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Text(
+                    roleLabel,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 10),
+                Text(
+                  name,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 20,
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: -0.3,
+                  ),
+                ),
+                if (subtitle != null) ...[
+                  const SizedBox(height: 6),
+                  Text(
+                    subtitle!,
+                    style: TextStyle(
+                      color: Colors.white.withValues(alpha: 0.88),
+                      fontSize: 13,
+                    ),
+                  ),
+                ],
               ],
             ),
           ),

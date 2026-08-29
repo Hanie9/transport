@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/widgets/iranian_plate_widget.dart';
 import '../../core/widgets/common_widgets.dart';
+import '../../core/widgets/fade_slide_in.dart';
 import '../../core/widgets/modern_app_bar.dart';
 import '../../l10n/app_localizations.dart';
 import '../../models/driver_profile.dart';
@@ -46,11 +47,27 @@ class _ActiveDriversScreenState extends State<ActiveDriversScreen> {
       body: AppRefreshIndicator(
         onRefresh: () => _loadDrivers(),
         slivers: [
+          SliverToBoxAdapter(
+            child: FadeSlideIn(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+                child: GradientHeaderCard(
+                  title: l10n.activeDrivers,
+                  subtitle: l10n.homeStatActiveDrivers,
+                  icon: Icons.people_rounded,
+                ),
+              ),
+            ),
+          ),
           if (_loading)
             SliverFillRemaining(child: LoadingOverlay(message: l10n.loadingDrivers))
           else if (_drivers.isEmpty)
             SliverFillRemaining(
-              child: EmptyState(icon: Icons.people_outline, title: l10n.noActiveDrivers),
+              child: EmptyState(
+                icon: Icons.people_outline,
+                useIllustration: true,
+                title: l10n.noActiveDrivers,
+              ),
             )
           else
             SliverPadding(
@@ -59,7 +76,10 @@ class _ActiveDriversScreenState extends State<ActiveDriversScreen> {
                 delegate: SliverChildBuilderDelegate(
                   (context, index) => Padding(
                     padding: const EdgeInsets.only(bottom: 12),
-                    child: _DriverCard(driver: _drivers[index]),
+                    child: StaggeredItem(
+                      index: index,
+                      child: _DriverCard(driver: _drivers[index]),
+                    ),
                   ),
                   childCount: _drivers.length,
                 ),

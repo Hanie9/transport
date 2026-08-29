@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../core/theme/app_theme.dart';
 import '../../core/widgets/common_widgets.dart';
+import '../../core/widgets/fade_slide_in.dart';
 import '../../core/widgets/modern_app_bar.dart';
 import '../../l10n/app_localizations.dart';
 import '../../models/driver_profile.dart';
@@ -46,25 +47,13 @@ class _NearbyDriversScreenState extends State<NearbyDriversScreen> {
         onRefresh: () => _loadDrivers(),
         slivers: [
           SliverToBoxAdapter(
-            child: Container(
-              margin: const EdgeInsets.fromLTRB(16, 8, 16, 8),
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: AppTheme.primary.withValues(alpha: 0.06),
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: AppTheme.primary.withValues(alpha: 0.1)),
-              ),
-              child: Row(
-                children: [
-                  const Icon(Icons.lightbulb_outline, color: AppTheme.primary),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Text(
-                      l10n.nearbyDriversHint,
-                      style: const TextStyle(fontSize: 13, color: AppTheme.textSecondary),
-                    ),
-                  ),
-                ],
+            child: FadeSlideIn(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+                child: InfoBanner(
+                  message: l10n.nearbyDriversHint,
+                  icon: Icons.lightbulb_outline_rounded,
+                ),
               ),
             ),
           ),
@@ -72,7 +61,11 @@ class _NearbyDriversScreenState extends State<NearbyDriversScreen> {
             SliverFillRemaining(child: LoadingOverlay(message: l10n.searchingNearbyDrivers))
           else if (_drivers.isEmpty)
             SliverFillRemaining(
-              child: EmptyState(icon: Icons.person_search, title: l10n.noNearbyDrivers),
+              child: EmptyState(
+                icon: Icons.person_search,
+                useIllustration: true,
+                title: l10n.noNearbyDrivers,
+              ),
             )
           else
             SliverPadding(
@@ -84,7 +77,9 @@ class _NearbyDriversScreenState extends State<NearbyDriversScreen> {
                     final l10n = context.l10n;
                     return Padding(
                       padding: const EdgeInsets.only(bottom: 12),
-                      child: AppCard(
+                      child: StaggeredItem(
+                        index: index,
+                        child: AppCard(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
@@ -192,6 +187,7 @@ class _NearbyDriversScreenState extends State<NearbyDriversScreen> {
                             ),
                           ],
                         ),
+                      ),
                       ),
                     );
                   },

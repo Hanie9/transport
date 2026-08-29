@@ -4,6 +4,8 @@ import 'package:provider/provider.dart';
 
 import '../../core/theme/app_theme.dart';
 import '../../core/widgets/common_widgets.dart';
+import '../../core/widgets/fade_slide_in.dart';
+import '../../core/widgets/modern_app_bar.dart';
 import '../../l10n/app_localizations.dart';
 import '../../models/cargo.dart';
 import '../../services/auth_service.dart';
@@ -74,6 +76,13 @@ class _CargoDetailScreenState extends State<CargoDetailScreen> {
         SnackBar(content: Text(context.l10n.cargoAccepted)),
       );
       context.push('/driver/route/${_cargo!.id}');
+    } else {
+      final msg = _cargoService.lastError;
+      if (msg != null && msg.isNotEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(msg)),
+        );
+      }
     }
   }
 
@@ -83,16 +92,17 @@ class _CargoDetailScreenState extends State<CargoDetailScreen> {
 
     if (_loading) {
       return Scaffold(
-        appBar: AppBar(title: Text(l10n.cargoDetails)),
+        appBar: ModernAppBar(title: l10n.cargoDetails),
         body: LoadingOverlay(message: l10n.loading),
       );
     }
 
     if (_cargo == null) {
       return Scaffold(
-        appBar: AppBar(title: Text(l10n.cargoDetails)),
+        appBar: ModernAppBar(title: l10n.cargoDetails),
         body: EmptyState(
           icon: Icons.error_outline,
+          useIllustration: true,
           title: l10n.noCargoFound,
         ),
       );
@@ -102,107 +112,114 @@ class _CargoDetailScreenState extends State<CargoDetailScreen> {
     final canAccept = cargo.status == 'در انتظار راننده';
 
     return Scaffold(
-      appBar: AppBar(title: Text(l10n.cargoDetails)),
+      appBar: ModernAppBar(title: l10n.cargoDetails),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            AppCard(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Expanded(
-                        child: Text(
-                          cargo.title,
-                          style: const TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
+            FadeSlideIn(
+              child: AppCard(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            cargo.title,
+                            style: const TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                            ),
                           ),
                         ),
-                      ),
-                      StatusChip(status: cargo.status),
-                    ],
-                  ),
-                  const SizedBox(height: 16),
-                  PriceLabel(price: cargo.estimatedPrice, fontSize: 20),
-                ],
-              ),
-            ),
-            const SizedBox(height: 12),
-            AppCard(
-              child: Column(
-                children: [
-                  InfoRow(icon: Icons.trip_origin, label: l10n.origin, value: cargo.origin),
-                  InfoRow(icon: Icons.location_on, label: l10n.destination, value: cargo.destination),
-                  if (cargo.distanceKm != null)
-                    InfoRow(
-                      icon: Icons.straighten,
-                      label: l10n.distance,
-                      value: l10n.distanceKm(cargo.distanceKm!),
+                        StatusChip(status: cargo.status),
+                      ],
                     ),
-                ],
+                    const SizedBox(height: 16),
+                    PriceLabel(price: cargo.estimatedPrice, fontSize: 20),
+                  ],
+                ),
               ),
             ),
             const SizedBox(height: 12),
-            AppCard(
-              child: Column(
-                children: [
-                  InfoRow(icon: Icons.category, label: l10n.trailerType, value: cargo.cargoType),
-                  InfoRow(icon: Icons.inventory, label: l10n.goodsType, value: cargo.goodsType),
-                  InfoRow(
-                    icon: Icons.scale,
-                    label: l10n.weight,
-                    value: l10n.tons(cargo.weightTons),
-                  ),
-                  InfoRow(
-                    icon: Icons.business,
-                    label: l10n.coordinator,
-                    value: cargo.coordinatorName,
-                  ),
-                ],
+            FadeSlideIn(
+              delay: const Duration(milliseconds: 80),
+              child: AppCard(
+                child: Column(
+                  children: [
+                    InfoRow(icon: Icons.trip_origin, label: l10n.origin, value: cargo.origin),
+                    InfoRow(icon: Icons.location_on, label: l10n.destination, value: cargo.destination),
+                    if (cargo.distanceKm != null)
+                      InfoRow(
+                        icon: Icons.straighten,
+                        label: l10n.distance,
+                        value: l10n.distanceKm(cargo.distanceKm!),
+                      ),
+                  ],
+                ),
               ),
             ),
-            if (cargo.isNearby && cargo.nearbyDistanceKm != null) ...[
-              const SizedBox(height: 12),
-              Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: AppTheme.accent.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Row(
+            const SizedBox(height: 12),
+            FadeSlideIn(
+              delay: const Duration(milliseconds: 120),
+              child: AppCard(
+                child: Column(
                   children: [
-                    const Icon(Icons.near_me, color: AppTheme.accent),
-                    const SizedBox(width: 12),
-                    Text(
-                      l10n.nearbyCargoDistance(cargo.nearbyDistanceKm!),
-                      style: const TextStyle(color: AppTheme.accent, fontWeight: FontWeight.w500),
+                    InfoRow(icon: Icons.category, label: l10n.trailerType, value: cargo.cargoType),
+                    InfoRow(icon: Icons.inventory, label: l10n.goodsType, value: cargo.goodsType),
+                    InfoRow(
+                      icon: Icons.scale,
+                      label: l10n.weight,
+                      value: l10n.tons(cargo.weightTons),
+                    ),
+                    InfoRow(
+                      icon: Icons.business,
+                      label: l10n.coordinator,
+                      value: cargo.coordinatorName,
                     ),
                   ],
                 ),
               ),
+            ),
+            if (cargo.isNearby && cargo.nearbyDistanceKm != null) ...[
+              const SizedBox(height: 12),
+              FadeSlideIn(
+                delay: const Duration(milliseconds: 160),
+                child: InfoBanner(
+                  message: l10n.nearbyCargoDistance(cargo.nearbyDistanceKm!),
+                  icon: Icons.near_me_rounded,
+                  color: AppTheme.accent,
+                ),
+              ),
             ],
             const SizedBox(height: 24),
-            if (canAccept)
-              ElevatedButton(
-                onPressed: _accepting ? null : _acceptCargo,
-                child: _accepting
-                    ? const SizedBox(
-                        height: 22,
-                        width: 22,
-                        child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
-                      )
-                    : Text(l10n.acceptCargo),
+            FadeSlideIn(
+              delay: const Duration(milliseconds: 200),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  if (canAccept)
+                    ElevatedButton(
+                      onPressed: _accepting ? null : _acceptCargo,
+                      child: _accepting
+                          ? const SizedBox(
+                              height: 22,
+                              width: 22,
+                              child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                            )
+                          : Text(l10n.acceptCargo),
+                    ),
+                  if (!canAccept && cargo.status != 'در انتظار راننده')
+                    OutlinedButton.icon(
+                      onPressed: () => context.push('/driver/route/${cargo.id}'),
+                      icon: const Icon(Icons.map_outlined),
+                      label: Text(l10n.viewRoute),
+                    ),
+                ],
               ),
-            if (!canAccept && cargo.status != 'در انتظار راننده')
-              OutlinedButton.icon(
-                onPressed: () => context.push('/driver/route/${cargo.id}'),
-                icon: const Icon(Icons.map_outlined),
-                label: Text(l10n.viewRoute),
-              ),
+            ),
           ],
         ),
       ),

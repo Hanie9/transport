@@ -7,6 +7,7 @@ import '../../core/theme/app_theme.dart';
 import '../../core/widgets/app_drawer.dart';
 import '../../core/widgets/shell_scope.dart';
 import '../../core/widgets/common_widgets.dart';
+import '../../core/widgets/fade_slide_in.dart';
 import '../../core/widgets/modern_app_bar.dart';
 import '../../models/cargo.dart';
 import '../../services/cargo_service.dart';
@@ -125,7 +126,7 @@ class _CoordinatorHomeScreenState extends State<CoordinatorHomeScreen> {
 
   Future<void> _loadCargos({bool showLoader = false}) async {
     if (showLoader) setState(() => _loading = true);
-    final cargos = await _cargoService.getAllCargos();
+    final cargos = await _cargoService.getCoordinatorCargos();
     if (mounted) {
       setState(() {
         _cargos = cargos;
@@ -151,9 +152,10 @@ class _CoordinatorHomeScreenState extends State<CoordinatorHomeScreen> {
         onRefresh: () => _loadCargos(),
         slivers: [
           SliverToBoxAdapter(
-            child: SizedBox(
-              height: 52,
-              child: ListView(
+            child: FadeSlideIn(
+              child: SizedBox(
+                height: 52,
+                child: ListView(
                 scrollDirection: Axis.horizontal,
                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                 children: filterOptions.map((status) {
@@ -180,6 +182,7 @@ class _CoordinatorHomeScreenState extends State<CoordinatorHomeScreen> {
                 }).toList(),
               ),
             ),
+            ),
           ),
           if (_loading)
             SliverFillRemaining(
@@ -188,7 +191,11 @@ class _CoordinatorHomeScreenState extends State<CoordinatorHomeScreen> {
             )
           else if (_filteredCargos.isEmpty)
             SliverFillRemaining(
-              child: EmptyState(icon: Icons.inventory_2_outlined, title: l10n.noCargoFound),
+              child: EmptyState(
+                icon: Icons.inventory_2_outlined,
+                useIllustration: true,
+                title: l10n.noCargoFound,
+              ),
             )
           else
             SliverPadding(
@@ -199,7 +206,9 @@ class _CoordinatorHomeScreenState extends State<CoordinatorHomeScreen> {
                     final cargo = _filteredCargos[index];
                     return Padding(
                       padding: const EdgeInsets.only(bottom: 12),
-                      child: AppCard(
+                      child: StaggeredItem(
+                        index: index,
+                        child: AppCard(
                         onTap: () => context.push('/coordinator/cargo/${cargo.id}'),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
@@ -264,6 +273,7 @@ class _CoordinatorHomeScreenState extends State<CoordinatorHomeScreen> {
                             ],
                           ],
                         ),
+                      ),
                       ),
                     );
                   },

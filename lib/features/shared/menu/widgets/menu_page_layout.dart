@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../../core/theme/app_theme.dart';
+import '../../../../core/widgets/fade_slide_in.dart';
 import '../../../../core/widgets/modern_app_bar.dart';
 
 class MenuPageLayout extends StatelessWidget {
@@ -29,13 +30,18 @@ class MenuPageLayout extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            _MenuHeroBanner(
-              icon: icon,
-              title: title,
-              subtitle: subtitle,
+            FadeSlideIn(
+              child: _MenuHeroBanner(
+                icon: icon,
+                title: title,
+                subtitle: subtitle,
+              ),
             ),
             const SizedBox(height: 20),
-            child,
+            FadeSlideIn(
+              delay: const Duration(milliseconds: 100),
+              child: child,
+            ),
           ],
         ),
       ),
@@ -76,6 +82,7 @@ class _MenuHeroBanner extends StatelessWidget {
             decoration: BoxDecoration(
               color: Colors.white.withValues(alpha: 0.18),
               borderRadius: BorderRadius.circular(18),
+              border: Border.all(color: Colors.white.withValues(alpha: 0.22)),
             ),
             child: Icon(icon, color: Colors.white, size: 30),
           ),
@@ -128,7 +135,6 @@ class MenuSectionCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final palette = context.palette;
-    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Container(
       padding: padding,
@@ -136,9 +142,7 @@ class MenuSectionCard extends StatelessWidget {
         color: palette.cardBg,
         borderRadius: BorderRadius.circular(20),
         boxShadow: palette.cardShadow,
-        border: isDark
-            ? Border.all(color: const Color(0xFF334155).withValues(alpha: 0.9))
-            : null,
+        border: Border.all(color: palette.divider.withValues(alpha: 0.65)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -189,7 +193,12 @@ class MenuSettingTile extends StatelessWidget {
         Container(
           padding: const EdgeInsets.all(10),
           decoration: BoxDecoration(
-            color: color.withValues(alpha: 0.12),
+            gradient: LinearGradient(
+              colors: [
+                color.withValues(alpha: 0.2),
+                color.withValues(alpha: 0.08),
+              ],
+            ),
             borderRadius: BorderRadius.circular(14),
           ),
           child: Icon(icon, color: color, size: 22),
@@ -253,13 +262,19 @@ class MenuContactTile extends StatelessWidget {
         color: palette.cardBg,
         borderRadius: BorderRadius.circular(20),
         boxShadow: palette.cardShadow,
+        border: Border.all(color: palette.divider.withValues(alpha: 0.65)),
       ),
       child: Row(
         children: [
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: color.withValues(alpha: 0.1),
+              gradient: LinearGradient(
+                colors: [
+                  color.withValues(alpha: 0.16),
+                  color.withValues(alpha: 0.06),
+                ],
+              ),
               borderRadius: BorderRadius.circular(14),
             ),
             child: Icon(icon, color: color, size: 22),

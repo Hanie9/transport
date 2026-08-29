@@ -2,16 +2,24 @@ import 'package:flutter/foundation.dart';
 import 'package:latlong2/latlong.dart';
 
 import '../api_config.dart';
+import '../l10n/api_messages.dart';
 import '../models/cargo.dart';
 import '../models/driver_profile.dart';
 import 'api_client.dart';
+import 'api_response.dart';
 import 'location_service.dart';
 import 'notification_service.dart';
+import 'settings_service.dart';
 
-/// Cargo / driver facade — mock data now, REST when [ApiConfig.shouldUseMock] is false.
+/// Cargo / driver facade — REST API at transport.liara.run (or mock).
 class CargoService extends ChangeNotifier {
   CargoService._({ApiClient? apiClient, LocationService? locationService})
       : _api = apiClient ?? ApiClient(),
+        _location = locationService ?? LocationService();
+
+  /// Test-only constructor with injected API client.
+  CargoService.withClient(ApiClient apiClient, {LocationService? locationService})
+      : _api = apiClient,
         _location = locationService ?? LocationService();
 
   static final CargoService _instance = CargoService._();
@@ -19,6 +27,38 @@ class CargoService extends ChangeNotifier {
 
   final ApiClient _api;
   final LocationService _location;
+
+  String? _lastError;
+  String? get lastError => _lastError;
+
+  void _clearError() => _lastError = null;
+
+  void _setError(Object error) {
+    final isEnglish = SettingsService().isEnglish;
+    if (error is ApiException) {
+      _lastError = error.message;
+      return;
+    }
+
+    final text = error.toString();
+    if (text.contains('SocketException') ||
+        text.contains('Failed host lookup') ||
+        text.contains('Network is unreachable') ||
+        text.contains('Connection refused')) {
+      _lastError = ApiMessages.noInternet(isEnglish: isEnglish);
+      return;
+    }
+
+    if (error is FormatException) {
+      _lastError = ApiMessages.invalidServerResponse(isEnglish: isEnglish);
+      return;
+    }
+
+    _lastError = ApiResponse.httpErrorMessage(
+      rawBody: text,
+      isEnglish: isEnglish,
+    );
+  }
 
   static const double nearbyRadiusKm = 25;
 
@@ -198,57 +238,69 @@ class CargoService extends ChangeNotifier {
     ),
   ];
 
-  Future<List<Cargo>> getAllCargos() async {
-    if (!ApiConfig.shouldUseMock) {
-      final data = await _api.get(ApiConfig.cargosPath);
-      final list = (data['results'] ?? data['data'] ?? data) as dynamic;
-      if (list is List) {
-        return list
-            .whereType<Map>()
-            .map((e) => Cargo.fromJson(Map<String, dynamic>.from(e)))
-            .toList();
+  Future<List<Cargo>> getAllCargos({Map<String, String>? query}) async {
+    _clearError();
+    try {
+      if (!ApiConfig.shouldUseMock) {
+        final list = await _api.getList(ApiConfig.cargosPath, query: query);
+        return list.map(Cargo.fromJson).toList();
       }
+      await Future<void>.delayed(const Duration(milliseconds: 400));
+      return List.unmodifiable(_cargos);
+    } catch (e) {
+      _setError(e);
+      rethrow;
     }
-    await Future<void>.delayed(const Duration(milliseconds: 400));
-    return List.unmodifiable(_cargos);
   }
 
   Future<List<Cargo>> getCargosForDriver(String cargoType) async {
+    if (!ApiConfig.shouldUseMock) {
+      try {
+        final list = await _api.getList(
+          ApiConfig.cargosPath,
+          query: {
+            'status': 'در انتظار راننده',
+            'cargo_type': cargoType,
+          },
+        );
+        return list.map(Cargo.fromJson).toList();
+      } catch (e) {
+        _setError(e);
+        return const [];
+      }
+    }
+
     final all = await getAllCargos();
     return all
         .where((c) => c.cargoType == cargoType && c.status == 'در انتظار راننده')
         .toList();
   }
 
-  /// Nearby cargos using the driver's real GPS distance to cargo origin.
-  /// Returns an empty list when [driverPosition] / device GPS is unavailable —
-  /// never falls back to a fake city centre.
   Future<List<Cargo>> getNearbyCargos({
     String? cargoType,
     double radiusKm = nearbyRadiusKm,
     LatLng? driverPosition,
   }) async {
-    final pos = driverPosition ?? await _location.getCurrentPosition();
+    _clearError();
+    final pos = driverPosition ?? await _location.getCurrentPosition(requestIfNeeded: false);
     if (pos == null) return const [];
 
     if (!ApiConfig.shouldUseMock) {
-      final data = await _api.get(
-        ApiConfig.nearbyCargosPath,
-        query: {
-          'lat': '${pos.latitude}',
-          'lng': '${pos.longitude}',
-          'radius_km': '$radiusKm',
-          if (cargoType != null) 'cargo_type': cargoType,
-        },
-      );
-      final list = (data['results'] ?? data['data'] ?? data) as dynamic;
-      if (list is List) {
-        return list
-            .whereType<Map>()
-            .map((e) => Cargo.fromJson(Map<String, dynamic>.from(e)))
-            .toList();
+      try {
+        final list = await _api.getList(
+          ApiConfig.nearbyCargosPath,
+          query: {
+            'lat': '${pos.latitude}',
+            'lng': '${pos.longitude}',
+            'radius_km': '$radiusKm',
+            if (cargoType != null) 'cargo_type': cargoType,
+          },
+        );
+        return list.map(Cargo.fromJson).toList();
+      } catch (e) {
+        _setError(e);
+        return const [];
       }
-      return const [];
     }
 
     await Future<void>.delayed(const Duration(milliseconds: 350));
@@ -278,37 +330,60 @@ class CargoService extends ChangeNotifier {
     return results;
   }
 
-  Future<List<Cargo>> getCoordinatorCargos(String coordinatorName) async {
-    final all = await getAllCargos();
-    return all.where((c) => c.coordinatorName == coordinatorName).toList();
+  /// Coordinator cargos — backend filters by authenticated user (`mine=true`).
+  Future<List<Cargo>> getCoordinatorCargos() async {
+    if (!ApiConfig.shouldUseMock) {
+      try {
+        final list = await _api.getList(
+          ApiConfig.cargosPath,
+          query: const {'mine': 'true'},
+        );
+        return list.map(Cargo.fromJson).toList();
+      } catch (e) {
+        _setError(e);
+        return const [];
+      }
+    }
+
+    await Future<void>.delayed(const Duration(milliseconds: 300));
+    return List.unmodifiable(_cargos);
   }
 
   Future<Cargo?> getCargoById(String id) async {
-    if (!ApiConfig.shouldUseMock) {
-      final data = await _api.get('${ApiConfig.cargosPath}$id/');
-      return Cargo.fromJson(data);
-    }
-    await Future<void>.delayed(const Duration(milliseconds: 200));
+    _clearError();
     try {
-      return _cargos.firstWhere((c) => c.id == id);
-    } catch (_) {
+      if (!ApiConfig.shouldUseMock) {
+        final data = await _api.get(ApiConfig.cargoDetailPath(id));
+        return Cargo.fromJson(data);
+      }
+      await Future<void>.delayed(const Duration(milliseconds: 200));
+      try {
+        return _cargos.firstWhere((c) => c.id == id);
+      } catch (_) {
+        return null;
+      }
+    } catch (e) {
+      _setError(e);
       return null;
     }
   }
 
   Future<List<DriverProfile>> getActiveDrivers() async {
-    if (!ApiConfig.shouldUseMock) {
-      final data = await _api.get(ApiConfig.driversPath, query: {'active': 'true'});
-      final list = (data['results'] ?? data['data'] ?? data) as dynamic;
-      if (list is List) {
-        return list
-            .whereType<Map>()
-            .map((e) => DriverProfile.fromJson(Map<String, dynamic>.from(e)))
-            .toList();
+    _clearError();
+    try {
+      if (!ApiConfig.shouldUseMock) {
+        final list = await _api.getList(
+          ApiConfig.driversPath,
+          query: const {'active': 'true'},
+        );
+        return list.map(DriverProfile.fromJson).toList();
       }
+      await Future<void>.delayed(const Duration(milliseconds: 400));
+      return _drivers.where((d) => d.isActive).toList();
+    } catch (e) {
+      _setError(e);
+      return const [];
     }
-    await Future<void>.delayed(const Duration(milliseconds: 400));
-    return _drivers.where((d) => d.isActive).toList();
   }
 
   Future<List<DriverProfile>> getNearbyDrivers({
@@ -316,21 +391,21 @@ class CargoService extends ChangeNotifier {
     double? originLng,
     double radiusKm = nearbyRadiusKm,
   }) async {
+    _clearError();
     if (!ApiConfig.shouldUseMock) {
-      final data = await _api.get(
-        ApiConfig.nearbyDriversPath,
-        query: {
-          if (originLat != null) 'lat': '$originLat',
-          if (originLng != null) 'lng': '$originLng',
-          'radius_km': '$radiusKm',
-        },
-      );
-      final list = (data['results'] ?? data['data'] ?? data) as dynamic;
-      if (list is List) {
-        return list
-            .whereType<Map>()
-            .map((e) => DriverProfile.fromJson(Map<String, dynamic>.from(e)))
-            .toList();
+      try {
+        final list = await _api.getList(
+          ApiConfig.nearbyDriversPath,
+          query: {
+            if (originLat != null) 'lat': '$originLat',
+            if (originLng != null) 'lng': '$originLng',
+            'radius_km': '$radiusKm',
+          },
+        );
+        return list.map(DriverProfile.fromJson).toList();
+      } catch (e) {
+        _setError(e);
+        return const [];
       }
     }
 
@@ -339,7 +414,7 @@ class CargoService extends ChangeNotifier {
     if (originLat != null && originLng != null) {
       center = LatLng(originLat, originLng);
     } else {
-      center = await _location.getCurrentPosition();
+      center = await _location.getCurrentPosition(requestIfNeeded: false);
     }
     if (center == null) return const [];
 
@@ -364,6 +439,7 @@ class CargoService extends ChangeNotifier {
     required String goodsType,
     required double weightTons,
   }) async {
+    _clearError();
     if (!ApiConfig.shouldUseMock) {
       final data = await _api.post(
         ApiConfig.estimatePricePath,
@@ -394,12 +470,13 @@ class CargoService extends ChangeNotifier {
     required String goodsType,
     required double weightTons,
     required int estimatedPrice,
-    required String coordinatorName,
+    String? coordinatorName,
     double? originLat,
     double? originLng,
     double? destinationLat,
     double? destinationLng,
   }) async {
+    _clearError();
     if (!ApiConfig.shouldUseMock) {
       final data = await _api.post(
         ApiConfig.cargosPath,
@@ -433,7 +510,7 @@ class CargoService extends ChangeNotifier {
       weightTons: weightTons,
       estimatedPrice: estimatedPrice,
       status: 'در انتظار راننده',
-      coordinatorName: coordinatorName,
+      coordinatorName: coordinatorName ?? '',
       createdAt: DateTime.now(),
       originLat: originLat,
       originLng: originLng,
@@ -447,20 +524,52 @@ class CargoService extends ChangeNotifier {
   }
 
   Future<List<Cargo>> getDriverMissions({
-    required String driverPhone,
+    String? driverPhone,
     String? driverName,
   }) async {
+    _clearError();
+    if (!ApiConfig.shouldUseMock) {
+      try {
+        final list = await _api.getList(ApiConfig.driverMissionsPath);
+        return list.map(Cargo.fromJson).toList()
+          ..sort(
+            (a, b) =>
+                (b.createdAt ?? DateTime(0)).compareTo(a.createdAt ?? DateTime(0)),
+          );
+      } catch (_) {
+        // Fallback: filter assigned cargos client-side.
+        final all = await getAllCargos();
+        return all
+            .where(
+              (c) =>
+                  c.status != 'در انتظار راننده' &&
+                  c.status != 'لغو شده' &&
+                  (driverPhone == null ||
+                      c.assignedDriverPhone == driverPhone ||
+                      (driverName != null && c.assignedDriverName == driverName)),
+            )
+            .toList()
+          ..sort(
+            (a, b) =>
+                (b.createdAt ?? DateTime(0)).compareTo(a.createdAt ?? DateTime(0)),
+          );
+      }
+    }
+
     final all = await getAllCargos();
     return all
         .where(
           (c) =>
               c.status != 'در انتظار راننده' &&
               c.status != 'لغو شده' &&
-              (c.assignedDriverPhone == driverPhone ||
+              (driverPhone == null ||
+                  c.assignedDriverPhone == driverPhone ||
                   (driverName != null && c.assignedDriverName == driverName)),
         )
         .toList()
-      ..sort((a, b) => (b.createdAt ?? DateTime(0)).compareTo(a.createdAt ?? DateTime(0)));
+      ..sort(
+        (a, b) => (b.createdAt ?? DateTime(0)).compareTo(a.createdAt ?? DateTime(0)),
+      );
   }
 
   Future<bool> acceptCargo(
@@ -468,65 +577,80 @@ class CargoService extends ChangeNotifier {
     String driverName,
     String driverPhone,
   ) async {
-    if (!ApiConfig.shouldUseMock) {
-      await _api.post(
-        ApiConfig.acceptCargoPath.replaceFirst('{id}', cargoId),
-        body: {
-          'driver_name': driverName,
-          'driver_phone': driverPhone,
-        },
-      );
-      notifyListeners();
-      NotificationService().pushLocal('بار پذیرفته شد');
-      return true;
-    }
+    _clearError();
+    try {
+      if (!ApiConfig.shouldUseMock) {
+        await _api.post(
+          ApiConfig.acceptCargoPathFor(cargoId),
+          body: {
+            'driver_name': driverName,
+            'driver_phone': driverPhone,
+          },
+        );
+        notifyListeners();
+        NotificationService().pushLocal('بار پذیرفته شد');
+        return true;
+      }
 
-    await Future<void>.delayed(const Duration(milliseconds: 600));
-    final index = _cargos.indexWhere((c) => c.id == cargoId);
-    if (index == -1) return false;
-    _cargos[index] = _cargos[index].copyWith(
-      status: 'تخصیص یافته',
-      assignedDriverName: driverName,
-      assignedDriverPhone: driverPhone,
-    );
-    NotificationService().pushLocal('بار «${_cargos[index].title}» پذیرفته شد');
-    notifyListeners();
-    return true;
+      await Future<void>.delayed(const Duration(milliseconds: 600));
+      final index = _cargos.indexWhere((c) => c.id == cargoId);
+      if (index == -1) return false;
+      _cargos[index] = _cargos[index].copyWith(
+        status: 'تخصیص یافته',
+        assignedDriverName: driverName,
+        assignedDriverPhone: driverPhone,
+      );
+      NotificationService().pushLocal('بار «${_cargos[index].title}» پذیرفته شد');
+      notifyListeners();
+      return true;
+    } catch (e) {
+      _setError(e);
+      return false;
+    }
   }
 
   Future<bool> updateCargoStatus(String cargoId, String status) async {
-    if (!ApiConfig.shouldUseMock) {
-      await _api.patch(
-        ApiConfig.cargoStatusPath.replaceFirst('{id}', cargoId),
-        body: {'status': status},
-      );
+    _clearError();
+    try {
+      if (!ApiConfig.shouldUseMock) {
+        await _api.patch(
+          ApiConfig.cargoStatusPathFor(cargoId),
+          body: {'status': status},
+        );
+        notifyListeners();
+        return true;
+      }
+
+      await Future<void>.delayed(const Duration(milliseconds: 400));
+      final index = _cargos.indexWhere((c) => c.id == cargoId);
+      if (index == -1) return false;
+      _cargos[index] = _cargos[index].copyWith(status: status);
+      NotificationService().pushLocal('وضعیت بار به «$status» تغییر کرد');
       notifyListeners();
       return true;
+    } catch (e) {
+      _setError(e);
+      return false;
     }
-
-    await Future<void>.delayed(const Duration(milliseconds: 400));
-    final index = _cargos.indexWhere((c) => c.id == cargoId);
-    if (index == -1) return false;
-    _cargos[index] = _cargos[index].copyWith(status: status);
-    NotificationService().pushLocal('وضعیت بار به «$status» تغییر کرد');
-    notifyListeners();
-    return true;
   }
 
-  /// Reports driver GPS to backend (no-op in mock aside from local cache).
   Future<void> reportDriverLocation({
     required double lat,
     required double lng,
   }) async {
     if (!ApiConfig.shouldUseMock) {
-      await _api.post(
-        ApiConfig.reportLocationPath,
-        body: {
-          'lat': lat,
-          'lng': lng,
-          'reported_at': DateTime.now().toIso8601String(),
-        },
-      );
+      try {
+        await _api.post(
+          ApiConfig.reportLocationPath,
+          body: {
+            'lat': lat,
+            'lng': lng,
+            'reported_at': DateTime.now().toIso8601String(),
+          },
+        );
+      } catch (_) {
+        // Best-effort background ping.
+      }
     }
   }
 }

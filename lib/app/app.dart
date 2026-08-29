@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:provider/provider.dart';
 
+import '../core/widgets/session_lifecycle_observer.dart';
 import '../core/theme/app_theme.dart';
 import '../l10n/app_localizations.dart';
 import '../services/auth_service.dart';
@@ -43,9 +44,13 @@ class LogisticsApp extends StatelessWidget {
             ],
             routerConfig: router,
             builder: (context, child) {
-              return Directionality(
-                textDirection: settings.isEnglish ? TextDirection.ltr : TextDirection.rtl,
-                child: child!,
+              return SessionLifecycleObserver(
+                auth: _authService,
+                child: Directionality(
+                  textDirection:
+                      settings.isEnglish ? TextDirection.ltr : TextDirection.rtl,
+                  child: child!,
+                ),
               );
             },
           );

@@ -1,6 +1,23 @@
 import 'package:geolocator/geolocator.dart';
 import 'package:latlong2/latlong.dart';
 
+enum GpsAccessStatus {
+  ready,
+  permissionDenied,
+  permissionDeniedForever,
+  serviceDisabled,
+  unavailable,
+}
+
+class GpsAccessResult {
+  const GpsAccessResult({required this.status, this.position});
+
+  final GpsAccessStatus status;
+  final LatLng? position;
+
+  bool get isReady => status == GpsAccessStatus.ready && position != null;
+}
+
 /// Device GPS helper — used for nearby cargo/driver suggestions.
 class LocationService {
   LocationService._();
@@ -14,7 +31,23 @@ class LocationService {
 
   LatLng? get lastKnown => _lastKnown;
 
+  /// User opted in to nearby-cargo suggestions on the Cargos page.
   bool get appGpsEnabled => _appGpsEnabled;
+
+  bool _nearbyPreferenceInitialized = false;
+
+  /// On first visit, mirror device GPS if it is already available.
+  Future<void> initializeNearbyPreferenceFromDevice() async {
+    if (_nearbyPreferenceInitialized) return;
+    _nearbyPreferenceInitialized = true;
+    if (await isGpsReady()) {
+      _appGpsEnabled = true;
+    }
+  }
+
+  /// Nearby suggestions are active only when the user opted in and device GPS works.
+  Future<bool> isNearbyGpsActive() async =>
+      _appGpsEnabled && await isGpsReady();
 
   Future<bool> isSystemLocationEnabled() =>
       Geolocator.isLocationServiceEnabled();
@@ -36,8 +69,11 @@ class LocationService {
 
   Future<bool> openAppPermissionSettings() => Geolocator.openAppSettings();
 
-  /// Requests permission and prompts to enable device location if needed.
-  Future<bool> ensurePermission({bool openSettingsIfNeeded = true}) async {
+  /// Requests permission without opening the Settings app.
+  ///
+  /// When [openSettingsIfNeeded] is true, only permanently denied permission
+  /// may redirect to app settings — never the device location settings screen.
+  Future<bool> ensurePermission({bool openSettingsIfNeeded = false}) async {
     var permission = await Geolocator.checkPermission();
     if (permission == LocationPermission.denied) {
       permission = await Geolocator.requestPermission();
@@ -55,63 +91,89 @@ class LocationService {
       return false;
     }
 
-    var enabled = await Geolocator.isLocationServiceEnabled();
-    if (!enabled && openSettingsIfNeeded) {
-      await openSystemLocationSettings();
-      // Give the user a moment after returning from settings.
-      await Future<void>.delayed(const Duration(milliseconds: 600));
-      enabled = await Geolocator.isLocationServiceEnabled();
-    }
-    return enabled;
+    return Geolocator.isLocationServiceEnabled();
   }
 
-  /// Turn GPS on for the app: request permission + enable device location.
-  Future<LatLng?> enableGps() async {
+  /// Requests permission and uses the platform location-service dialog on Android.
+  ///
+  /// Never opens the device location Settings screen automatically.
+  Future<GpsAccessResult> requestGpsAccess() async {
     _appGpsEnabled = true;
-    final ok = await ensurePermission(openSettingsIfNeeded: true);
-    if (!ok) {
-      _appGpsEnabled = false;
-      return null;
+
+    var permission = await Geolocator.checkPermission();
+    if (permission == LocationPermission.denied) {
+      permission = await Geolocator.requestPermission();
     }
-    return getCurrentPosition(requestIfNeeded: false);
+
+    if (permission == LocationPermission.deniedForever) {
+      _appGpsEnabled = false;
+      return const GpsAccessResult(status: GpsAccessStatus.permissionDeniedForever);
+    }
+
+    if (permission != LocationPermission.always &&
+        permission != LocationPermission.whileInUse) {
+      _appGpsEnabled = false;
+      return const GpsAccessResult(status: GpsAccessStatus.permissionDenied);
+    }
+
+    final position = await _readCurrentPosition(triggerServiceDialog: true);
+    if (position != null) {
+      return GpsAccessResult(status: GpsAccessStatus.ready, position: position);
+    }
+
+    _appGpsEnabled = false;
+    final servicesOn = await Geolocator.isLocationServiceEnabled();
+    return GpsAccessResult(
+      status: servicesOn ? GpsAccessStatus.unavailable : GpsAccessStatus.serviceDisabled,
+    );
   }
 
-  /// Turn GPS off for the app and open system location settings so the user
-  /// can disable device location (apps cannot force-disable OS GPS).
-  Future<void> disableGps({bool openSettings = true}) async {
+  /// Turn GPS on for the app: system permission + device-location dialogs.
+  Future<LatLng?> enableGps() async {
+    final result = await requestGpsAccess();
+    return result.position;
+  }
+
+  /// Disables nearby-cargo GPS in the app (does not change device location).
+  Future<void> disableGps() async {
     _appGpsEnabled = false;
     _lastKnown = null;
-    if (openSettings) {
-      final stillOn = await Geolocator.isLocationServiceEnabled();
-      if (stillOn) {
-        await openSystemLocationSettings();
-      }
-    }
   }
 
-  Future<LatLng?> getCurrentPosition({bool requestIfNeeded = true}) async {
+  void setNearbyGpsEnabled(bool enabled) {
+    _appGpsEnabled = enabled;
+    if (!enabled) _lastKnown = null;
+  }
+
+  Future<LatLng?> getCurrentPosition({bool requestIfNeeded = false}) async {
     if (requestIfNeeded) {
-      final ok = await ensurePermission();
-      if (!ok) return _lastKnown;
-    } else {
-      final permission = await Geolocator.checkPermission();
-      if (permission == LocationPermission.denied ||
-          permission == LocationPermission.deniedForever) {
-        return _lastKnown;
-      }
-      final enabled = await Geolocator.isLocationServiceEnabled();
-      if (!enabled) return _lastKnown;
+      final result = await requestGpsAccess();
+      return result.position;
     }
 
+    final permission = await Geolocator.checkPermission();
+    if (permission == LocationPermission.denied ||
+        permission == LocationPermission.deniedForever) {
+      return _lastKnown;
+    }
+    final enabled = await Geolocator.isLocationServiceEnabled();
+    if (!enabled) return _lastKnown;
+
+    return _readCurrentPosition(triggerServiceDialog: false);
+  }
+
+  Future<LatLng?> _readCurrentPosition({required bool triggerServiceDialog}) async {
     try {
       final pos = await Geolocator.getCurrentPosition(
-        locationSettings: const LocationSettings(
+        locationSettings: LocationSettings(
           accuracy: LocationAccuracy.high,
-          timeLimit: Duration(seconds: 8),
+          timeLimit: Duration(seconds: triggerServiceDialog ? 30 : 8),
         ),
       );
       _lastKnown = LatLng(pos.latitude, pos.longitude);
       return _lastKnown;
+    } on LocationServiceDisabledException {
+      return null;
     } catch (_) {
       try {
         final last = await Geolocator.getLastKnownPosition();

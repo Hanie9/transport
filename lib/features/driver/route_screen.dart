@@ -7,7 +7,9 @@ import 'package:latlong2/latlong.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../core/theme/app_theme.dart';
+import '../../core/widgets/location_access_dialog.dart';
 import '../../core/widgets/common_widgets.dart';
+import '../../core/widgets/metric_chip.dart';
 import '../../core/widgets/modern_app_bar.dart';
 import '../../l10n/app_localizations.dart';
 import '../../models/cargo.dart';
@@ -127,8 +129,8 @@ class _RouteScreenState extends State<RouteScreen> {
       final origin = originPoint.location;
       final destination = destPoint.location;
 
-      // Use whatever GPS the device reports — no geographic filter.
-      final driverPos = await _location.getCurrentPosition();
+      // Do not prompt for GPS on entry — only when the user starts navigation.
+      final driverPos = await _location.getCurrentPosition(requestIfNeeded: false);
       if (!mounted) return;
 
       NeshanRoute? pickup;
@@ -192,6 +194,27 @@ class _RouteScreenState extends State<RouteScreen> {
       });
 
       await _startLocationStream();
+
+      if (driverPos == null) {
+        WidgetsBinding.instance.addPostFrameCallback((_) async {
+          if (!mounted) return;
+          final ready = await requestLocationAccessWithDialog(
+            context,
+            title: context.l10n.locationEnableTitle,
+            message: context.l10n.locationEnableNavigationMessage,
+          );
+          if (!mounted || !ready) return;
+
+          final pos = await _location.getCurrentPosition(requestIfNeeded: false);
+          if (!mounted || pos == null) return;
+
+          setState(() => _driverPosition = pos);
+          await _startLocationStream();
+          if (_routeStep == 0 && _pickupRoute == null) {
+            await _loadPickupRoute(force: true, fromDriver: pos);
+          }
+        });
+      }
 
       final approximateMessage = context.l10n.routeApproximateFallback;
       WidgetsBinding.instance.addPostFrameCallback((_) async {
@@ -438,8 +461,7 @@ class _RouteScreenState extends State<RouteScreen> {
   }
 
   Future<void> _startLocationStream() async {
-    final ok = await _location.ensurePermission();
-    if (!ok) return;
+    if (!await _location.isGpsReady()) return;
 
     _positionSub?.cancel();
     _positionSub = Geolocator.getPositionStream(
@@ -741,13 +763,11 @@ class _RouteScreenState extends State<RouteScreen> {
                     children: [
                       if (!_navigationActive)
                         Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 14,
-                            vertical: 10,
-                          ),
+                          padding: const EdgeInsets.all(14),
                           decoration: BoxDecoration(
-                            color: palette.cardBg.withValues(alpha: 0.94),
-                            borderRadius: BorderRadius.circular(14),
+                            color: palette.cardBg.withValues(alpha: 0.96),
+                            borderRadius: BorderRadius.circular(18),
+                            border: Border.all(color: palette.divider.withValues(alpha: 0.8)),
                             boxShadow: palette.cardShadow,
                           ),
                           child: Row(
@@ -755,11 +775,11 @@ class _RouteScreenState extends State<RouteScreen> {
                               Container(
                                 padding: const EdgeInsets.symmetric(
                                   horizontal: 10,
-                                  vertical: 5,
+                                  vertical: 6,
                                 ),
                                 decoration: BoxDecoration(
-                                  color: AppTheme.primary,
-                                  borderRadius: BorderRadius.circular(8),
+                                  gradient: AppTheme.primaryGradient,
+                                  borderRadius: BorderRadius.circular(10),
                                 ),
                                 child: Text(
                                   stepLabel,
@@ -774,10 +794,11 @@ class _RouteScreenState extends State<RouteScreen> {
                               Expanded(
                                 child: Text(
                                   targetLabel,
-                                  maxLines: 1,
+                                  maxLines: 2,
                                   overflow: TextOverflow.ellipsis,
                                   style: TextStyle(
-                                    fontWeight: FontWeight.w600,
+                                    fontWeight: FontWeight.w700,
+                                    fontSize: 13,
                                     color: palette.textPrimary,
                                   ),
                                 ),
@@ -801,22 +822,36 @@ class _RouteScreenState extends State<RouteScreen> {
             ),
           ),
           Container(
-            padding: const EdgeInsets.fromLTRB(16, 14, 16, 8),
             decoration: BoxDecoration(
               color: palette.cardBg,
+              borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+              border: Border(top: BorderSide(color: palette.divider.withValues(alpha: 0.8))),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.06),
-                  blurRadius: 12,
-                  offset: const Offset(0, -4),
+                  color: Colors.black.withValues(alpha: isDark ? 0.28 : 0.08),
+                  blurRadius: 20,
+                  offset: const Offset(0, -6),
                 ),
               ],
             ),
             child: SafeArea(
               top: false,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Center(
+                      child: Container(
+                        width: 42,
+                        height: 4,
+                        margin: const EdgeInsets.only(bottom: 14),
+                        decoration: BoxDecoration(
+                          color: palette.divider,
+                          borderRadius: BorderRadius.circular(99),
+                        ),
+                      ),
+                    ),
                   Row(
                     children: [
                       _StepIndicator(
@@ -843,26 +878,19 @@ class _RouteScreenState extends State<RouteScreen> {
                   ),
                   if (leg != null) ...[
                     const SizedBox(height: 12),
-                    Row(
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
                       children: [
-                        Icon(Icons.straighten, size: 16, color: palette.textSecondary),
-                        const SizedBox(width: 6),
-                        Text(
-                          leg.distanceText,
-                          style: TextStyle(
-                            fontWeight: FontWeight.w700,
-                            color: palette.textPrimary,
-                          ),
+                        MetricChip(
+                          icon: Icons.straighten_rounded,
+                          label: leg.distanceText,
+                          color: AppTheme.primary,
                         ),
-                        const SizedBox(width: 16),
-                        Icon(Icons.schedule, size: 16, color: palette.textSecondary),
-                        const SizedBox(width: 6),
-                        Text(
-                          leg.durationText,
-                          style: TextStyle(
-                            fontWeight: FontWeight.w700,
-                            color: palette.textPrimary,
-                          ),
+                        MetricChip(
+                          icon: Icons.schedule_rounded,
+                          label: leg.durationText,
+                          color: AppTheme.accent,
                         ),
                       ],
                     ),
@@ -871,14 +899,34 @@ class _RouteScreenState extends State<RouteScreen> {
                   if (!_navigationActive)
                     ElevatedButton.icon(
                       onPressed: () async {
-                        final pos = _driverPosition;
+                        var pos = _driverPosition;
                         if (pos == null) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text(l10n.locationRequiredForRoute),
-                            ),
+                          final ready = await requestLocationAccessWithDialog(
+                            context,
+                            title: l10n.locationEnableTitle,
+                            message: l10n.locationEnableNavigationMessage,
                           );
-                          return;
+                          if (!mounted) return;
+                          if (!ready) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text(l10n.locationRequiredForRoute),
+                              ),
+                            );
+                            return;
+                          }
+                          pos = await _location.getCurrentPosition(requestIfNeeded: false);
+                          if (!mounted) return;
+                          if (pos == null) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text(l10n.locationRequiredForRoute),
+                              ),
+                            );
+                            return;
+                          }
+                          setState(() => _driverPosition = pos);
+                          await _startLocationStream();
                         }
                         // Refresh a real road route before heading-up navigation.
                         if (_routeStep == 0) {
@@ -947,6 +995,7 @@ class _RouteScreenState extends State<RouteScreen> {
               ),
             ),
           ),
+        ),
         ],
       ),
     );
@@ -971,18 +1020,41 @@ class _NavigationGuidanceCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final direction = persian ? TextDirection.rtl : TextDirection.ltr;
-    return Material(
-      elevation: 8,
-      borderRadius: BorderRadius.circular(12),
-      clipBehavior: Clip.antiAlias,
-      color: const Color(0xFF0F172A),
+    final palette = context.palette;
+    return Container(
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            palette.cardBg.withValues(alpha: 0.98),
+            AppTheme.primaryDark.withValues(alpha: 0.96),
+          ],
+        ),
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: AppTheme.primaryLight.withValues(alpha: 0.35)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.22),
+            blurRadius: 18,
+            offset: const Offset(0, 8),
+          ),
+        ],
+      ),
       child: Padding(
         padding: const EdgeInsets.fromLTRB(16, 14, 16, 16),
         child: Row(
           textDirection: direction,
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            maneuverIconWidget(step, rtl: persian),
+            Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.12),
+                borderRadius: BorderRadius.circular(14),
+              ),
+              child: maneuverIconWidget(step, rtl: persian),
+            ),
             const SizedBox(width: 14),
             Expanded(
               child: Column(
@@ -1001,7 +1073,7 @@ class _NavigationGuidanceCard extends StatelessWidget {
                   Text(
                     guidancePrimaryLabel(step),
                     style: const TextStyle(
-                      color: Color(0xFF22D3EE),
+                      color: AppTheme.primaryLight,
                       fontSize: 17,
                       fontWeight: FontWeight.bold,
                       height: 1.3,
@@ -1016,7 +1088,7 @@ class _NavigationGuidanceCard extends StatelessWidget {
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(
-                        color: Colors.white.withValues(alpha: 0.75),
+                        color: Colors.white.withValues(alpha: 0.78),
                         fontSize: 12,
                       ),
                       textDirection: direction,
@@ -1047,26 +1119,61 @@ class _StepIndicator extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final palette = context.palette;
     final color = isCompleted
         ? AppTheme.success
         : isActive
             ? AppTheme.primary
-            : Colors.grey.shade400;
+            : palette.textSecondary.withValues(alpha: 0.45);
 
     return Column(
       children: [
-        CircleAvatar(
-          radius: 16,
-          backgroundColor: color,
+        AnimatedContainer(
+          duration: const Duration(milliseconds: 220),
+          curve: Curves.easeOutCubic,
+          width: 34,
+          height: 34,
+          decoration: BoxDecoration(
+            gradient: isActive || isCompleted
+                ? LinearGradient(
+                    colors: isCompleted
+                        ? [AppTheme.success, AppTheme.success.withValues(alpha: 0.8)]
+                        : [AppTheme.primary, AppTheme.primaryLight],
+                  )
+                : null,
+            color: isActive || isCompleted ? null : palette.divider,
+            shape: BoxShape.circle,
+            boxShadow: isActive
+                ? [
+                    BoxShadow(
+                      color: AppTheme.primary.withValues(alpha: 0.28),
+                      blurRadius: 10,
+                      offset: const Offset(0, 4),
+                    ),
+                  ]
+                : null,
+          ),
+          alignment: Alignment.center,
           child: isCompleted
-              ? const Icon(Icons.check, size: 18, color: Colors.white)
+              ? const Icon(Icons.check_rounded, size: 18, color: Colors.white)
               : Text(
                   '$step',
-                  style: const TextStyle(color: Colors.white, fontSize: 13),
+                  style: TextStyle(
+                    color: isActive ? Colors.white : palette.textSecondary,
+                    fontSize: 13,
+                    fontWeight: FontWeight.w800,
+                  ),
                 ),
         ),
-        const SizedBox(height: 4),
-        Text(label, style: TextStyle(fontSize: 12, color: color)),
+        const SizedBox(height: 6),
+        Text(
+          label,
+          style: TextStyle(
+            fontSize: 11.5,
+            fontWeight: FontWeight.w700,
+            color: color,
+          ),
+        ),
       ],
     );
   }

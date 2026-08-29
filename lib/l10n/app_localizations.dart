@@ -252,6 +252,9 @@ class AppLocalizations {
   String roleLabel(String role) => role == 'driver'
       ? _t('راننده', 'Driver')
       : _t('متصدی حمل‌ونقل', 'Transport coordinator');
+  String roleSegmentLabel(String role) => role == 'driver'
+      ? _t('راننده', 'Driver')
+      : _t('متصدی', 'Coordinator');
 
   // Navigation
   String get home => _t('خانه', 'Home');
@@ -307,9 +310,33 @@ class AppLocalizations {
         'Could not enable location. Check permission and location services.',
       );
   String get gpsDisabledSystemHint => _t(
-        'برای خاموش کردن موقعیت دستگاه، آن را در تنظیمات خاموش کنید',
-        'Turn off device location in system settings if needed',
+        'GPS در اپ خاموش شد',
+        'GPS is turned off in the app',
       );
+  String get gpsDisableTitle => _t('خاموش کردن GPS', 'Turn off GPS');
+  String get gpsDisableMessage => _t(
+        'پیشنهاد بارهای نزدیک غیرفعال شد و موقعیت شما دیگر برای این بخش استفاده نمی‌شود. '
+            'برای خاموش کردن موقعیت دستگاه می‌توانید به تنظیمات موقعیت بروید.',
+        'Nearby cargo suggestions are turned off and your location is no longer used here. '
+            'To turn off device location, open location settings.',
+      );
+  String get gpsDisableConfirm => _t('متوجه شدم', 'Got it');
+  String get openLocationSettings => _t('تنظیمات موقعیت', 'Location settings');
+  String get locationEnableTitle => _t('فعال‌سازی موقعیت', 'Enable location');
+  String get locationEnableAction => _t('فعال‌سازی', 'Enable');
+  String get locationEnableNearbyMessage => _t(
+        'برای نمایش بارهای نزدیک، دسترسی به موقعیت دستگاه لازم است.',
+        'Device location is required to show nearby cargos.',
+      );
+  String get locationEnableNavigationMessage => _t(
+        'برای مسیریابی از موقعیت شما، دسترسی به GPS دستگاه لازم است.',
+        'Device GPS is required to navigate from your location.',
+      );
+  String get locationPermissionDeniedForever => _t(
+        'دسترسی موقعیت برای این اپ مسدود شده است. از تنظیمات برنامه آن را فعال کنید.',
+        'Location access is blocked for this app. Enable it in app settings.',
+      );
+  String get openAppSettings => _t('تنظیمات برنامه', 'App settings');
   String get loadingCargos => _t('در حال بارگذاری بارها...', 'Loading cargos...');
   String get noCargoFound => _t('باری یافت نشد', 'No cargo found');
   String get noMatchingCargo => _t(

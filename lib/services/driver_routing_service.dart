@@ -1,10 +1,10 @@
 import 'package:flutter/foundation.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:legestic/api_config.dart';
 import 'package:legestic/services/neshan_android_channel.dart';
 import 'package:legestic/services/neshan_backend_client.dart';
 import 'package:legestic/services/neshan_models.dart';
 import 'package:legestic/services/neshan_service.dart';
+import 'package:legestic/services/token_storage.dart';
 import 'package:legestic/utils/address_geocode_hints.dart';
 import 'package:legestic/utils/neshan_config.dart';
 import 'package:legestic/utils/neshan_error_codes.dart';
@@ -667,8 +667,7 @@ class DriverRoutingService {
 
   Future<String?> _loadAuthToken() async {
     try {
-      final prefs = await SharedPreferences.getInstance();
-      return prefs.getString('token');
+      return TokenStorage().readAccessToken();
     } catch (_) {
       return null;
     }

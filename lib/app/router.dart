@@ -1,5 +1,7 @@
+import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
+import '../core/widgets/app_page_transitions.dart';
 import '../features/auth/login_screen.dart';
 import '../features/auth/signup_screen.dart';
 import '../features/coordinator/active_drivers_screen.dart';
@@ -43,93 +45,228 @@ class AppRouter {
         return null;
       },
       routes: [
-        GoRoute(path: '/', builder: (_, __) => const SplashScreen()),
-        GoRoute(path: '/login', builder: (_, __) => const LoginScreen()),
-        GoRoute(path: '/signup', builder: (_, __) => const SignupScreen()),
+        GoRoute(
+          path: '/',
+          pageBuilder: (context, state) => AppPageTransitions.fade(
+            key: state.pageKey,
+            child: const SplashScreen(),
+          ),
+        ),
+        GoRoute(
+          path: '/login',
+          pageBuilder: (context, state) => AppPageTransitions.fadeSlide(
+            key: state.pageKey,
+            child: const LoginScreen(),
+          ),
+        ),
+        GoRoute(
+          path: '/signup',
+          pageBuilder: (context, state) => AppPageTransitions.fadeSlide(
+            key: state.pageKey,
+            child: const SignupScreen(),
+          ),
+        ),
         ShellRoute(
-          builder: (_, __, child) => DriverShell(child: child),
+          builder: (context, state, child) => DriverShell(child: child),
           routes: [
             GoRoute(
               path: '/driver',
-              builder: (_, __) => const HomeScreen(role: 'driver'),
+              pageBuilder: (context, state) => _noTransition(
+                state,
+                const HomeScreen(role: 'driver'),
+              ),
             ),
             GoRoute(
               path: '/driver/cargos',
-              builder: (_, __) => const DriverHomeScreen(),
+              pageBuilder: (context, state) => _noTransition(
+                state,
+                const DriverHomeScreen(),
+              ),
             ),
-            GoRoute(path: '/driver/missions', builder: (_, __) => const DriverMissionsScreen()),
-            GoRoute(path: '/driver/nearby', builder: (_, __) => const NearbyCargoScreen()),
+            GoRoute(
+              path: '/driver/missions',
+              pageBuilder: (context, state) => _noTransition(
+                state,
+                const DriverMissionsScreen(),
+              ),
+            ),
+            GoRoute(
+              path: '/driver/nearby',
+              pageBuilder: (context, state) => _noTransition(
+                state,
+                const NearbyCargoScreen(),
+              ),
+            ),
             GoRoute(
               path: '/driver/profile',
-              builder: (_, state) => ProfileScreen(
-                role: 'driver',
-                editVehicleInitially: state.uri.queryParameters['editVehicle'] == '1',
+              pageBuilder: (context, state) => _noTransition(
+                state,
+                ProfileScreen(
+                  role: 'driver',
+                  editVehicleInitially:
+                      state.uri.queryParameters['editVehicle'] == '1',
+                ),
               ),
             ),
             GoRoute(
               path: '/driver/vehicle',
-              builder: (_, __) => const VehicleProfileScreen(),
+              pageBuilder: (context, state) => _noTransition(
+                state,
+                const VehicleProfileScreen(),
+              ),
             ),
-            GoRoute(path: '/driver/settings', builder: (_, __) => const SettingsScreen()),
-            GoRoute(path: '/driver/about', builder: (_, __) => const AboutScreen()),
-            GoRoute(path: '/driver/help', builder: (_, __) => const HelpScreen(role: 'driver')),
-            GoRoute(path: '/driver/support', builder: (_, __) => const SupportScreen()),
-            GoRoute(path: '/driver/change-password', builder: (_, __) => const ChangePasswordScreen()),
+            GoRoute(
+              path: '/driver/settings',
+              pageBuilder: (context, state) => AppPageTransitions.sharedAxisHorizontal(
+                key: state.pageKey,
+                child: const SettingsScreen(),
+              ),
+            ),
+            GoRoute(
+              path: '/driver/about',
+              pageBuilder: (context, state) => AppPageTransitions.sharedAxisHorizontal(
+                key: state.pageKey,
+                child: const AboutScreen(),
+              ),
+            ),
+            GoRoute(
+              path: '/driver/help',
+              pageBuilder: (context, state) => AppPageTransitions.sharedAxisHorizontal(
+                key: state.pageKey,
+                child: const HelpScreen(role: 'driver'),
+              ),
+            ),
+            GoRoute(
+              path: '/driver/support',
+              pageBuilder: (context, state) => AppPageTransitions.sharedAxisHorizontal(
+                key: state.pageKey,
+                child: const SupportScreen(),
+              ),
+            ),
+            GoRoute(
+              path: '/driver/change-password',
+              pageBuilder: (context, state) => AppPageTransitions.sharedAxisHorizontal(
+                key: state.pageKey,
+                child: const ChangePasswordScreen(),
+              ),
+            ),
           ],
         ),
         GoRoute(
           path: '/driver/cargo/:id',
-          builder: (_, state) => CargoDetailScreen(
-            cargoId: state.pathParameters['id']!,
+          pageBuilder: (context, state) => AppPageTransitions.fadeSlide(
+            key: state.pageKey,
+            child: CargoDetailScreen(
+              cargoId: state.pathParameters['id']!,
+            ),
           ),
         ),
         GoRoute(
           path: '/driver/route/:id',
-          builder: (_, state) => RouteScreen(
-            cargoId: state.pathParameters['id']!,
+          pageBuilder: (context, state) => AppPageTransitions.fadeSlide(
+            key: state.pageKey,
+            beginOffset: const Offset(0, 0.06),
+            child: RouteScreen(
+              cargoId: state.pathParameters['id']!,
+            ),
           ),
         ),
         ShellRoute(
-          builder: (_, __, child) => CoordinatorShell(child: child),
+          builder: (context, state, child) => CoordinatorShell(child: child),
           routes: [
             GoRoute(
               path: '/coordinator',
-              builder: (_, __) => const HomeScreen(role: 'coordinator'),
+              pageBuilder: (context, state) => _noTransition(
+                state,
+                const HomeScreen(role: 'coordinator'),
+              ),
             ),
             GoRoute(
               path: '/coordinator/cargos',
-              builder: (_, __) => const CoordinatorHomeScreen(),
+              pageBuilder: (context, state) => _noTransition(
+                state,
+                const CoordinatorHomeScreen(),
+              ),
             ),
             GoRoute(
               path: '/coordinator/drivers',
-              builder: (_, __) => const ActiveDriversScreen(),
+              pageBuilder: (context, state) => _noTransition(
+                state,
+                const ActiveDriversScreen(),
+              ),
             ),
             GoRoute(
               path: '/coordinator/nearby-drivers',
-              builder: (_, __) => const NearbyDriversScreen(),
+              pageBuilder: (context, state) => _noTransition(
+                state,
+                const NearbyDriversScreen(),
+              ),
             ),
             GoRoute(
               path: '/coordinator/profile',
-              builder: (_, __) => const ProfileScreen(role: 'coordinator'),
+              pageBuilder: (context, state) => _noTransition(
+                state,
+                const ProfileScreen(role: 'coordinator'),
+              ),
             ),
-            GoRoute(path: '/coordinator/settings', builder: (_, __) => const SettingsScreen()),
-            GoRoute(path: '/coordinator/about', builder: (_, __) => const AboutScreen()),
-            GoRoute(path: '/coordinator/help', builder: (_, __) => const HelpScreen(role: 'coordinator')),
-            GoRoute(path: '/coordinator/support', builder: (_, __) => const SupportScreen()),
-            GoRoute(path: '/coordinator/change-password', builder: (_, __) => const ChangePasswordScreen()),
+            GoRoute(
+              path: '/coordinator/settings',
+              pageBuilder: (context, state) => AppPageTransitions.sharedAxisHorizontal(
+                key: state.pageKey,
+                child: const SettingsScreen(),
+              ),
+            ),
+            GoRoute(
+              path: '/coordinator/about',
+              pageBuilder: (context, state) => AppPageTransitions.sharedAxisHorizontal(
+                key: state.pageKey,
+                child: const AboutScreen(),
+              ),
+            ),
+            GoRoute(
+              path: '/coordinator/help',
+              pageBuilder: (context, state) => AppPageTransitions.sharedAxisHorizontal(
+                key: state.pageKey,
+                child: const HelpScreen(role: 'coordinator'),
+              ),
+            ),
+            GoRoute(
+              path: '/coordinator/support',
+              pageBuilder: (context, state) => AppPageTransitions.sharedAxisHorizontal(
+                key: state.pageKey,
+                child: const SupportScreen(),
+              ),
+            ),
+            GoRoute(
+              path: '/coordinator/change-password',
+              pageBuilder: (context, state) => AppPageTransitions.sharedAxisHorizontal(
+                key: state.pageKey,
+                child: const ChangePasswordScreen(),
+              ),
+            ),
           ],
         ),
         GoRoute(
           path: '/coordinator/add-cargo',
-          builder: (_, __) => const AddCargoScreen(),
+          pageBuilder: (context, state) => AppPageTransitions.fadeSlide(
+            key: state.pageKey,
+            child: const AddCargoScreen(),
+          ),
         ),
         GoRoute(
           path: '/coordinator/cargo/:id',
-          builder: (_, state) => coordinator.CoordinatorCargoDetailScreen(
-            cargoId: state.pathParameters['id']!,
+          pageBuilder: (context, state) => AppPageTransitions.fadeSlide(
+            key: state.pageKey,
+            child: coordinator.CoordinatorCargoDetailScreen(
+              cargoId: state.pathParameters['id']!,
+            ),
           ),
         ),
       ],
     );
+  }
+
+  static NoTransitionPage<void> _noTransition(GoRouterState state, Widget child) {
+    return NoTransitionPage<void>(key: state.pageKey, child: child);
   }
 }

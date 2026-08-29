@@ -3,8 +3,11 @@ import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
 import '../../core/theme/app_theme.dart';
+import '../../core/widgets/app_illustrations.dart';
 import '../../core/widgets/common_widgets.dart';
+import '../../core/widgets/fade_slide_in.dart';
 import '../../core/widgets/modern_app_bar.dart';
+import '../../core/widgets/scale_tap.dart';
 import '../../l10n/app_localizations.dart';
 import '../../models/cargo.dart';
 import '../../services/auth_service.dart';
@@ -72,8 +75,9 @@ class _HomeScreenState extends State<HomeScreen> {
         _loading = false;
       });
     } else {
-      final cargos = await _cargoService.getCoordinatorCargos(user.fullName);
-      final allCargos = cargos.isEmpty ? await _cargoService.getAllCargos() : cargos;
+      final cargos = await _cargoService.getCoordinatorCargos();
+      final allCargos =
+          cargos.isNotEmpty ? cargos : await _cargoService.getAllCargos();
       final drivers = await _cargoService.getActiveDrivers();
       final nearby = await _cargoService.getNearbyDrivers();
       final pending = allCargos.where((c) => c.status == 'در انتظار راننده').length;
@@ -110,12 +114,14 @@ class _HomeScreenState extends State<HomeScreen> {
           SliverPadding(
             padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
             sliver: SliverToBoxAdapter(
-              child: _HomeHero(
-                greeting: l10n.hello(name),
-                subtitle: _isDriver
-                    ? l10n.homeDriverSubtitle
-                    : l10n.homeCoordinatorSubtitle,
-                roleLabel: l10n.roleLabel(widget.role),
+              child: FadeSlideIn(
+                child: _HomeHero(
+                  greeting: l10n.hello(name),
+                  subtitle: _isDriver
+                      ? l10n.homeDriverSubtitle
+                      : l10n.homeCoordinatorSubtitle,
+                  roleLabel: l10n.roleLabel(widget.role),
+                ),
               ),
             ),
           ),
@@ -128,8 +134,10 @@ class _HomeScreenState extends State<HomeScreen> {
             SliverPadding(
               padding: const EdgeInsets.fromLTRB(16, 20, 16, 0),
               sliver: SliverToBoxAdapter(
-                child: _StatsRow(
-                  items: _isDriver
+                child: FadeSlideIn(
+                  delay: const Duration(milliseconds: 80),
+                  child: _StatsRow(
+                    items: _isDriver
                       ? [
                           _StatData(
                             label: l10n.homeStatNearby,
@@ -170,6 +178,7 @@ class _HomeScreenState extends State<HomeScreen> {
                             color: AppTheme.success,
                           ),
                         ],
+                  ),
                 ),
               ),
             ),
@@ -177,7 +186,9 @@ class _HomeScreenState extends State<HomeScreen> {
               SliverPadding(
                 padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
                 sliver: SliverToBoxAdapter(
-                  child: Row(
+                  child: FadeSlideIn(
+                    delay: const Duration(milliseconds: 140),
+                    child: Row(
                     children: [
                       Expanded(
                         child: _MiniHintCard(
@@ -200,13 +211,19 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
                 ),
               ),
+            ),
             SliverToBoxAdapter(
-              child: SectionHeader(title: l10n.homeQuickActions),
+              child: FadeSlideIn(
+                delay: const Duration(milliseconds: 180),
+                child: SectionHeader(title: l10n.homeQuickActions),
+              ),
             ),
             SliverPadding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
               sliver: SliverToBoxAdapter(
-                child: _QuickActionsGrid(
+                child: FadeSlideIn(
+                  delay: const Duration(milliseconds: 220),
+                  child: _QuickActionsGrid(
                   actions: _isDriver
                       ? [
                           _QuickAction(
@@ -260,15 +277,19 @@ class _HomeScreenState extends State<HomeScreen> {
                             onTap: () => context.go('/coordinator/nearby-drivers'),
                           ),
                         ],
+                  ),
                 ),
               ),
             ),
             SliverToBoxAdapter(
-              child: SectionHeader(
-                title: _isDriver ? l10n.homeSuggestedCargos : l10n.homeRecentCargos,
-                actionLabel: l10n.homeViewAll,
-                action: () => context.go(
-                  _isDriver ? '/driver/cargos' : '/coordinator/cargos',
+              child: FadeSlideIn(
+                delay: const Duration(milliseconds: 260),
+                child: SectionHeader(
+                  title: _isDriver ? l10n.homeSuggestedCargos : l10n.homeRecentCargos,
+                  actionLabel: l10n.homeViewAll,
+                  action: () => context.go(
+                    _isDriver ? '/driver/cargos' : '/coordinator/cargos',
+                  ),
                 ),
               ),
             ),
@@ -276,41 +297,40 @@ class _HomeScreenState extends State<HomeScreen> {
               SliverPadding(
                 padding: const EdgeInsets.fromLTRB(16, 0, 16, 100),
                 sliver: SliverToBoxAdapter(
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 28),
-                    decoration: BoxDecoration(
-                      color: palette.cardBg,
-                      borderRadius: BorderRadius.circular(20),
-                      boxShadow: palette.cardShadow,
-                    ),
-                    child: Column(
-                      children: [
-                        Icon(
-                          Icons.inventory_2_outlined,
-                          size: 40,
-                          color: AppTheme.primary.withValues(alpha: 0.45),
-                        ),
-                        const SizedBox(height: 12),
-                        Text(
-                          l10n.noCargoFound,
-                          style: TextStyle(
-                            fontWeight: FontWeight.w700,
-                            color: palette.textPrimary,
-                          ),
-                        ),
-                        if (_isDriver) ...[
-                          const SizedBox(height: 6),
+                  child: FadeSlideIn(
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 28),
+                      decoration: BoxDecoration(
+                        color: palette.cardBg,
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(color: palette.divider.withValues(alpha: 0.65)),
+                        boxShadow: palette.cardShadow,
+                      ),
+                      child: Column(
+                        children: [
+                          const EmptyCargoIllustration(),
+                          const SizedBox(height: 16),
                           Text(
-                            l10n.noMatchingCargo,
-                            textAlign: TextAlign.center,
+                            l10n.noCargoFound,
                             style: TextStyle(
-                              fontSize: 13,
-                              color: palette.textSecondary,
-                              height: 1.4,
+                              fontWeight: FontWeight.w700,
+                              color: palette.textPrimary,
                             ),
                           ),
+                          if (_isDriver) ...[
+                            const SizedBox(height: 6),
+                            Text(
+                              l10n.noMatchingCargo,
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                fontSize: 13,
+                                color: palette.textSecondary,
+                                height: 1.4,
+                              ),
+                            ),
+                          ],
                         ],
-                      ],
+                      ),
                     ),
                   ),
                 ),
@@ -324,13 +344,16 @@ class _HomeScreenState extends State<HomeScreen> {
                       final cargo = _recent[index];
                       return Padding(
                         padding: const EdgeInsets.only(bottom: 12),
-                        child: _HomeCargoTile(
-                          cargo: cargo,
-                          showNearby: _isDriver && cargo.isNearby,
-                          onTap: () => context.push(
-                            _isDriver
-                                ? '/driver/cargo/${cargo.id}'
-                                : '/coordinator/cargo/${cargo.id}',
+                        child: FadeSlideIn(
+                          delay: Duration(milliseconds: 80 * index),
+                          child: _HomeCargoTile(
+                            cargo: cargo,
+                            showNearby: _isDriver && cargo.isNearby,
+                            onTap: () => context.push(
+                              _isDriver
+                                  ? '/driver/cargo/${cargo.id}'
+                                  : '/coordinator/cargo/${cargo.id}',
+                            ),
                           ),
                         ),
                       );
@@ -373,54 +396,63 @@ class _HomeHero extends StatelessWidget {
         ],
       ),
       child: Stack(
+        clipBehavior: Clip.none,
         children: [
           Positioned(
-            left: -18,
-            bottom: -28,
+            left: -8,
+            bottom: -6,
             child: Icon(
               Icons.local_shipping_rounded,
               size: 120,
-              color: Colors.white.withValues(alpha: 0.08),
+              color: Colors.white.withValues(alpha: 0.07),
             ),
           ),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.18),
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: Text(
-                  roleLabel,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 12,
-                    fontWeight: FontWeight.w700,
+          Positioned(
+            left: 12,
+            top: 0,
+            child: LogisticsHeroArt(size: 96),
+          ),
+          Padding(
+            padding: const EdgeInsets.only(left: 108),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.18),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Text(
+                    roleLabel,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w700,
+                    ),
                   ),
                 ),
-              ),
-              const SizedBox(height: 14),
-              Text(
-                greeting,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 22,
-                  fontWeight: FontWeight.w800,
-                  letterSpacing: -0.4,
+                const SizedBox(height: 14),
+                Text(
+                  greeting,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 22,
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: -0.4,
+                  ),
                 ),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                subtitle,
-                style: TextStyle(
-                  color: Colors.white.withValues(alpha: 0.9),
-                  fontSize: 13.5,
-                  height: 1.45,
+                const SizedBox(height: 8),
+                Text(
+                  subtitle,
+                  style: TextStyle(
+                    color: Colors.white.withValues(alpha: 0.9),
+                    fontSize: 13.5,
+                    height: 1.45,
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ],
       ),
@@ -473,42 +505,67 @@ class _StatCard extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(12, 14, 12, 14),
       decoration: BoxDecoration(
         color: palette.cardBg,
-        borderRadius: BorderRadius.circular(18),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: data.color.withValues(alpha: 0.14)),
         boxShadow: palette.cardShadow,
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      child: Stack(
+        clipBehavior: Clip.none,
         children: [
-          Container(
-            width: 36,
-            height: 36,
-            decoration: BoxDecoration(
-              color: data.color.withValues(alpha: 0.12),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Icon(data.icon, color: data.color, size: 20),
-          ),
-          const SizedBox(height: 12),
-          Text(
-            data.value,
-            style: TextStyle(
-              fontSize: 22,
-              fontWeight: FontWeight.w800,
-              color: palette.textPrimary,
-              letterSpacing: -0.5,
+          Positioned(
+            top: -18,
+            right: -10,
+            child: Container(
+              width: 56,
+              height: 56,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: data.color.withValues(alpha: 0.08),
+              ),
             ),
           ),
-          const SizedBox(height: 4),
-          Text(
-            data.label,
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis,
-            style: TextStyle(
-              fontSize: 11.5,
-              height: 1.3,
-              fontWeight: FontWeight.w600,
-              color: palette.textSecondary,
-            ),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                width: 38,
+                height: 38,
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [
+                      data.color.withValues(alpha: 0.22),
+                      data.color.withValues(alpha: 0.08),
+                    ],
+                  ),
+                  borderRadius: BorderRadius.circular(13),
+                ),
+                child: Icon(data.icon, color: data.color, size: 20),
+              ),
+              const SizedBox(height: 14),
+              Text(
+                data.value,
+                style: TextStyle(
+                  fontSize: 24,
+                  fontWeight: FontWeight.w800,
+                  color: palette.textPrimary,
+                  letterSpacing: -0.6,
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                data.label,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  fontSize: 11.5,
+                  height: 1.3,
+                  fontWeight: FontWeight.w600,
+                  color: palette.textSecondary,
+                ),
+              ),
+            ],
           ),
         ],
       ),
@@ -615,44 +672,60 @@ class _QuickActionTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final palette = context.palette;
 
-    return Material(
-      color: palette.cardBg,
+    return ScaleTap(
+      onTap: action.onTap,
       borderRadius: BorderRadius.circular(18),
-      child: InkWell(
-        onTap: action.onTap,
+      child: Material(
+        color: palette.cardBg,
         borderRadius: BorderRadius.circular(18),
-        child: Ink(
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(18),
-            boxShadow: palette.cardShadow,
-          ),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-            child: Row(
-              children: [
-                Container(
-                  width: 40,
-                  height: 40,
-                  decoration: BoxDecoration(
-                    color: action.color.withValues(alpha: 0.12),
-                    borderRadius: BorderRadius.circular(12),
+        child: InkWell(
+          onTap: action.onTap,
+          borderRadius: BorderRadius.circular(18),
+          splashColor: action.color.withValues(alpha: 0.1),
+          child: Ink(
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(18),
+              border: Border.all(color: palette.divider.withValues(alpha: 0.7)),
+              boxShadow: palette.cardShadow,
+            ),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+              child: Row(
+                children: [
+                  Container(
+                    width: 40,
+                    height: 40,
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: [
+                          action.color.withValues(alpha: 0.2),
+                          action.color.withValues(alpha: 0.08),
+                        ],
+                      ),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Icon(action.icon, color: action.color, size: 22),
                   ),
-                  child: Icon(action.icon, color: action.color, size: 22),
-                ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: Text(
-                    action.label,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                      fontWeight: FontWeight.w700,
-                      fontSize: 13.5,
-                      color: palette.textPrimary,
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Text(
+                      action.label,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        fontWeight: FontWeight.w700,
+                        fontSize: 13.5,
+                        color: palette.textPrimary,
+                      ),
                     ),
                   ),
-                ),
-              ],
+                  Icon(
+                    Icons.arrow_forward_ios_rounded,
+                    size: 14,
+                    color: palette.textSecondary.withValues(alpha: 0.7),
+                  ),
+                ],
+              ),
             ),
           ),
         ),

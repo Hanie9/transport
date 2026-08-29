@@ -5,6 +5,8 @@ import 'package:provider/provider.dart';
 import '../../core/constants/app_constants.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/widgets/common_widgets.dart';
+import '../../core/widgets/fade_slide_in.dart';
+import '../../core/widgets/modern_app_bar.dart';
 import '../../l10n/app_localizations.dart';
 import '../../services/auth_service.dart';
 import '../../services/cargo_service.dart';
@@ -53,19 +55,29 @@ class _AddCargoScreenState extends State<AddCargoScreen> {
     }
 
     setState(() => _estimating = true);
-    final price = await _cargoService.estimatePrice(
-      origin: _originController.text.trim(),
-      destination: _destinationController.text.trim(),
-      cargoType: _cargoType!,
-      goodsType: _goodsType!,
-      weightTons: double.parse(_weightController.text.trim()),
-    );
+    try {
+      final price = await _cargoService.estimatePrice(
+        origin: _originController.text.trim(),
+        destination: _destinationController.text.trim(),
+        cargoType: _cargoType!,
+        goodsType: _goodsType!,
+        weightTons: double.parse(_weightController.text.trim()),
+      );
 
-    if (mounted) {
-      setState(() {
-        _estimatedPrice = price;
-        _estimating = false;
-      });
+      if (mounted) {
+        setState(() {
+          _estimatedPrice = price;
+          _estimating = false;
+        });
+      }
+    } catch (_) {
+      if (!mounted) return;
+      setState(() => _estimating = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(_cargoService.lastError ?? l10n.fillRouteFields),
+        ),
+      );
     }
   }
 
@@ -85,25 +97,36 @@ class _AddCargoScreenState extends State<AddCargoScreen> {
 
     setState(() => _submitting = true);
     final user = context.read<AuthService>().currentUser;
+    final coordinatorName = user?.fullName ?? l10n.defaultCoordinatorName;
 
-    await _cargoService.createCargo(
-      title: _titleController.text.trim(),
-      origin: _originController.text.trim(),
-      destination: _destinationController.text.trim(),
-      cargoType: _cargoType!,
-      goodsType: _goodsType!,
-      weightTons: double.parse(_weightController.text.trim()),
-      estimatedPrice: _estimatedPrice!,
-      coordinatorName: user?.fullName ?? l10n.defaultCoordinatorName,
-    );
+    try {
+      await _cargoService.createCargo(
+        title: _titleController.text.trim(),
+        origin: _originController.text.trim(),
+        destination: _destinationController.text.trim(),
+        cargoType: _cargoType!,
+        goodsType: _goodsType!,
+        weightTons: double.parse(_weightController.text.trim()),
+        estimatedPrice: _estimatedPrice!,
+        coordinatorName: coordinatorName,
+      );
 
-    if (!mounted) return;
-    setState(() => _submitting = false);
+      if (!mounted) return;
+      setState(() => _submitting = false);
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(l10n.cargoRegistered)),
-    );
-    context.pop();
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(l10n.cargoRegistered)),
+      );
+      context.pop();
+    } catch (_) {
+      if (!mounted) return;
+      setState(() => _submitting = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(_cargoService.lastError ?? l10n.fillRouteFields),
+        ),
+      );
+    }
   }
 
   @override
@@ -111,18 +134,13 @@ class _AddCargoScreenState extends State<AddCargoScreen> {
     final l10n = context.l10n;
 
     return Scaffold(
-      appBar: AppBar(
-        title: Text(l10n.addNewCargo),
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          onPressed: () => context.pop(),
-        ),
-      ),
+      appBar: ModernAppBar(title: l10n.addNewCargo),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(24),
-        child: Form(
-          key: _formKey,
-          child: Column(
+        child: FadeSlideIn(
+          child: Form(
+            key: _formKey,
+            child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               TextFormField(
@@ -252,6 +270,7 @@ class _AddCargoScreenState extends State<AddCargoScreen> {
               ),
             ],
           ),
+        ),
         ),
       ),
     );

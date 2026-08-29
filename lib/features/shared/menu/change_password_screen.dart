@@ -49,6 +49,13 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
       _currentController.clear();
       _newController.clear();
       _confirmController.clear();
+    } else {
+      final msg = context.read<AuthService>().lastError;
+      if (msg != null && msg.isNotEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(msg)),
+        );
+      }
     }
   }
 

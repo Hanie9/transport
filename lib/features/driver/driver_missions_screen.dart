@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import '../../core/theme/app_theme.dart';
 import '../../l10n/app_localizations.dart';
 import '../../core/widgets/common_widgets.dart';
+import '../../core/widgets/fade_slide_in.dart';
 import '../../core/widgets/modern_app_bar.dart';
 import '../../models/cargo.dart';
 import '../../services/auth_service.dart';
@@ -87,12 +88,14 @@ class _DriverMissionsScreenState extends State<DriverMissionsScreen> {
         onRefresh: () => _loadMissions(),
         slivers: [
           SliverToBoxAdapter(
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
-              child: GradientHeaderCard(
-                title: l10n.activeMissionsCount(activeCount),
-                subtitle: l10n.missionsSubtitle,
-                icon: Icons.assignment_outlined,
+            child: FadeSlideIn(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+                child: GradientHeaderCard(
+                  title: l10n.activeMissionsCount(activeCount),
+                  subtitle: l10n.missionsSubtitle,
+                  icon: Icons.assignment_outlined,
+                ),
               ),
             ),
           ),
@@ -131,6 +134,7 @@ class _DriverMissionsScreenState extends State<DriverMissionsScreen> {
             SliverFillRemaining(
               child: EmptyState(
                 icon: Icons.assignment_outlined,
+                useIllustration: true,
                 title: _filter == 'active' ? l10n.noActiveMission : l10n.noMissionFound,
                 subtitle: _filter == 'active' ? l10n.acceptCargoHint : null,
               ),
@@ -144,10 +148,13 @@ class _DriverMissionsScreenState extends State<DriverMissionsScreen> {
                     final mission = _filteredMissions[index];
                     return Padding(
                       padding: const EdgeInsets.only(bottom: 12),
-                      child: _MissionCard(
+                      child: StaggeredItem(
+                        index: index,
+                        child: _MissionCard(
                         mission: mission,
                         onTap: () => context.push('/driver/cargo/${mission.id}'),
                         onRoute: () => context.push('/driver/route/${mission.id}'),
+                        ),
                       ),
                     );
                   },

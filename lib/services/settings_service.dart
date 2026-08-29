@@ -10,6 +10,9 @@ class SettingsService extends ChangeNotifier {
   static const _localeKey = 'locale';
   static const _themeModeKey = 'theme_mode';
 
+  /// App preferences stored in SharedPreferences — survive logout and session
+  /// expiry. They are removed only when the app is uninstalled or app data is cleared.
+
   Locale _locale = const Locale('fa', 'IR');
   ThemeMode _themeMode = ThemeMode.light;
   bool _initialized = false;
