@@ -453,6 +453,22 @@ class AppLocalizations {
   String get maxPrice => _t('حداکثر قیمت', 'Max price');
   String get originOstan => _t('استان مبدا', 'Origin province');
   String get destinationOstan => _t('استان مقصد', 'Destination province');
+  String get coordinatesSection => _t('مختصات جغرافیایی', 'Coordinates');
+  String get coordinatesOptional => _t(
+        'اختیاری — برای نمایش بارهای نزدیک و مسیریابی دقیق‌تر',
+        'Optional — improves nearby cargo and routing accuracy',
+      );
+  String get originLatitude => _t('عرض مبدا', 'Origin latitude');
+  String get originLongitude => _t('طول مبدا', 'Origin longitude');
+  String get destinationLatitude => _t('عرض مقصد', 'Destination latitude');
+  String get destinationLongitude => _t('طول مقصد', 'Destination longitude');
+  String get invalidCoordinate => _t('مختصات نامعتبر است', 'Invalid coordinate');
+  String get profileRefreshed => _t('پروفایل به‌روز شد', 'Profile updated');
+  String get profileRefreshFailed => _t(
+        'به‌روزرسانی پروفایل ممکن نبود. از اطلاعات ذخیره‌شده استفاده می‌شود.',
+        'Could not refresh profile. Using saved account data.',
+      );
+  String get refreshProfile => _t('به‌روزرسانی پروفایل', 'Refresh profile');
   String get deliveryMarkedByCoordinator => _t(
         'پس از تحویل، متصدی وضعیت بار را به‌روزرسانی می‌کند',
         'After delivery, the coordinator will update the cargo status',

@@ -132,7 +132,7 @@ PRODUCT_ID=$(python3 -c "import json; print(json.load(open('$TMP/ref.json'))[0][
 MACHINE_ID=$(curl -sS "$BASE/machines/" -H "Authorization: Bearer $COORD_TOKEN" | python3 -c "import json,sys; print(json.load(sys.stdin)[0]['id'])")
 OSTAN_ID=$(curl -sS "$BASE/ostans/" -H "Authorization: Bearer $COORD_TOKEN" | python3 -c "import json,sys; print(json.load(sys.stdin)[0]['id'])")
 CREATE_BODY=$(cat <<EOF
-{"title":"API smoke test","description":"auto test","price":1000000,"product":$PRODUCT_ID,"machine":$MACHINE_ID,"ostan_mabda":$OSTAN_ID,"ostan_maghsad":$OSTAN_ID,"address_mabda":"تهران","address_maghsad":"اصفهان"}
+{"title":"API smoke test","description":"auto test","price":1000000,"product":$PRODUCT_ID,"machine":$MACHINE_ID,"ostan_mabda":$OSTAN_ID,"ostan_maghsad":$OSTAN_ID,"address_mabda":"تهران","address_maghsad":"اصفهان","latitude_mabda":"35.6892","longitude_mabda":"51.3890","latitude_maghsad":"32.6539","longitude_maghsad":"51.6660"}
 EOF
 )
 code=$(post_auth_json "$BASE/operator/bars/create/" "$CREATE_BODY" "$TMP/create.json" "$COORD_TOKEN")
@@ -146,6 +146,15 @@ info "PATCH /operator/bars/$BAR_ID/update/"
 code=$(patch_json "$BASE/operator/bars/$BAR_ID/update/" '{"description":"patched by smoke test"}' "$TMP/patch.json" "$COORD_TOKEN")
 [[ "$code" == "200" ]] || { cat "$TMP/patch.json"; fail "patch bar HTTP $code"; }
 pass "patch bar OK"
+
+info "PUT /operator/bars/$BAR_ID/update/"
+code=$(curl -sS -o "$TMP/put.json" -w "%{http_code}" --max-time 25 -X PUT \
+  "$BASE/operator/bars/$BAR_ID/update/" \
+  -H "Authorization: Bearer $COORD_TOKEN" \
+  -H "Content-Type: application/json" -H "Accept: application/json" \
+  -d "$CREATE_BODY")
+[[ "$code" == "200" ]] || { cat "$TMP/put.json"; fail "put bar HTTP $code"; }
+pass "put bar OK"
 
 info "GET /operator/bars/$BAR_ID/"
 code=$(get_auth "$BASE/operator/bars/$BAR_ID/" "$COORD_TOKEN" "$TMP/detail.json")

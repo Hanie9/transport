@@ -10,6 +10,7 @@ import '../../models/api_reference_item.dart';
 import '../../models/cargo.dart';
 import '../../services/cargo_service.dart';
 import '../../services/reference_data_service.dart';
+import 'widgets/cargo_coordinates_fields.dart';
 
 class EditCargoScreen extends StatefulWidget {
   const EditCargoScreen({super.key, required this.cargoId});
@@ -29,6 +30,10 @@ class _EditCargoScreenState extends State<EditCargoScreen> {
   final _originController = TextEditingController();
   final _destinationController = TextEditingController();
   final _priceController = TextEditingController();
+  final _originLatController = TextEditingController();
+  final _originLngController = TextEditingController();
+  final _destinationLatController = TextEditingController();
+  final _destinationLngController = TextEditingController();
 
   List<ApiReferenceItem> _products = const [];
   List<ApiReferenceItem> _machines = const [];
@@ -80,6 +85,14 @@ class _EditCargoScreenState extends State<EditCargoScreen> {
     _machineId = cargo.machineId;
     _ostanMabdaId = cargo.ostanMabdaId;
     _ostanMaghsadId = cargo.ostanMaghsadId;
+    if (cargo.originLat != null) _originLatController.text = '${cargo.originLat}';
+    if (cargo.originLng != null) _originLngController.text = '${cargo.originLng}';
+    if (cargo.destinationLat != null) {
+      _destinationLatController.text = '${cargo.destinationLat}';
+    }
+    if (cargo.destinationLng != null) {
+      _destinationLngController.text = '${cargo.destinationLng}';
+    }
 
     if (mounted) setState(() => _loading = false);
   }
@@ -91,6 +104,10 @@ class _EditCargoScreenState extends State<EditCargoScreen> {
     _originController.dispose();
     _destinationController.dispose();
     _priceController.dispose();
+    _originLatController.dispose();
+    _originLngController.dispose();
+    _destinationLatController.dispose();
+    _destinationLngController.dispose();
     super.dispose();
   }
 
@@ -124,6 +141,11 @@ class _EditCargoScreenState extends State<EditCargoScreen> {
       ostanMaghsadId: _ostanMaghsadId,
       addressMabda: _originController.text.trim(),
       addressMaghsad: _destinationController.text.trim(),
+      originLat: CargoCoordinatesFields.parseCoordinate(_originLatController.text),
+      originLng: CargoCoordinatesFields.parseCoordinate(_originLngController.text),
+      destinationLat: CargoCoordinatesFields.parseCoordinate(_destinationLatController.text),
+      destinationLng: CargoCoordinatesFields.parseCoordinate(_destinationLngController.text),
+      fullReplace: !ApiConfig.shouldUseMock,
     );
 
     if (!mounted) return;
@@ -248,6 +270,15 @@ class _EditCargoScreenState extends State<EditCargoScreen> {
                       v == null || v.trim().isEmpty ? l10n.destinationRequired : null,
                 ),
                 const SizedBox(height: 16),
+                if (!ApiConfig.shouldUseMock) ...[
+                  CargoCoordinatesFields(
+                    originLatController: _originLatController,
+                    originLngController: _originLngController,
+                    destinationLatController: _destinationLatController,
+                    destinationLngController: _destinationLngController,
+                  ),
+                  const SizedBox(height: 16),
+                ],
                 TextFormField(
                   controller: _priceController,
                   keyboardType: TextInputType.number,

@@ -88,4 +88,39 @@ abstract final class TransportApiMapper {
     if (o != null && o.isNotEmpty) return o;
     return '';
   }
+
+  /// Builds JSON body for `BarCreateUpdate` / `PatchedBarCreateUpdate`.
+  static Map<String, dynamic> barPayload({
+    String? title,
+    String? description,
+    int? price,
+    int? productId,
+    int? machineId,
+    int? ostanMabdaId,
+    int? ostanMaghsadId,
+    String? addressMabda,
+    String? addressMaghsad,
+    double? originLat,
+    double? originLng,
+    double? destinationLat,
+    double? destinationLng,
+    String? status,
+  }) {
+    return {
+      if (title != null) 'title': title,
+      if (description != null) 'description': description,
+      if (price != null) 'price': price,
+      if (productId != null) 'product': productId,
+      if (machineId != null) 'machine': machineId,
+      if (ostanMabdaId != null) 'ostan_mabda': ostanMabdaId,
+      if (ostanMaghsadId != null) 'ostan_maghsad': ostanMaghsadId,
+      if (addressMabda != null) 'address_mabda': addressMabda,
+      if (addressMaghsad != null) 'address_maghsad': addressMaghsad,
+      if (originLat != null) 'latitude_mabda': originLat.toString(),
+      if (originLng != null) 'longitude_mabda': originLng.toString(),
+      if (destinationLat != null) 'latitude_maghsad': destinationLat.toString(),
+      if (destinationLng != null) 'longitude_maghsad': destinationLng.toString(),
+      if (status != null) 'status': apiStatusForApp(status) ?? status,
+    };
+  }
 }

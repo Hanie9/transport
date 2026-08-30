@@ -541,21 +541,21 @@ class CargoService extends ChangeNotifier {
     if (!ApiConfig.shouldUseMock) {
       final data = await _api.post(
         ApiConfig.operatorBarCreatePath,
-        body: {
-          'title': title,
-          'description': description ?? '$goodsType${weightTons > 0 ? ' - ${weightTons}t' : ''}',
-          'price': estimatedPrice,
-          if (productId != null) 'product': productId,
-          if (machineId != null) 'machine': machineId,
-          if (ostanMabdaId != null) 'ostan_mabda': ostanMabdaId,
-          if (ostanMaghsadId != null) 'ostan_maghsad': ostanMaghsadId,
-          'address_mabda': origin,
-          'address_maghsad': destination,
-          if (originLat != null) 'latitude_mabda': '$originLat',
-          if (originLng != null) 'longitude_mabda': '$originLng',
-          if (destinationLat != null) 'latitude_maghsad': '$destinationLat',
-          if (destinationLng != null) 'longitude_maghsad': '$destinationLng',
-        },
+        body: TransportApiMapper.barPayload(
+          title: title,
+          description: description ?? '$goodsType${weightTons > 0 ? ' - ${weightTons}t' : ''}',
+          price: estimatedPrice,
+          productId: productId,
+          machineId: machineId,
+          ostanMabdaId: ostanMabdaId,
+          ostanMaghsadId: ostanMaghsadId,
+          addressMabda: origin,
+          addressMaghsad: destination,
+          originLat: originLat,
+          originLng: originLng,
+          destinationLat: destinationLat,
+          destinationLng: destinationLng,
+        ),
       );
       final cargo = TransportApiMapper.cargoFromBar(ApiResponse.extractObject(data));
       notifyListeners();
@@ -725,25 +725,37 @@ class CargoService extends ChangeNotifier {
     int? ostanMaghsadId,
     String? addressMabda,
     String? addressMaghsad,
+    double? originLat,
+    double? originLng,
+    double? destinationLat,
+    double? destinationLng,
     String? status,
+    bool fullReplace = false,
   }) async {
     _clearError();
     try {
       if (!ApiConfig.shouldUseMock) {
-        final body = <String, dynamic>{
-          if (title != null) 'title': title,
-          if (description != null) 'description': description,
-          if (price != null) 'price': price,
-          if (productId != null) 'product': productId,
-          if (machineId != null) 'machine': machineId,
-          if (ostanMabdaId != null) 'ostan_mabda': ostanMabdaId,
-          if (ostanMaghsadId != null) 'ostan_maghsad': ostanMaghsadId,
-          if (addressMabda != null) 'address_mabda': addressMabda,
-          if (addressMaghsad != null) 'address_maghsad': addressMaghsad,
-          if (status != null)
-            'status': TransportApiMapper.apiStatusForApp(status) ?? status,
-        };
-        await _api.patch(ApiConfig.operatorBarUpdatePath(cargoId), body: body);
+        final body = TransportApiMapper.barPayload(
+          title: title,
+          description: description,
+          price: price,
+          productId: productId,
+          machineId: machineId,
+          ostanMabdaId: ostanMabdaId,
+          ostanMaghsadId: ostanMaghsadId,
+          addressMabda: addressMabda,
+          addressMaghsad: addressMaghsad,
+          originLat: originLat,
+          originLng: originLng,
+          destinationLat: destinationLat,
+          destinationLng: destinationLng,
+          status: status,
+        );
+        if (fullReplace) {
+          await _api.put(ApiConfig.operatorBarUpdatePath(cargoId), body: body);
+        } else {
+          await _api.patch(ApiConfig.operatorBarUpdatePath(cargoId), body: body);
+        }
         if (status != null) {
           await DriverMissionStore.instance.updateStatus(cargoId, status);
         }

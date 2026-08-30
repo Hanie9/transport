@@ -42,11 +42,25 @@ class _DriverProfileScreen extends StatefulWidget {
 
 class _DriverProfileScreenState extends State<_DriverProfileScreen> {
   late bool _editingVehicle;
+  bool _refreshingProfile = false;
 
   @override
   void initState() {
     super.initState();
     _editingVehicle = widget.editVehicleInitially;
+  }
+
+  Future<void> _refreshProfile() async {
+    if (_refreshingProfile || ApiConfig.shouldUseMock) return;
+    setState(() => _refreshingProfile = true);
+    final ok = await context.read<AuthService>().refreshProfile();
+    if (!mounted) return;
+    setState(() => _refreshingProfile = false);
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(ok ? context.l10n.profileRefreshed : context.l10n.profileRefreshFailed),
+      ),
+    );
   }
 
   Future<void> _saveVehicle(VehicleInfo info) async {
@@ -71,7 +85,23 @@ class _DriverProfileScreenState extends State<_DriverProfileScreen> {
     final vehicle = user?.vehicleInfo;
 
     return Scaffold(
-      appBar: ModernAppBar(title: l10n.profile),
+      appBar: ModernAppBar(
+        title: l10n.profile,
+        actions: [
+          if (!ApiConfig.shouldUseMock)
+            IconButton(
+              tooltip: l10n.refreshProfile,
+              onPressed: _refreshingProfile ? null : _refreshProfile,
+              icon: _refreshingProfile
+                  ? const SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : const Icon(Icons.refresh_rounded),
+            ),
+        ],
+      ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
         child: Column(
@@ -220,8 +250,28 @@ class _InfoRow extends StatelessWidget {
   }
 }
 
-class _CoordinatorProfileScreen extends StatelessWidget {
+class _CoordinatorProfileScreen extends StatefulWidget {
   const _CoordinatorProfileScreen();
+
+  @override
+  State<_CoordinatorProfileScreen> createState() => _CoordinatorProfileScreenState();
+}
+
+class _CoordinatorProfileScreenState extends State<_CoordinatorProfileScreen> {
+  bool _refreshingProfile = false;
+
+  Future<void> _refreshProfile() async {
+    if (_refreshingProfile || ApiConfig.shouldUseMock) return;
+    setState(() => _refreshingProfile = true);
+    final ok = await context.read<AuthService>().refreshProfile();
+    if (!mounted) return;
+    setState(() => _refreshingProfile = false);
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(ok ? context.l10n.profileRefreshed : context.l10n.profileRefreshFailed),
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -229,7 +279,23 @@ class _CoordinatorProfileScreen extends StatelessWidget {
     final user = context.watch<AuthService>().currentUser;
 
     return Scaffold(
-      appBar: ModernAppBar(title: l10n.profile),
+      appBar: ModernAppBar(
+        title: l10n.profile,
+        actions: [
+          if (!ApiConfig.shouldUseMock)
+            IconButton(
+              tooltip: l10n.refreshProfile,
+              onPressed: _refreshingProfile ? null : _refreshProfile,
+              icon: _refreshingProfile
+                  ? const SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : const Icon(Icons.refresh_rounded),
+            ),
+        ],
+      ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
         child: Column(

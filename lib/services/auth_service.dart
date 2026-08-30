@@ -68,6 +68,25 @@ class AuthService extends ChangeNotifier {
     );
   }
 
+  /// Refreshes user from `/accounts/profile` when the server is healthy.
+  Future<bool> refreshProfile() => _tryRefreshProfile();
+
+  Future<bool> _tryRefreshProfile() async {
+    if (ApiConfig.shouldUseMock || _currentUser == null) return true;
+    try {
+      final me = await _api.get(ApiConfig.profilePath);
+      final userJson = me.containsKey('user') && me['user'] is Map
+          ? Map<String, dynamic>.from(me['user'] as Map)
+          : me;
+      _currentUser = User.fromJson(userJson);
+      await _tokens.saveUserJson(jsonEncode(_currentUser!.toJson()));
+      notifyListeners();
+      return true;
+    } catch (_) {
+      return false;
+    }
+  }
+
   Future<void> restoreSession() async {
     if (_restored) return;
     _clearError();
@@ -90,7 +109,7 @@ class AuthService extends ChangeNotifier {
       if (!ApiConfig.shouldUseMock) {
         final token = await _tokens.readAccessToken();
         if (token != null && token.isNotEmpty) {
-          // Keep cached login user — /accounts/profile currently returns HTTP 500.
+          await _tryRefreshProfile();
         } else {
           await _tokens.clear();
           _currentUser = null;
@@ -187,6 +206,9 @@ class AuthService extends ChangeNotifier {
       }
 
       await _tokens.saveUserJson(jsonEncode(_currentUser!.toJson()));
+      if (!ApiConfig.shouldUseMock) {
+        await _tryRefreshProfile();
+      }
       await SessionService().clearBackgroundMarker();
       await NotificationService().init();
       await NotificationService().registerWithBackend();
