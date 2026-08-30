@@ -26,8 +26,6 @@ class ApiClient {
   final http.Client _client;
   final TokenStorage _tokens;
 
-  bool _refreshing = false;
-
   Uri _uri(String path, [Map<String, String>? query]) {
     final base = ApiConfig.apiBaseUrl.replaceAll(RegExp(r'/+$'), '');
     final normalized = path.startsWith('/') ? path : '/$path';
@@ -144,37 +142,8 @@ class ApiClient {
   Future<bool> refreshAccessToken() => _tryRefreshToken();
 
   Future<bool> _tryRefreshToken() async {
-    if (_refreshing) return false;
-    final refresh = await _tokens.readRefreshToken();
-    if (refresh == null || refresh.isEmpty) return false;
-
-    _refreshing = true;
-    try {
-      final response = await _client.post(
-        _uri(ApiConfig.refreshTokenPath),
-        headers: const {
-          'Accept': 'application/json',
-          'Content-Type': 'application/json',
-        },
-        body: jsonEncode({'refresh': refresh}),
-      );
-      if (response.statusCode < 200 || response.statusCode >= 300) {
-        return false;
-      }
-      final raw = utf8.decode(response.bodyBytes);
-      final data = json.decode(raw);
-      if (data is! Map) return false;
-      final map = Map<String, dynamic>.from(data);
-      final access = (map['access'] ?? map['token'] ?? '').toString();
-      if (access.isEmpty) return false;
-      final newRefresh = map['refresh']?.toString();
-      await _tokens.saveTokens(access: access, refresh: newRefresh ?? refresh);
-      return true;
-    } catch (_) {
-      return false;
-    } finally {
-      _refreshing = false;
-    }
+    // Transport API does not expose a token refresh endpoint in OpenAPI.
+    return false;
   }
 
   Future<Map<String, dynamic>> _decode(

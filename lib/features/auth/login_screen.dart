@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
+import '../../api_config.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/widgets/scale_tap.dart';
 import '../../l10n/api_messages.dart';
@@ -469,23 +470,25 @@ class _LoginScreenState extends State<LoginScreen> {
                           child: AuthErrorBanner(message: _error),
                         ),
                       ],
-                      const SizedBox(height: 16),
-                      AuthFormSection(
-                        delay: const Duration(milliseconds: 220),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Text(
-                              l10n.noAccount,
-                              style: TextStyle(color: palette.textSecondary),
-                            ),
-                            TextButton(
-                              onPressed: busy ? null : () => context.go('/signup'),
-                              child: Text(l10n.signup),
-                            ),
-                          ],
+                      if (ApiConfig.shouldUseMock) ...[
+                        const SizedBox(height: 16),
+                        AuthFormSection(
+                          delay: const Duration(milliseconds: 220),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Text(
+                                l10n.noAccount,
+                                style: TextStyle(color: palette.textSecondary),
+                              ),
+                              TextButton(
+                                onPressed: busy ? null : () => context.go('/signup'),
+                                child: Text(l10n.signup),
+                              ),
+                            ],
+                          ),
                         ),
-                      ),
+                      ],
                     ],
                   ),
                 ),

@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../../api_config.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/widgets/location_access_dialog.dart';
 import '../../core/widgets/common_widgets.dart';
@@ -955,10 +956,6 @@ class _RouteScreenState extends State<RouteScreen> {
                     if (!_navigationActive) const SizedBox(height: 8),
                     OutlinedButton(
                       onPressed: () async {
-                        await _cargoService.updateCargoStatus(
-                          cargo.id,
-                          'در حال حمل',
-                        );
                         if (!mounted) return;
                         setState(() {
                           _routeStep = 1;
@@ -976,20 +973,26 @@ class _RouteScreenState extends State<RouteScreen> {
                     ),
                   ] else ...[
                     const SizedBox(height: 8),
-                    OutlinedButton(
-                      onPressed: () async {
-                        await _cargoService.updateCargoStatus(
-                          cargo.id,
-                          'تحویل شده',
-                        );
-                        if (!mounted) return;
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(content: Text(l10n.cargoDelivered)),
-                        );
-                        context.pop();
-                      },
-                      child: Text(l10n.markDelivered),
-                    ),
+                    if (ApiConfig.shouldUseMock)
+                      OutlinedButton(
+                        onPressed: () async {
+                          await _cargoService.updateCargoStatus(
+                            cargo.id,
+                            'تحویل شده',
+                          );
+                          if (!mounted) return;
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(content: Text(l10n.cargoDelivered)),
+                          );
+                          context.pop();
+                        },
+                        child: Text(l10n.markDelivered),
+                      )
+                    else
+                      InfoBanner(
+                        message: l10n.deliveryMarkedByCoordinator,
+                        icon: Icons.info_outline,
+                      ),
                   ],
                 ],
               ),

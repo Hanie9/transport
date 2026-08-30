@@ -20,6 +20,11 @@ class Cargo {
     this.originLng,
     this.destinationLat,
     this.destinationLng,
+    this.description,
+    this.productId,
+    this.machineId,
+    this.ostanMabdaId,
+    this.ostanMaghsadId,
   });
 
   final String id;
@@ -42,6 +47,11 @@ class Cargo {
   final double? originLng;
   final double? destinationLat;
   final double? destinationLng;
+  final String? description;
+  final int? productId;
+  final int? machineId;
+  final int? ostanMabdaId;
+  final int? ostanMaghsadId;
 
   bool get hasOriginCoords => originLat != null && originLng != null;
 
@@ -68,6 +78,11 @@ class Cargo {
     double? originLng,
     double? destinationLat,
     double? destinationLng,
+    String? description,
+    int? productId,
+    int? machineId,
+    int? ostanMabdaId,
+    int? ostanMaghsadId,
   }) {
     return Cargo(
       id: id ?? this.id,
@@ -90,6 +105,11 @@ class Cargo {
       originLng: originLng ?? this.originLng,
       destinationLat: destinationLat ?? this.destinationLat,
       destinationLng: destinationLng ?? this.destinationLng,
+      description: description ?? this.description,
+      productId: productId ?? this.productId,
+      machineId: machineId ?? this.machineId,
+      ostanMabdaId: ostanMabdaId ?? this.ostanMabdaId,
+      ostanMaghsadId: ostanMaghsadId ?? this.ostanMaghsadId,
     );
   }
 

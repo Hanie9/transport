@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
+import '../../api_config.dart';
 import '../../l10n/app_localizations.dart';
 import '../../services/auth_service.dart';
 import '../theme/app_theme.dart';
@@ -109,11 +110,12 @@ class AppDrawer extends StatelessWidget {
                     title: l10n.settings,
                     onTap: () => _navigate(context, '$_basePath/settings'),
                   ),
-                  _DrawerTile(
-                    icon: Icons.lock_outline,
-                    title: l10n.changePassword,
-                    onTap: () => _navigate(context, '$_basePath/change-password'),
-                  ),
+                  if (ApiConfig.shouldUseMock)
+                    _DrawerTile(
+                      icon: Icons.lock_outline,
+                      title: l10n.changePassword,
+                      onTap: () => _navigate(context, '$_basePath/change-password'),
+                    ),
                   const Divider(height: 1, indent: 16, endIndent: 16),
                   _DrawerTile(
                     icon: Icons.help_outline,

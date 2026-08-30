@@ -1,14 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
+import '../api_config.dart';
 import '../core/widgets/app_page_transitions.dart';
 import '../features/auth/login_screen.dart';
 import '../features/auth/signup_screen.dart';
-import '../features/coordinator/active_drivers_screen.dart';
 import '../features/coordinator/add_cargo_screen.dart';
 import '../features/coordinator/cargo_detail_screen.dart' as coordinator;
 import '../features/coordinator/coordinator_home_screen.dart';
-import '../features/coordinator/nearby_drivers_screen.dart';
+import '../features/coordinator/edit_cargo_screen.dart';
 import '../features/driver/cargo_detail_screen.dart';
 import '../features/driver/driver_missions_screen.dart';
 import '../features/driver/driver_home_screen.dart';
@@ -41,6 +41,12 @@ class AppRouter {
         if (isAuth && isAuthRoute) {
           final role = authService.currentUser?.role;
           return role?.name == 'driver' ? '/driver' : '/coordinator';
+        }
+        if (!ApiConfig.shouldUseMock) {
+          if (path == '/signup') return '/login';
+          if (path.endsWith('/change-password')) {
+            return path.replaceAll('/change-password', '/profile');
+          }
         }
         return null;
       },
@@ -190,17 +196,11 @@ class AppRouter {
             ),
             GoRoute(
               path: '/coordinator/drivers',
-              pageBuilder: (context, state) => _noTransition(
-                state,
-                const ActiveDriversScreen(),
-              ),
+              redirect: (_, __) => '/coordinator/cargos',
             ),
             GoRoute(
               path: '/coordinator/nearby-drivers',
-              pageBuilder: (context, state) => _noTransition(
-                state,
-                const NearbyDriversScreen(),
-              ),
+              redirect: (_, __) => '/coordinator/cargos',
             ),
             GoRoute(
               path: '/coordinator/profile',
@@ -251,6 +251,15 @@ class AppRouter {
           pageBuilder: (context, state) => AppPageTransitions.fadeSlide(
             key: state.pageKey,
             child: const AddCargoScreen(),
+          ),
+        ),
+        GoRoute(
+          path: '/coordinator/cargo/:id/edit',
+          pageBuilder: (context, state) => AppPageTransitions.fadeSlide(
+            key: state.pageKey,
+            child: EditCargoScreen(
+              cargoId: state.pathParameters['id']!,
+            ),
           ),
         ),
         GoRoute(

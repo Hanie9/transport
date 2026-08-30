@@ -282,10 +282,10 @@ class AppLocalizations {
   String get homeStatAvailable => _t('قابل پذیرش', 'Available');
   String get homeStatActiveMissions => _t('ماموریت فعال', 'Active');
   String get homeStatTotalCargos => _t('کل بارها', 'Total cargos');
-  String get homeStatActiveDrivers => _t('راننده فعال', 'Active drivers');
-  String get homeStatNearbyDrivers => _t('راننده نزدیک', 'Nearby drivers');
+  String get homeStatActiveDrivers => _t('در انتظار', 'Pending');
+  String get homeStatNearbyDrivers => _t('تخصیص‌یافته', 'Assigned');
   String get homePendingCargos => _t('در انتظار', 'Pending');
-  String get homeInTransit => _t('در حال حمل', 'In transit');
+  String get homeInTransit => _t('تخصیص‌یافته', 'Assigned');
 
   // Driver cargos
   String hello(String name) => _t('سلام $name!', 'Hello $name!');
@@ -382,6 +382,7 @@ class AppLocalizations {
       );
   String get vehicleInfo => _t('اطلاعات خودرو', 'Vehicle info');
   String get edit => _t('ویرایش', 'Edit');
+  String get save => _t('ذخیره', 'Save');
   String get register => _t('ثبت', 'Add');
   String get vehiclePlate => _t('پلاک خودرو', 'License plate');
   String get vehicleModel => _t('مدل خودرو', 'Vehicle model');
@@ -435,6 +436,41 @@ class AppLocalizations {
   String get phone => _t('تلفن', 'Phone');
   String get shippingProgress => _t('پیشرفت حمل', 'Shipping progress');
   String get viewNearbyDrivers => _t('مشاهده رانندگان نزدیک', 'View nearby drivers');
+  String get deleteCargo => _t('حذف بار', 'Delete cargo');
+  String deleteCargoConfirm(String title) =>
+      _t('آیا از حذف بار «$title» اطمینان دارید؟', 'Delete cargo "$title"?');
+  String get delete => _t('حذف', 'Delete');
+  String get cargoDeleted => _t('بار حذف شد', 'Cargo deleted');
+  String cargoStatusUpdated(String status) =>
+      _t('وضعیت به «$status» تغییر کرد', 'Status updated to "$status"');
+  String get markCargoDone => _t('ثبت تحویل', 'Mark delivered');
+  String get cancelCargo => _t('لغو بار', 'Cancel cargo');
+  String get genericError => _t('خطایی رخ داد', 'Something went wrong');
+  String get filterCargos => _t('فیلتر بارها', 'Filter cargos');
+  String get clearFilters => _t('پاک کردن فیلتر', 'Clear filters');
+  String get applyFilters => _t('اعمال فیلتر', 'Apply filters');
+  String get minPrice => _t('حداقل قیمت', 'Min price');
+  String get maxPrice => _t('حداکثر قیمت', 'Max price');
+  String get originOstan => _t('استان مبدا', 'Origin province');
+  String get destinationOstan => _t('استان مقصد', 'Destination province');
+  String get deliveryMarkedByCoordinator => _t(
+        'پس از تحویل، متصدی وضعیت بار را به‌روزرسانی می‌کند',
+        'After delivery, the coordinator will update the cargo status',
+      );
+  String get editCargo => _t('ویرایش بار', 'Edit cargo');
+  String get cargoUpdated => _t('بار به‌روزرسانی شد', 'Cargo updated');
+  String get loadMore => _t('بارگذاری بیشتر', 'Load more');
+  String get missionsSyncNote => _t(
+        'مأموریت‌های پذیرفته‌شده روی این دستگاه ذخیره می‌شوند. '
+            'وضعیت نهایی تحویل توسط متصدی ثبت می‌شود.',
+        'Accepted missions are stored on this device. '
+            'Final delivery status is updated by the coordinator.',
+      );
+  String get selectMachineType => _t('نوع ماشین را انتخاب کنید', 'Select machine type');
+  String get machineSavedLocally => _t(
+        'اطلاعات خودرو روی دستگاه ذخیره شد. تطابق با سرور هنگام پذیرش بار بررسی می‌شود.',
+        'Vehicle info saved on device. Server matching is checked when accepting cargo.',
+      );
 
   // Route
   String get routeTitle => _t('مسیریابی', 'Navigation');
@@ -511,6 +547,13 @@ class AppLocalizations {
   String get weightInvalid => _t('وزن معتبر نیست', 'Invalid weight');
   String get weightTonsLabel => _t('وزن (تن)', 'Weight (tons)');
   String get selectCargoAndGoods => _t('نوع بارگیر و کالا را انتخاب کنید', 'Select trailer and goods type');
+  String get description => _t('توضیحات', 'Description');
+  String get descriptionRequired => _t('توضیحات الزامی است', 'Description is required');
+  String get originProvince => _t('استان مبدا', 'Origin province');
+  String get destinationProvince => _t('استان مقصد', 'Destination province');
+  String get price => _t('قیمت (ریال)', 'Price (IRR)');
+  String get priceRequired => _t('قیمت الزامی است', 'Price is required');
+  String get priceInvalid => _t('قیمت معتبر نیست', 'Invalid price');
   String get fillRouteFields => _t(
         'لطفاً مبدا، مقصد، نوع بارگیر و وزن را وارد کنید',
         'Please enter origin, destination, trailer type, and weight',

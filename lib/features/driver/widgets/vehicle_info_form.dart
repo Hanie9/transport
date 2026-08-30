@@ -1,11 +1,16 @@
 import 'package:flutter/material.dart';
 
+import '../../../api_config.dart';
 import '../../../core/constants/app_constants.dart';
 import '../../../core/models/iranian_plate.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/iranian_plate_widget.dart';
+import '../../../l10n/api_messages.dart';
 import '../../../l10n/app_localizations.dart';
+import '../../../models/api_reference_item.dart';
 import '../../../models/user.dart';
+import '../../../services/reference_data_service.dart';
+import '../../../services/settings_service.dart';
 
 class VehicleInfoForm extends StatefulWidget {
   const VehicleInfoForm({
@@ -30,7 +35,11 @@ class _VehicleInfoFormState extends State<VehicleInfoForm> {
   final _plateKey = GlobalKey<IranianPlateInputState>();
   final _modelController = TextEditingController();
   final _capacityController = TextEditingController();
+  final _referenceData = ReferenceDataService();
   String? _selectedCargoType;
+  int? _selectedMachineId;
+  List<ApiReferenceItem> _machines = const [];
+  bool _loadingMachines = false;
   bool _saving = false;
   IranianPlateData _plateData = const IranianPlateData();
 
@@ -38,6 +47,7 @@ class _VehicleInfoFormState extends State<VehicleInfoForm> {
   void initState() {
     super.initState();
     _loadInitial(widget.initial);
+    _loadMachines();
   }
 
   @override
@@ -48,11 +58,27 @@ class _VehicleInfoFormState extends State<VehicleInfoForm> {
     }
   }
 
+  Future<void> _loadMachines() async {
+    if (ApiConfig.shouldUseMock) return;
+    setState(() => _loadingMachines = true);
+    try {
+      final machines = await _referenceData.getMachines();
+      if (!mounted) return;
+      setState(() {
+        _machines = machines;
+        _loadingMachines = false;
+      });
+    } catch (_) {
+      if (mounted) setState(() => _loadingMachines = false);
+    }
+  }
+
   void _loadInitial(VehicleInfo? vehicle) {
     if (vehicle != null) {
       _plateData = IranianPlateData.parse(vehicle.plateNumber) ?? const IranianPlateData();
       _modelController.text = vehicle.vehicleModel;
       _selectedCargoType = vehicle.cargoType;
+      _selectedMachineId = vehicle.machineId;
       _capacityController.text = vehicle.capacityTons?.toString() ?? '';
     }
   }
@@ -68,20 +94,33 @@ class _VehicleInfoFormState extends State<VehicleInfoForm> {
     final l10n = context.l10n;
     final plateError = _plateKey.currentState?.validate();
     if (!_formKey.currentState!.validate() || plateError != null) return;
-    if (_selectedCargoType == null) {
+
+    if (ApiConfig.shouldUseMock) {
+      if (_selectedCargoType == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(l10n.selectTrailerType)),
+        );
+        return;
+      }
+    } else if (_selectedMachineId == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(l10n.selectTrailerType)),
+        SnackBar(content: Text(l10n.selectMachineType)),
       );
       return;
     }
 
     setState(() => _saving = true);
 
+    final machineName = ApiConfig.shouldUseMock
+        ? _selectedCargoType!
+        : _machines.firstWhere((m) => m.id == _selectedMachineId).name;
+
     final info = VehicleInfo(
       plateNumber: _plateData.toStorageString(),
-      cargoType: _selectedCargoType!,
+      cargoType: machineName,
       vehicleModel: _modelController.text.trim(),
       capacityTons: double.tryParse(_capacityController.text.trim()),
+      machineId: _selectedMachineId,
     );
 
     await widget.onSave(info);
@@ -92,6 +131,7 @@ class _VehicleInfoFormState extends State<VehicleInfoForm> {
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
+    final isEnglish = SettingsService().isEnglish;
 
     return Form(
       key: _formKey,
@@ -121,6 +161,20 @@ class _VehicleInfoFormState extends State<VehicleInfoForm> {
             ),
             const SizedBox(height: 20),
           ],
+          if (!ApiConfig.shouldUseMock) ...[
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: AppTheme.warning.withValues(alpha: 0.08),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Text(
+                ApiMessages.serverMachineNote(isEnglish: isEnglish),
+                style: const TextStyle(fontSize: 12, color: AppTheme.textSecondary),
+              ),
+            ),
+            const SizedBox(height: 16),
+          ],
           IranianPlateInput(
             key: _plateKey,
             initialValue: widget.initial?.plateNumber,
@@ -144,17 +198,41 @@ class _VehicleInfoFormState extends State<VehicleInfoForm> {
                 v == null || v.trim().isEmpty ? l10n.modelRequired : null,
           ),
           const SizedBox(height: 16),
-          DropdownButtonFormField<String>(
-            value: _selectedCargoType,
-            decoration: InputDecoration(
-              labelText: l10n.trailerType,
-              prefixIcon: const Icon(Icons.category_outlined),
+          if (_loadingMachines)
+            const Padding(
+              padding: EdgeInsets.symmetric(vertical: 8),
+              child: Center(child: CircularProgressIndicator()),
+            )
+          else if (!ApiConfig.shouldUseMock)
+            DropdownButtonFormField<int>(
+              value: _selectedMachineId,
+              decoration: InputDecoration(
+                labelText: l10n.trailerType,
+                prefixIcon: const Icon(Icons.category_outlined),
+              ),
+              items: _machines
+                  .map(
+                    (machine) => DropdownMenuItem<int>(
+                      value: machine.id,
+                      child: Text(machine.name),
+                    ),
+                  )
+                  .toList(),
+              onChanged: (v) => setState(() => _selectedMachineId = v),
+              validator: (v) => v == null ? l10n.selectMachineType : null,
+            )
+          else
+            DropdownButtonFormField<String>(
+              value: _selectedCargoType,
+              decoration: InputDecoration(
+                labelText: l10n.trailerType,
+                prefixIcon: const Icon(Icons.category_outlined),
+              ),
+              items: AppConstants.cargoTypes
+                  .map((t) => DropdownMenuItem(value: t, child: Text(l10n.cargoType(t))))
+                  .toList(),
+              onChanged: (v) => setState(() => _selectedCargoType = v),
             ),
-            items: AppConstants.cargoTypes
-                .map((t) => DropdownMenuItem(value: t, child: Text(l10n.cargoType(t))))
-                .toList(),
-            onChanged: (v) => setState(() => _selectedCargoType = v),
-          ),
           const SizedBox(height: 16),
           TextFormField(
             controller: _capacityController,

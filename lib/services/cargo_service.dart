@@ -4,12 +4,16 @@ import 'package:latlong2/latlong.dart';
 import '../api_config.dart';
 import '../l10n/api_messages.dart';
 import '../models/cargo.dart';
+import '../models/driver_bar_query.dart';
 import '../models/driver_profile.dart';
+import '../models/paginated_result.dart';
 import 'api_client.dart';
 import 'api_response.dart';
 import 'location_service.dart';
 import 'notification_service.dart';
+import 'reference_data_service.dart';
 import 'settings_service.dart';
+import 'transport_api_mapper.dart';
 
 /// Cargo / driver facade — REST API at transport.liara.run (or mock).
 class CargoService extends ChangeNotifier {
@@ -128,7 +132,7 @@ class CargoService extends ChangeNotifier {
       goodsType: 'مواد شیمیایی',
       weightTons: 20,
       estimatedPrice: 25600000,
-      status: 'در حال حمل',
+      status: 'تخصیص یافته',
       coordinatorName: 'رضا کریمی',
       distanceKm: 650,
       assignedDriverName: 'علی محمدی',
@@ -242,8 +246,9 @@ class CargoService extends ChangeNotifier {
     _clearError();
     try {
       if (!ApiConfig.shouldUseMock) {
-        final list = await _api.getList(ApiConfig.cargosPath, query: query);
-        return list.map(Cargo.fromJson).toList();
+        final data = await _api.get(ApiConfig.operatorBarsPath, query: query);
+        final list = ApiResponse.extractList(data);
+        return list.map(TransportApiMapper.cargoFromBar).toList();
       }
       await Future<void>.delayed(const Duration(milliseconds: 400));
       return List.unmodifiable(_cargos);
@@ -253,17 +258,56 @@ class CargoService extends ChangeNotifier {
     }
   }
 
-  Future<List<Cargo>> getCargosForDriver(String cargoType) async {
+  Future<PaginatedResult<Cargo>> getDriverBarsPage({
+    DriverBarQuery? query,
+    int page = 1,
+  }) async {
     if (!ApiConfig.shouldUseMock) {
       try {
-        final list = await _api.getList(
-          ApiConfig.cargosPath,
-          query: {
-            'status': 'در انتظار راننده',
-            'cargo_type': cargoType,
-          },
+        final params = {
+          ...?query?.toQueryParameters(),
+          'page': '$page',
+        };
+        final data = await _api.get(ApiConfig.driverBarsPath, query: params);
+        final list = ApiResponse.extractList(data);
+        final meta = ApiResponse.extractPagination(data);
+        return PaginatedResult(
+          items: list.map(TransportApiMapper.cargoFromBar).toList(),
+          count: meta.count,
+          currentPage: meta.currentPage,
+          totalPages: meta.totalPages,
+          hasNext: meta.hasNext,
         );
-        return list.map(Cargo.fromJson).toList();
+      } catch (e) {
+        _setError(e);
+        return const PaginatedResult(
+          items: [],
+          count: 0,
+          currentPage: 1,
+          totalPages: 1,
+          hasNext: false,
+        );
+      }
+    }
+
+    final all = await getCargosForDriver('');
+    return PaginatedResult(
+      items: all,
+      count: all.length,
+      currentPage: 1,
+      totalPages: 1,
+      hasNext: false,
+    );
+  }
+
+  Future<List<Cargo>> getCargosForDriver(
+    String cargoType, {
+    DriverBarQuery? query,
+  }) async {
+    if (!ApiConfig.shouldUseMock) {
+      try {
+        final page = await getDriverBarsPage(query: query);
+        return page.items;
       } catch (e) {
         _setError(e);
         return const [];
@@ -287,16 +331,34 @@ class CargoService extends ChangeNotifier {
 
     if (!ApiConfig.shouldUseMock) {
       try {
-        final list = await _api.getList(
-          ApiConfig.nearbyCargosPath,
-          query: {
-            'lat': '${pos.latitude}',
-            'lng': '${pos.longitude}',
-            'radius_km': '$radiusKm',
-            if (cargoType != null) 'cargo_type': cargoType,
-          },
+        final open = await getCargosForDriver(cargoType ?? '');
+        final pos = driverPosition ?? await _location.getCurrentPosition(requestIfNeeded: false);
+        if (pos == null) {
+          return open
+              .map((c) => c.copyWith(isNearby: true))
+              .toList();
+        }
+
+        final results = <Cargo>[];
+        for (final cargo in open) {
+          if (!cargo.hasOriginCoords) continue;
+          final km = _location.distanceKm(
+            pos,
+            LatLng(cargo.originLat!, cargo.originLng!),
+          );
+          if (km <= radiusKm) {
+            results.add(
+              cargo.copyWith(
+                isNearby: true,
+                nearbyDistanceKm: double.parse(km.toStringAsFixed(1)),
+              ),
+            );
+          }
+        }
+        results.sort(
+          (a, b) => (a.nearbyDistanceKm ?? 0).compareTo(b.nearbyDistanceKm ?? 0),
         );
-        return list.map(Cargo.fromJson).toList();
+        return results;
       } catch (e) {
         _setError(e);
         return const [];
@@ -334,11 +396,9 @@ class CargoService extends ChangeNotifier {
   Future<List<Cargo>> getCoordinatorCargos() async {
     if (!ApiConfig.shouldUseMock) {
       try {
-        final list = await _api.getList(
-          ApiConfig.cargosPath,
-          query: const {'mine': 'true'},
-        );
-        return list.map(Cargo.fromJson).toList();
+        final data = await _api.get(ApiConfig.operatorBarsPath);
+        final list = ApiResponse.extractList(data);
+        return list.map(TransportApiMapper.cargoFromBar).toList();
       } catch (e) {
         _setError(e);
         return const [];
@@ -349,12 +409,32 @@ class CargoService extends ChangeNotifier {
     return List.unmodifiable(_cargos);
   }
 
+  Future<Cargo?> _findOpenDriverBar(String id, {DriverBarQuery? query}) async {
+    var page = 1;
+    while (true) {
+      final result = await getDriverBarsPage(query: query, page: page);
+      for (final cargo in result.items) {
+        if (cargo.id == id) return cargo;
+      }
+      if (!result.hasNext) break;
+      page += 1;
+    }
+    return null;
+  }
+
   Future<Cargo?> getCargoById(String id) async {
     _clearError();
     try {
       if (!ApiConfig.shouldUseMock) {
-        final data = await _api.get(ApiConfig.cargoDetailPath(id));
-        return Cargo.fromJson(data);
+        try {
+          final data = await _api.get(ApiConfig.operatorBarDetailPath(id));
+          return TransportApiMapper.cargoFromBar(ApiResponse.extractObject(data));
+        } catch (_) {}
+
+        final open = await _findOpenDriverBar(id);
+        if (open != null) return open;
+
+        return DriverMissionStore.instance.findById(id);
       }
       await Future<void>.delayed(const Duration(milliseconds: 200));
       try {
@@ -370,14 +450,10 @@ class CargoService extends ChangeNotifier {
 
   Future<List<DriverProfile>> getActiveDrivers() async {
     _clearError();
+    if (!ApiConfig.shouldUseMock) {
+      return const [];
+    }
     try {
-      if (!ApiConfig.shouldUseMock) {
-        final list = await _api.getList(
-          ApiConfig.driversPath,
-          query: const {'active': 'true'},
-        );
-        return list.map(DriverProfile.fromJson).toList();
-      }
       await Future<void>.delayed(const Duration(milliseconds: 400));
       return _drivers.where((d) => d.isActive).toList();
     } catch (e) {
@@ -393,20 +469,7 @@ class CargoService extends ChangeNotifier {
   }) async {
     _clearError();
     if (!ApiConfig.shouldUseMock) {
-      try {
-        final list = await _api.getList(
-          ApiConfig.nearbyDriversPath,
-          query: {
-            if (originLat != null) 'lat': '$originLat',
-            if (originLng != null) 'lng': '$originLng',
-            'radius_km': '$radiusKm',
-          },
-        );
-        return list.map(DriverProfile.fromJson).toList();
-      } catch (e) {
-        _setError(e);
-        return const [];
-      }
+      return const [];
     }
 
     await Future<void>.delayed(const Duration(milliseconds: 350));
@@ -441,17 +504,10 @@ class CargoService extends ChangeNotifier {
   }) async {
     _clearError();
     if (!ApiConfig.shouldUseMock) {
-      final data = await _api.post(
-        ApiConfig.estimatePricePath,
-        body: {
-          'origin': origin,
-          'destination': destination,
-          'cargo_type': cargoType,
-          'goods_type': goodsType,
-          'weight_tons': weightTons,
-        },
-      );
-      return int.tryParse('${data['estimated_price'] ?? data['price'] ?? 0}') ?? 0;
+      final base = 5000000;
+      final distanceFactor = (origin.length + destination.length) * 150000;
+      final weightFactor = (weightTons * 200000).toInt();
+      return base + distanceFactor + weightFactor;
     }
 
     await Future<void>.delayed(const Duration(milliseconds: 600));
@@ -471,6 +527,11 @@ class CargoService extends ChangeNotifier {
     required double weightTons,
     required int estimatedPrice,
     String? coordinatorName,
+    String? description,
+    int? productId,
+    int? machineId,
+    int? ostanMabdaId,
+    int? ostanMaghsadId,
     double? originLat,
     double? originLng,
     double? destinationLat,
@@ -479,22 +540,24 @@ class CargoService extends ChangeNotifier {
     _clearError();
     if (!ApiConfig.shouldUseMock) {
       final data = await _api.post(
-        ApiConfig.cargosPath,
+        ApiConfig.operatorBarCreatePath,
         body: {
           'title': title,
-          'origin': origin,
-          'destination': destination,
-          'cargo_type': cargoType,
-          'goods_type': goodsType,
-          'weight_tons': weightTons,
-          'estimated_price': estimatedPrice,
-          if (originLat != null) 'origin_lat': originLat,
-          if (originLng != null) 'origin_lng': originLng,
-          if (destinationLat != null) 'destination_lat': destinationLat,
-          if (destinationLng != null) 'destination_lng': destinationLng,
+          'description': description ?? '$goodsType${weightTons > 0 ? ' - ${weightTons}t' : ''}',
+          'price': estimatedPrice,
+          if (productId != null) 'product': productId,
+          if (machineId != null) 'machine': machineId,
+          if (ostanMabdaId != null) 'ostan_mabda': ostanMabdaId,
+          if (ostanMaghsadId != null) 'ostan_maghsad': ostanMaghsadId,
+          'address_mabda': origin,
+          'address_maghsad': destination,
+          if (originLat != null) 'latitude_mabda': '$originLat',
+          if (originLng != null) 'longitude_mabda': '$originLng',
+          if (destinationLat != null) 'latitude_maghsad': '$destinationLat',
+          if (destinationLng != null) 'longitude_maghsad': '$destinationLng',
         },
       );
-      final cargo = Cargo.fromJson(data);
+      final cargo = TransportApiMapper.cargoFromBar(ApiResponse.extractObject(data));
       notifyListeners();
       return cargo;
     }
@@ -529,31 +592,18 @@ class CargoService extends ChangeNotifier {
   }) async {
     _clearError();
     if (!ApiConfig.shouldUseMock) {
-      try {
-        final list = await _api.getList(ApiConfig.driverMissionsPath);
-        return list.map(Cargo.fromJson).toList()
-          ..sort(
-            (a, b) =>
-                (b.createdAt ?? DateTime(0)).compareTo(a.createdAt ?? DateTime(0)),
-          );
-      } catch (_) {
-        // Fallback: filter assigned cargos client-side.
-        final all = await getAllCargos();
-        return all
-            .where(
-              (c) =>
-                  c.status != 'در انتظار راننده' &&
-                  c.status != 'لغو شده' &&
-                  (driverPhone == null ||
-                      c.assignedDriverPhone == driverPhone ||
-                      (driverName != null && c.assignedDriverName == driverName)),
-            )
-            .toList()
-          ..sort(
-            (a, b) =>
-                (b.createdAt ?? DateTime(0)).compareTo(a.createdAt ?? DateTime(0)),
-          );
-      }
+      final missions = await DriverMissionStore.instance.load();
+      final filtered = missions.where((mission) {
+        if (driverPhone == null && driverName == null) return true;
+        if (driverPhone != null && mission.assignedDriverPhone == driverPhone) {
+          return true;
+        }
+        return driverName != null && mission.assignedDriverName == driverName;
+      }).toList();
+      filtered.sort(
+        (a, b) => (b.createdAt ?? DateTime(0)).compareTo(a.createdAt ?? DateTime(0)),
+      );
+      return filtered;
     }
 
     final all = await getAllCargos();
@@ -575,18 +625,53 @@ class CargoService extends ChangeNotifier {
   Future<bool> acceptCargo(
     String cargoId,
     String driverName,
-    String driverPhone,
-  ) async {
+    String driverPhone, {
+    int? driverMachineId,
+  }) async {
     _clearError();
     try {
       if (!ApiConfig.shouldUseMock) {
-        await _api.post(
-          ApiConfig.acceptCargoPathFor(cargoId),
-          body: {
-            'driver_name': driverName,
-            'driver_phone': driverPhone,
-          },
+        final existing = await getCargoById(cargoId);
+        if (existing != null &&
+            existing.machineId != null &&
+            driverMachineId != null &&
+            existing.machineId != driverMachineId) {
+          throw ApiException(
+            ApiMessages.machineMismatch(
+              isEnglish: SettingsService().isEnglish,
+              requiredMachine: existing.cargoType,
+            ),
+          );
+        }
+
+        final response = await _api.post(ApiConfig.driverBarAcceptPath(cargoId));
+        if (response['error'] != null) {
+          throw ApiException(response['error'].toString());
+        }
+
+        final assign = response['assign_info'];
+        Map<String, dynamic>? assignMap;
+        if (assign is Map) {
+          assignMap = Map<String, dynamic>.from(assign);
+        }
+
+        final mission = (existing ?? Cargo(
+          id: cargoId,
+          title: '',
+          origin: '',
+          destination: '',
+          cargoType: '',
+          goodsType: '',
+          weightTons: 0,
+          estimatedPrice: 0,
+          status: 'تخصیص یافته',
+          coordinatorName: '',
+        )).copyWith(
+          status: 'تخصیص یافته',
+          assignedDriverName: assignMap?['driver_name']?.toString() ?? driverName,
+          assignedDriverPhone: assignMap?['driver_phone']?.toString() ?? driverPhone,
         );
+        await DriverMissionStore.instance.upsert(mission);
         notifyListeners();
         NotificationService().pushLocal('بار پذیرفته شد');
         return true;
@@ -609,23 +694,18 @@ class CargoService extends ChangeNotifier {
     }
   }
 
-  Future<bool> updateCargoStatus(String cargoId, String status) async {
+  Future<bool> deleteCargo(String cargoId) async {
     _clearError();
     try {
       if (!ApiConfig.shouldUseMock) {
-        await _api.patch(
-          ApiConfig.cargoStatusPathFor(cargoId),
-          body: {'status': status},
-        );
+        await _api.delete(ApiConfig.operatorBarDeletePath(cargoId));
+        await DriverMissionStore.instance.remove(cargoId);
         notifyListeners();
         return true;
       }
 
-      await Future<void>.delayed(const Duration(milliseconds: 400));
-      final index = _cargos.indexWhere((c) => c.id == cargoId);
-      if (index == -1) return false;
-      _cargos[index] = _cargos[index].copyWith(status: status);
-      NotificationService().pushLocal('وضعیت بار به «$status» تغییر کرد');
+      await Future<void>.delayed(const Duration(milliseconds: 300));
+      _cargos.removeWhere((c) => c.id == cargoId);
       notifyListeners();
       return true;
     } catch (e) {
@@ -634,23 +714,71 @@ class CargoService extends ChangeNotifier {
     }
   }
 
+  Future<bool> updateCargo({
+    required String cargoId,
+    String? title,
+    String? description,
+    int? price,
+    int? productId,
+    int? machineId,
+    int? ostanMabdaId,
+    int? ostanMaghsadId,
+    String? addressMabda,
+    String? addressMaghsad,
+    String? status,
+  }) async {
+    _clearError();
+    try {
+      if (!ApiConfig.shouldUseMock) {
+        final body = <String, dynamic>{
+          if (title != null) 'title': title,
+          if (description != null) 'description': description,
+          if (price != null) 'price': price,
+          if (productId != null) 'product': productId,
+          if (machineId != null) 'machine': machineId,
+          if (ostanMabdaId != null) 'ostan_mabda': ostanMabdaId,
+          if (ostanMaghsadId != null) 'ostan_maghsad': ostanMaghsadId,
+          if (addressMabda != null) 'address_mabda': addressMabda,
+          if (addressMaghsad != null) 'address_maghsad': addressMaghsad,
+          if (status != null)
+            'status': TransportApiMapper.apiStatusForApp(status) ?? status,
+        };
+        await _api.patch(ApiConfig.operatorBarUpdatePath(cargoId), body: body);
+        if (status != null) {
+          await DriverMissionStore.instance.updateStatus(cargoId, status);
+        }
+        notifyListeners();
+        return true;
+      }
+
+      await Future<void>.delayed(const Duration(milliseconds: 300));
+      final index = _cargos.indexWhere((c) => c.id == cargoId);
+      if (index == -1) return false;
+      _cargos[index] = _cargos[index].copyWith(
+        title: title,
+        description: description,
+        estimatedPrice: price,
+        status: status,
+      );
+      if (status != null) {
+        NotificationService().pushLocal('وضعیت بار به «$status» تغییر کرد');
+      }
+      notifyListeners();
+      return true;
+    } catch (e) {
+      _setError(e);
+      return false;
+    }
+  }
+
+  Future<bool> updateCargoStatus(String cargoId, String status) async {
+    return updateCargo(cargoId: cargoId, status: status);
+  }
+
   Future<void> reportDriverLocation({
     required double lat,
     required double lng,
   }) async {
-    if (!ApiConfig.shouldUseMock) {
-      try {
-        await _api.post(
-          ApiConfig.reportLocationPath,
-          body: {
-            'lat': lat,
-            'lng': lng,
-            'reported_at': DateTime.now().toIso8601String(),
-          },
-        );
-      } catch (_) {
-        // Best-effort background ping.
-      }
-    }
+    if (ApiConfig.shouldUseMock) return;
   }
 }

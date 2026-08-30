@@ -68,14 +68,6 @@ class AuthService extends ChangeNotifier {
     );
   }
 
-  Future<User?> _fetchMe() async {
-    final me = await _api.get(ApiConfig.mePath);
-    final user = User.fromJson(me);
-    _currentUser = user;
-    await _tokens.saveUserJson(jsonEncode(user.toJson()));
-    return user;
-  }
-
   Future<void> restoreSession() async {
     if (_restored) return;
     _clearError();
@@ -98,7 +90,7 @@ class AuthService extends ChangeNotifier {
       if (!ApiConfig.shouldUseMock) {
         final token = await _tokens.readAccessToken();
         if (token != null && token.isNotEmpty) {
-          await _fetchMe();
+          // Keep cached login user — /accounts/profile currently returns HTTP 500.
         } else {
           await _tokens.clear();
           _currentUser = null;
@@ -157,27 +149,41 @@ class AuthService extends ChangeNotifier {
         final data = await _api.post(
           ApiConfig.loginPath,
           body: {
-            'phone': normalizeIranPhone(phone),
+            'phone_number': normalizeIranPhone(phone),
             'password': password,
-            'role': role.apiValue,
           },
         );
-        final access = (data['access'] ?? data['token'] ?? '').toString();
+
+        final userMap = data['user'];
+        if (userMap is! Map) {
+          throw ApiException(
+            ApiMessages.loginTokenMissing(isEnglish: _isEnglish),
+          );
+        }
+        final userJson = Map<String, dynamic>.from(userMap);
+        if (!UserRole.matchesApiUser(userJson, role)) {
+          throw ApiException(
+            ApiMessages.roleMismatch(isEnglish: _isEnglish, role: role),
+          );
+        }
+
+        final tokens = data['tokens'];
+        String access = '';
+        String? refresh;
+        if (tokens is Map) {
+          access = (tokens['access'] ?? '').toString();
+          refresh = tokens['refresh']?.toString();
+        }
+        access = access.isNotEmpty ? access : (data['access'] ?? data['token'] ?? '').toString();
+        refresh ??= data['refresh']?.toString();
         if (access.isEmpty) {
           throw ApiException(
             ApiMessages.loginTokenMissing(isEnglish: _isEnglish),
           );
         }
-        final refresh = data['refresh']?.toString();
         await _tokens.saveTokens(access: access, refresh: refresh);
 
-        if (data['user'] is Map) {
-          _currentUser = User.fromJson(
-            Map<String, dynamic>.from(data['user'] as Map),
-          );
-        } else {
-          await _fetchMe();
-        }
+        _currentUser = User.fromJson(userJson);
       }
 
       await _tokens.saveUserJson(jsonEncode(_currentUser!.toJson()));
@@ -218,36 +224,9 @@ class AuthService extends ChangeNotifier {
         );
         await _tokens.saveTokens(access: 'mock-access-token', refresh: 'mock-refresh');
       } else {
-        final data = await _api.post(
-          ApiConfig.signupPath,
-          body: {
-            'full_name': fullName,
-            'phone': normalizeIranPhone(phone),
-            'password': password,
-            'role': role.apiValue,
-            if (email != null && email.isNotEmpty) 'email': email,
-          },
+        throw ApiException(
+          ApiMessages.signupUnavailable(isEnglish: _isEnglish),
         );
-
-        final access = (data['access'] ?? data['token'] ?? '').toString();
-        if (access.isNotEmpty) {
-          final refresh = data['refresh']?.toString();
-          await _tokens.saveTokens(access: access, refresh: refresh);
-          if (data['user'] is Map) {
-            _currentUser = User.fromJson(
-              Map<String, dynamic>.from(data['user'] as Map),
-            );
-          } else {
-            await _fetchMe();
-          }
-        } else {
-          // Some backends only create the user — log in right after signup.
-          return login(
-            phone: normalizeIranPhone(phone),
-            password: password,
-            role: role,
-          );
-        }
       }
 
       await _tokens.saveUserJson(jsonEncode(_currentUser!.toJson()));
@@ -269,14 +248,8 @@ class AuthService extends ChangeNotifier {
     _clearError();
     if (ApiConfig.shouldUseMock) {
       await Future<void>.delayed(const Duration(milliseconds: 500));
-      _currentUser = _currentUser!.copyWith(vehicleInfo: info);
-    } else {
-      final data = await _api.put(ApiConfig.vehiclePath, body: info.toJson());
-      final updated = data.isNotEmpty && data.containsKey('plate_number')
-          ? VehicleInfo.fromJson(data)
-          : info;
-      _currentUser = _currentUser!.copyWith(vehicleInfo: updated);
     }
+    _currentUser = _currentUser!.copyWith(vehicleInfo: info);
     await _tokens.saveUserJson(jsonEncode(_currentUser!.toJson()));
     notifyListeners();
   }
@@ -294,19 +267,8 @@ class AuthService extends ChangeNotifier {
       }
       return true;
     }
-    try {
-      await _api.post(
-        ApiConfig.changePasswordPath,
-        body: {
-          'current_password': currentPassword,
-          'new_password': newPassword,
-        },
-      );
-      return true;
-    } catch (e) {
-      _setError(e);
-      return false;
-    }
+    _lastError = ApiMessages.featureUnavailable(isEnglish: _isEnglish);
+    return false;
   }
 
   Future<void> logout() async {

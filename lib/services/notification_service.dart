@@ -1,19 +1,13 @@
-import 'dart:io' show Platform;
-
 import 'package:flutter/foundation.dart';
 
 import '../api_config.dart';
-import 'api_client.dart';
 
 /// Push notification registration against the transport backend.
 class NotificationService extends ChangeNotifier {
-  NotificationService._({ApiClient? apiClient})
-      : _api = apiClient ?? ApiClient();
+  NotificationService._();
 
   static final NotificationService _instance = NotificationService._();
   factory NotificationService() => _instance;
-
-  final ApiClient _api;
 
   bool _initialized = false;
   String? _deviceToken;
@@ -34,30 +28,8 @@ class NotificationService extends ChangeNotifier {
   }
 
   Future<void> registerWithBackend() async {
+    // Transport API has no device registration endpoint in OpenAPI yet.
     if (ApiConfig.shouldUseMock) return;
-    final token = _deviceToken;
-    if (token == null || token.isEmpty) return;
-
-    try {
-      await _api.post(
-        ApiConfig.devicesPath,
-        body: {
-          'token': token,
-          'platform': _platformLabel(),
-        },
-      );
-    } catch (_) {
-      // Non-fatal — app works without push registration.
-    }
-  }
-
-  String _platformLabel() {
-    if (kIsWeb) return 'web';
-    try {
-      return Platform.operatingSystem;
-    } catch (_) {
-      return 'unknown';
-    }
   }
 
   void pushLocal(String message) {

@@ -1,3 +1,5 @@
+import '../models/user_role.dart';
+
 /// User-facing API / backend error strings (no BuildContext required).
 abstract final class ApiMessages {
   static String t(String fa, String en, {required bool isEnglish}) =>
@@ -64,8 +66,47 @@ abstract final class ApiMessages {
   static String loginTokenMissing({required bool isEnglish}) =>
       t('توکن ورود دریافت نشد.', 'Login token was not received.', isEnglish: isEnglish);
 
+  static String signupUnavailable({required bool isEnglish}) =>
+      t(
+        'ثبت‌نام از طریق اپ فعلاً امکان‌پذیر نیست. با پشتیبانی تماس بگیرید.',
+        'Sign-up via the app is not available yet. Please contact support.',
+        isEnglish: isEnglish,
+      );
+
+  static String roleMismatch({required bool isEnglish, required UserRole role}) {
+    final fa = role == UserRole.driver
+        ? 'این حساب برای نقش راننده مجاز نیست.'
+        : 'این حساب برای نقش متصدی مجاز نیست.';
+    final en = role == UserRole.driver
+        ? 'This account is not authorized as a driver.'
+        : 'This account is not authorized as a coordinator.';
+    return t(fa, en, isEnglish: isEnglish);
+  }
+
+  static String featureUnavailable({required bool isEnglish}) =>
+      t('این قابلیت در سرور فعال نیست.', 'This feature is not available on the server.', isEnglish: isEnglish);
+
   static String invalidPassword({required bool isEnglish}) =>
       t('رمز عبور نامعتبر است.', 'Invalid password.', isEnglish: isEnglish);
+
+  static String machineMismatch({
+    required bool isEnglish,
+    required String requiredMachine,
+  }) =>
+      t(
+        'این بار برای ماشین «$requiredMachine» است و با ماشین ثبت‌شده شما هم‌خوانی ندارد.',
+        'This cargo requires a "$requiredMachine" and does not match your registered machine.',
+        isEnglish: isEnglish,
+      );
+
+  static String serverMachineNote({required bool isEnglish}) =>
+      t(
+        'بارهای قابل مشاهده توسط سرور بر اساس ماشین حساب شما فیلتر می‌شوند. '
+            'در صورت عدم تطابق، با پشتیبانی تماس بگیرید.',
+        'Visible cargos are filtered by the machine linked to your account on the server. '
+            'Contact support if they do not match.',
+        isEnglish: isEnglish,
+      );
 
   static String sessionExpired({required bool isEnglish}) =>
       t(

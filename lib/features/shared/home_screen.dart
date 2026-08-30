@@ -64,7 +64,7 @@ class _HomeScreenState extends State<HomeScreen> {
         driverName: user.fullName,
       );
       final active = missions
-          .where((c) => c.status == 'تخصیص یافته' || c.status == 'در حال حمل')
+          .where((c) => c.status == 'تخصیص یافته')
           .length;
       if (!mounted) return;
       setState(() {
@@ -78,17 +78,15 @@ class _HomeScreenState extends State<HomeScreen> {
       final cargos = await _cargoService.getCoordinatorCargos();
       final allCargos =
           cargos.isNotEmpty ? cargos : await _cargoService.getAllCargos();
-      final drivers = await _cargoService.getActiveDrivers();
-      final nearby = await _cargoService.getNearbyDrivers();
       final pending = allCargos.where((c) => c.status == 'در انتظار راننده').length;
-      final inTransit = allCargos.where((c) => c.status == 'در حال حمل').length;
+      final assigned = allCargos.where((c) => c.status == 'تخصیص یافته').length;
       if (!mounted) return;
       setState(() {
         _stat1 = allCargos.length;
-        _stat2 = drivers.length;
-        _stat3 = nearby.length;
+        _stat2 = pending;
+        _stat3 = assigned;
         _pendingHint = pending;
-        _inTransitHint = inTransit;
+        _inTransitHint = assigned;
         _recent = allCargos.take(3).toList();
         _loading = false;
       });
@@ -265,16 +263,16 @@ class _HomeScreenState extends State<HomeScreen> {
                             onTap: () => context.go('/coordinator/cargos'),
                           ),
                           _QuickAction(
-                            icon: Icons.people_outline,
-                            label: l10n.drivers,
+                            icon: Icons.person_outline,
+                            label: l10n.profile,
                             color: AppTheme.success,
-                            onTap: () => context.go('/coordinator/drivers'),
+                            onTap: () => context.go('/coordinator/profile'),
                           ),
                           _QuickAction(
-                            icon: Icons.near_me_outlined,
-                            label: l10n.nearbyDrivers,
+                            icon: Icons.help_outline_rounded,
+                            label: l10n.help,
                             color: AppTheme.primaryLight,
-                            onTap: () => context.go('/coordinator/nearby-drivers'),
+                            onTap: () => context.push('/coordinator/help'),
                           ),
                         ],
                   ),

@@ -24,40 +24,32 @@ class ApiConfig {
   /// When false and base URL is set, remote repositories are used.
   static bool get shouldUseMock => useMockApi || !hasApiBaseUrl;
 
-  // ── Auth ──────────────────────────────────────────────────────────────────
-  static const String loginPath = '/auth/login/';
-  static const String signupPath = '/auth/register/';
-  static const String refreshTokenPath = '/auth/refresh/';
-  static const String mePath = '/auth/me/';
-  static const String changePasswordPath = '/auth/change-password/';
-  static const String logoutPath = '/auth/logout/';
+  // ── Accounts (no trailing slash) ───────────────────────────────────────────
+  static const String loginPath = '/accounts/login';
+  static const String logoutPath = '/accounts/logout';
+  static const String profilePath = '/accounts/profile';
 
-  // ── Drivers ───────────────────────────────────────────────────────────────
-  static const String vehiclePath = '/drivers/vehicle/';
-  static const String driversPath = '/drivers/';
-  static const String nearbyDriversPath = '/drivers/nearby/';
-  static const String reportLocationPath = '/drivers/location/';
-  static const String driverMissionsPath = '/drivers/missions/';
+  // ── Operator (coordinator) bars ────────────────────────────────────────────
+  static const String operatorBarsPath = '/operator/bars/';
+  static const String operatorBarCreatePath = '/operator/bars/create/';
 
-  // ── Cargos ────────────────────────────────────────────────────────────────
-  static const String cargosPath = '/cargos/';
-  static const String nearbyCargosPath = '/cargos/nearby/';
-  static const String estimatePricePath = '/cargos/estimate-price/';
+  static String operatorBarDetailPath(String id) => '/operator/bars/$id/';
 
-  static String cargoDetailPath(String id) => '/cargos/$id/';
+  static String operatorBarUpdatePath(String id) => '/operator/bars/$id/update/';
 
-  static String acceptCargoPathFor(String id) => '/cargos/$id/accept/';
+  static String operatorBarDeletePath(String id) => '/operator/bars/$id/delete/';
 
-  static String cargoStatusPathFor(String id) => '/cargos/$id/status/';
+  // ── Driver bars ────────────────────────────────────────────────────────────
+  static const String driverBarsPath = '/driver/bars/';
 
-  // Legacy placeholders (prefer helpers above).
-  static const String acceptCargoPath = '/cargos/{id}/accept/';
-  static const String cargoStatusPath = '/cargos/{id}/status/';
+  static String driverBarAcceptPath(String id) => '/driver/bars/$id/accept/';
 
-  // ── Push / devices ────────────────────────────────────────────────────────
-  static const String devicesPath = '/devices/';
+  // ── Reference data ─────────────────────────────────────────────────────────
+  static const String productsPath = '/products/';
+  static const String machinesPath = '/machines/';
+  static const String ostansPath = '/ostans/';
 
-  // ── Neshan proxy (same backend) ───────────────────────────────────────────
+  // ── Neshan proxy (optional — not in Transport OpenAPI) ───────────────────
   static const String neshanGeocodePath = '/transport/neshan/geocode';
   static const String neshanSearchPath = '/transport/neshan/search';
   static const String neshanRoutePath = '/transport/neshan/route';

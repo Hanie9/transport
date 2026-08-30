@@ -39,9 +39,9 @@ class User {
     return User(
       id: '${json['id'] ?? ''}',
       fullName: (json['full_name'] ?? json['fullName'] ?? '').toString(),
-      phone: (json['phone'] ?? '').toString(),
+      phone: (json['phone_number'] ?? json['phone'] ?? '').toString(),
       email: json['email']?.toString(),
-      role: UserRole.fromApi((json['role'] ?? json['user_type'])?.toString()),
+      role: UserRole.fromApiUser(json),
       vehicleInfo: json['vehicle'] is Map<String, dynamic>
           ? VehicleInfo.fromJson(json['vehicle'] as Map<String, dynamic>)
           : json['vehicle_info'] is Map<String, dynamic>
@@ -66,12 +66,14 @@ class VehicleInfo {
     required this.cargoType,
     required this.vehicleModel,
     this.capacityTons,
+    this.machineId,
   });
 
   final String plateNumber;
   final String cargoType;
   final String vehicleModel;
   final double? capacityTons;
+  final int? machineId;
 
   factory VehicleInfo.fromJson(Map<String, dynamic> json) {
     return VehicleInfo(
@@ -81,6 +83,7 @@ class VehicleInfo {
       capacityTons: (json['capacity_tons'] ?? json['capacityTons']) == null
           ? null
           : double.tryParse('${json['capacity_tons'] ?? json['capacityTons']}'),
+      machineId: int.tryParse('${json['machine_id'] ?? json['machineId'] ?? ''}'),
     );
   }
 
@@ -89,5 +92,6 @@ class VehicleInfo {
         'cargo_type': cargoType,
         'vehicle_model': vehicleModel,
         if (capacityTons != null) 'capacity_tons': capacityTons,
+        if (machineId != null) 'machine_id': machineId,
       };
 }

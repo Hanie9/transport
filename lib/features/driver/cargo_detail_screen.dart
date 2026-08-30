@@ -2,10 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
+import '../../api_config.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/widgets/common_widgets.dart';
 import '../../core/widgets/fade_slide_in.dart';
 import '../../core/widgets/modern_app_bar.dart';
+import '../../l10n/api_messages.dart';
 import '../../l10n/app_localizations.dart';
 import '../../models/cargo.dart';
 import '../../services/auth_service.dart';
@@ -66,6 +68,7 @@ class _CargoDetailScreenState extends State<CargoDetailScreen> {
       _cargo!.id,
       user.fullName,
       user.phone,
+      driverMachineId: user.vehicleInfo?.machineId,
     );
 
     if (!mounted) return;
@@ -110,6 +113,16 @@ class _CargoDetailScreenState extends State<CargoDetailScreen> {
 
     final cargo = _cargo!;
     final canAccept = cargo.status == 'در انتظار راننده';
+    final user = context.watch<AuthService>().currentUser;
+    final driverMachineId = user?.vehicleInfo?.machineId;
+    final machineMismatch = canAccept &&
+        !ApiConfig.shouldUseMock &&
+        cargo.machineId != null &&
+        driverMachineId != null &&
+        cargo.machineId != driverMachineId;
+    final machineNotSet = canAccept &&
+        !ApiConfig.shouldUseMock &&
+        driverMachineId == null;
 
     return Scaffold(
       appBar: ModernAppBar(title: l10n.cargoDetails),
@@ -195,6 +208,25 @@ class _CargoDetailScreenState extends State<CargoDetailScreen> {
               ),
             ],
             const SizedBox(height: 24),
+            if (machineNotSet) ...[
+              InfoBanner(
+                message: l10n.selectMachineType,
+                icon: Icons.warning_amber_rounded,
+                color: AppTheme.warning,
+              ),
+              const SizedBox(height: 12),
+            ],
+            if (machineMismatch) ...[
+              InfoBanner(
+                message: ApiMessages.machineMismatch(
+                  isEnglish: !l10n.isFa,
+                  requiredMachine: cargo.cargoType,
+                ),
+                icon: Icons.warning_amber_rounded,
+                color: AppTheme.warning,
+              ),
+              const SizedBox(height: 12),
+            ],
             FadeSlideIn(
               delay: const Duration(milliseconds: 200),
               child: Column(

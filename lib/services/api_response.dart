@@ -7,7 +7,15 @@ import 'settings_service.dart';
 abstract final class ApiResponse {
   static bool get _isEnglish => SettingsService().isEnglish;
 
-  /// Unwraps `{results: [...]}`, `{data: [...]}`, or a bare list.
+  /// Unwraps `{data: {...}}` or returns the map as-is.
+  static Map<String, dynamic> extractObject(Map<String, dynamic> data) {
+    final nested = data['data'];
+    if (nested is Map) {
+      return Map<String, dynamic>.from(nested);
+    }
+    return data;
+  }
+
   static List<Map<String, dynamic>> extractList(dynamic data) {
     if (data is List) {
       return data
@@ -26,6 +34,28 @@ abstract final class ApiResponse {
           .toList();
     }
     return const [];
+  }
+
+  static ({
+    int count,
+    int currentPage,
+    int totalPages,
+    bool hasNext,
+  }) extractPagination(dynamic data) {
+    if (data is! Map) {
+      return (count: 0, currentPage: 1, totalPages: 1, hasNext: false);
+    }
+    final map = Map<String, dynamic>.from(data);
+    final count = int.tryParse('${map['count']}') ?? 0;
+    final currentPage = int.tryParse('${map['current_page']}') ?? 1;
+    final totalPages = int.tryParse('${map['total_pages']}') ?? 1;
+    final hasNext = map['next'] != null;
+    return (
+      count: count,
+      currentPage: currentPage,
+      totalPages: totalPages,
+      hasNext: hasNext,
+    );
   }
 
   /// Builds a short, user-facing HTTP error message in the active app language.

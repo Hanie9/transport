@@ -25,7 +25,6 @@ class AppConstants {
   static const List<String> cargoStatuses = [
     'در انتظار راننده',
     'تخصیص یافته',
-    'در حال حمل',
     'تحویل شده',
     'لغو شده',
   ];

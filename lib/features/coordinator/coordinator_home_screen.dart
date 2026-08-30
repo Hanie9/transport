@@ -26,9 +26,7 @@ class _CoordinatorShellState extends State<CoordinatorShell> {
 
   int _indexFromLocation(String location) {
     if (location.startsWith('/coordinator/cargos')) return 1;
-    if (location.startsWith('/coordinator/drivers')) return 2;
-    if (location.startsWith('/coordinator/nearby-drivers')) return 3;
-    if (location.startsWith('/coordinator/profile')) return 4;
+    if (location.startsWith('/coordinator/profile')) return 2;
     return 0;
   }
 
@@ -39,10 +37,6 @@ class _CoordinatorShellState extends State<CoordinatorShell> {
       case 1:
         context.go('/coordinator/cargos');
       case 2:
-        context.go('/coordinator/drivers');
-      case 3:
-        context.go('/coordinator/nearby-drivers');
-      case 4:
         context.go('/coordinator/profile');
     }
   }
@@ -82,16 +76,6 @@ class _CoordinatorShellState extends State<CoordinatorShell> {
               icon: const Icon(Icons.list_alt_outlined),
               selectedIcon: const Icon(Icons.list_alt),
               label: l10n.cargos,
-            ),
-            NavigationDestination(
-              icon: const Icon(Icons.people_outline),
-              selectedIcon: const Icon(Icons.people),
-              label: l10n.drivers,
-            ),
-            NavigationDestination(
-              icon: const Icon(Icons.near_me_outlined),
-              selectedIcon: const Icon(Icons.near_me),
-              label: l10n.nearby,
             ),
             NavigationDestination(
               icon: const Icon(Icons.person_outline),

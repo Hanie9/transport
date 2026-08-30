@@ -63,7 +63,7 @@ class _DriverMissionsScreenState extends State<DriverMissionsScreen> {
     if (_filter == 'all') return _missions;
     if (_filter == 'active') {
       return _missions
-          .where((m) => m.status == 'تخصیص یافته' || m.status == 'در حال حمل')
+          .where((m) => m.status == 'تخصیص یافته')
           .toList();
     }
     return _missions.where((m) => m.status == 'تحویل شده').toList();
@@ -74,7 +74,7 @@ class _DriverMissionsScreenState extends State<DriverMissionsScreen> {
     final l10n = context.l10n;
     final palette = context.palette;
     final activeCount = _missions
-        .where((m) => m.status == 'تخصیص یافته' || m.status == 'در حال حمل')
+        .where((m) => m.status == 'تخصیص یافته')
         .length;
     final filters = {
       'active': l10n.filterActive,
@@ -95,6 +95,19 @@ class _DriverMissionsScreenState extends State<DriverMissionsScreen> {
                   title: l10n.activeMissionsCount(activeCount),
                   subtitle: l10n.missionsSubtitle,
                   icon: Icons.assignment_outlined,
+                ),
+              ),
+            ),
+          ),
+          SliverToBoxAdapter(
+            child: FadeSlideIn(
+              delay: const Duration(milliseconds: 60),
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+                child: InfoBanner(
+                  message: l10n.missionsSyncNote,
+                  icon: Icons.info_outline,
+                  color: AppTheme.primary,
                 ),
               ),
             ),
@@ -180,7 +193,7 @@ class _MissionCard extends StatelessWidget {
   final VoidCallback onRoute;
 
   bool get _isActive =>
-      mission.status == 'تخصیص یافته' || mission.status == 'در حال حمل';
+      mission.status == 'تخصیص یافته';
 
   @override
   Widget build(BuildContext context) {

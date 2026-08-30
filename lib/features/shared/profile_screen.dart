@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../../api_config.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/widgets/common_widgets.dart';
 import '../../core/widgets/fade_slide_in.dart';
@@ -53,7 +54,13 @@ class _DriverProfileScreenState extends State<_DriverProfileScreen> {
     if (!mounted) return;
     setState(() => _editingVehicle = false);
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(context.l10n.vehicleSaved)),
+      SnackBar(
+        content: Text(
+          ApiConfig.shouldUseMock
+              ? context.l10n.vehicleSaved
+              : context.l10n.machineSavedLocally,
+        ),
+      ),
     );
   }
 

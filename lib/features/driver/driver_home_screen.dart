@@ -11,6 +11,8 @@ import '../../core/widgets/fade_slide_in.dart';
 import '../../core/widgets/location_access_dialog.dart';
 import '../../core/widgets/modern_app_bar.dart';
 import '../../models/cargo.dart';
+import '../../models/driver_bar_query.dart';
+import '../../services/reference_data_service.dart';
 import '../../services/auth_service.dart';
 import '../../services/cargo_service.dart';
 import '../../services/location_service.dart';
@@ -113,6 +115,10 @@ class _DriverHomeScreenState extends State<DriverHomeScreen>
   bool _loading = true;
   bool _gpsEnabled = false;
   bool _gpsBusy = false;
+  DriverBarQuery? _barQuery;
+  int _currentPage = 1;
+  bool _hasMore = false;
+  bool _loadingMore = false;
 
   @override
   void initState() {
@@ -195,28 +201,33 @@ class _DriverHomeScreenState extends State<DriverHomeScreen>
     }
   }
 
-  Future<void> _loadCargos({bool showLoader = false}) async {
-    if (showLoader) setState(() => _loading = true);
+  Future<void> _loadCargos({bool showLoader = false, bool loadMore = false}) async {
+    if (loadMore) {
+      if (_loadingMore || !_hasMore) return;
+      setState(() => _loadingMore = true);
+    } else if (showLoader) {
+      setState(() => _loading = true);
+    }
 
     final user = context.read<AuthService>().currentUser;
     final cargoType = user?.vehicleInfo?.cargoType ?? 'کفی';
+    final page = loadMore ? _currentPage + 1 : 1;
 
-    final allCargos = await _cargoService.getCargosForDriver(cargoType);
+    final pageResult = await _cargoService.getDriverBarsPage(
+      query: _barQuery,
+      page: page,
+    );
 
     // Respect the user's nearby-GPS preference, not only device GPS state.
     final gpsOn = await _location.isNearbyGpsActive();
     var nearbyCargos = <Cargo>[];
 
-    if (gpsOn) {
+    if (gpsOn && !loadMore) {
       final pos = await _location.getCurrentPosition(requestIfNeeded: false);
       if (pos != null) {
         nearbyCargos = await _cargoService.getNearbyCargos(
           cargoType: cargoType,
           driverPosition: pos,
-        );
-        await _cargoService.reportDriverLocation(
-          lat: pos.latitude,
-          lng: pos.longitude,
         );
       }
     }
@@ -224,11 +235,157 @@ class _DriverHomeScreenState extends State<DriverHomeScreen>
     if (!mounted) return;
 
     setState(() {
-      _allCargos = allCargos;
-      _nearbyCargos = nearbyCargos;
-      _gpsEnabled = gpsOn;
-      _loading = false;
+      if (loadMore) {
+        _allCargos = [..._allCargos, ...pageResult.items];
+        _loadingMore = false;
+      } else {
+        _allCargos = pageResult.items;
+        _nearbyCargos = nearbyCargos;
+        _gpsEnabled = gpsOn;
+        _loading = false;
+      }
+      _currentPage = pageResult.currentPage;
+      _hasMore = pageResult.hasNext;
     });
+  }
+
+  Future<void> _showFilterSheet() async {
+    final l10n = context.l10n;
+    final reference = ReferenceDataService();
+    final ostans = await reference.getOstans();
+
+    if (!mounted) return;
+
+    var ostanMabda = _barQuery?.ostanMabda;
+    var ostanMaghsad = _barQuery?.ostanMaghsad;
+    var priceMin = _barQuery?.priceMin;
+    var priceMax = _barQuery?.priceMax;
+    final minController = TextEditingController(
+      text: priceMin?.toString() ?? '',
+    );
+    final maxController = TextEditingController(
+      text: priceMax?.toString() ?? '',
+    );
+
+    final result = await showModalBottomSheet<DriverBarQuery?>(
+      context: context,
+      isScrollControlled: true,
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setModalState) {
+            return Padding(
+              padding: EdgeInsets.only(
+                left: 16,
+                right: 16,
+                top: 16,
+                bottom: MediaQuery.viewInsetsOf(context).bottom + 16,
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Text(
+                    l10n.filterCargos,
+                    style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(height: 16),
+                  DropdownButtonFormField<int?>(
+                    value: ostanMabda,
+                    decoration: InputDecoration(labelText: l10n.originOstan),
+                    items: [
+                      DropdownMenuItem<int?>(value: null, child: Text(l10n.filterAll)),
+                      ...ostans.map(
+                        (o) => DropdownMenuItem<int?>(
+                          value: o.id,
+                          child: Text(o.name),
+                        ),
+                      ),
+                    ],
+                    onChanged: (value) => setModalState(() => ostanMabda = value),
+                  ),
+                  const SizedBox(height: 12),
+                  DropdownButtonFormField<int?>(
+                    value: ostanMaghsad,
+                    decoration: InputDecoration(labelText: l10n.destinationOstan),
+                    items: [
+                      DropdownMenuItem<int?>(value: null, child: Text(l10n.filterAll)),
+                      ...ostans.map(
+                        (o) => DropdownMenuItem<int?>(
+                          value: o.id,
+                          child: Text(o.name),
+                        ),
+                      ),
+                    ],
+                    onChanged: (value) => setModalState(() => ostanMaghsad = value),
+                  ),
+                  const SizedBox(height: 12),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: TextField(
+                          controller: minController,
+                          keyboardType: TextInputType.number,
+                          decoration: InputDecoration(labelText: l10n.minPrice),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: TextField(
+                          controller: maxController,
+                          keyboardType: TextInputType.number,
+                          decoration: InputDecoration(labelText: l10n.maxPrice),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 20),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: OutlinedButton(
+                          onPressed: () => Navigator.pop(context, const DriverBarQuery()),
+                          child: Text(l10n.clearFilters),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: FilledButton(
+                          onPressed: () {
+                            final min = int.tryParse(minController.text.trim());
+                            final max = int.tryParse(maxController.text.trim());
+                            Navigator.pop(
+                              context,
+                              DriverBarQuery(
+                                ostanMabda: ostanMabda,
+                                ostanMaghsad: ostanMaghsad,
+                                priceMin: min,
+                                priceMax: max,
+                              ),
+                            );
+                          },
+                          child: Text(l10n.applyFilters),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            );
+          },
+        );
+      },
+    );
+
+    minController.dispose();
+    maxController.dispose();
+
+    if (!mounted || result == null) return;
+
+    setState(() {
+      _barQuery = result.isEmpty ? null : result;
+      _currentPage = 1;
+    });
+    await _loadCargos(showLoader: true);
   }
 
   List<Cargo> get _otherCargos {
@@ -246,7 +403,19 @@ class _DriverHomeScreenState extends State<DriverHomeScreen>
     final cargoType = user?.vehicleInfo?.cargoType;
 
     return Scaffold(
-      appBar: ModernAppBar(title: l10n.cargos),
+      appBar: ModernAppBar(
+        title: l10n.cargos,
+        actions: [
+          IconButton(
+            tooltip: l10n.filterCargos,
+            onPressed: _showFilterSheet,
+            icon: Badge(
+              isLabelVisible: _barQuery != null && !_barQuery!.isEmpty,
+              child: const Icon(Icons.filter_list_rounded),
+            ),
+          ),
+        ],
+      ),
       body: AppRefreshIndicator(
         onRefresh: () => _loadCargos(),
         slivers: [
@@ -339,6 +508,22 @@ class _DriverHomeScreenState extends State<DriverHomeScreen>
                 ),
               ),
             ],
+            if (_hasMore)
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
+                  child: OutlinedButton(
+                    onPressed: _loadingMore ? null : () => _loadCargos(loadMore: true),
+                    child: _loadingMore
+                        ? const SizedBox(
+                            height: 20,
+                            width: 20,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                        : Text(l10n.loadMore),
+                  ),
+                ),
+              ),
           ],
         ],
       ),

@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:provider/provider.dart';
 
 import '../../api_config.dart';
 import '../../core/widgets/common_widgets.dart';
@@ -8,18 +7,20 @@ import '../../core/widgets/fade_slide_in.dart';
 import '../../core/widgets/modern_app_bar.dart';
 import '../../l10n/app_localizations.dart';
 import '../../models/api_reference_item.dart';
-import '../../services/auth_service.dart';
+import '../../models/cargo.dart';
 import '../../services/cargo_service.dart';
 import '../../services/reference_data_service.dart';
 
-class AddCargoScreen extends StatefulWidget {
-  const AddCargoScreen({super.key});
+class EditCargoScreen extends StatefulWidget {
+  const EditCargoScreen({super.key, required this.cargoId});
+
+  final String cargoId;
 
   @override
-  State<AddCargoScreen> createState() => _AddCargoScreenState();
+  State<EditCargoScreen> createState() => _EditCargoScreenState();
 }
 
-class _AddCargoScreenState extends State<AddCargoScreen> {
+class _EditCargoScreenState extends State<EditCargoScreen> {
   final _formKey = GlobalKey<FormState>();
   final _cargoService = CargoService();
   final _referenceData = ReferenceDataService();
@@ -32,41 +33,55 @@ class _AddCargoScreenState extends State<AddCargoScreen> {
   List<ApiReferenceItem> _products = const [];
   List<ApiReferenceItem> _machines = const [];
   List<ApiReferenceItem> _ostans = const [];
+  Cargo? _cargo;
   int? _productId;
   int? _machineId;
   int? _ostanMabdaId;
   int? _ostanMaghsadId;
-  bool _loadingRefs = true;
+  bool _loading = true;
   bool _submitting = false;
 
   @override
   void initState() {
     super.initState();
-    _loadReferenceData();
+    _load();
   }
 
-  Future<void> _loadReferenceData() async {
-    if (ApiConfig.shouldUseMock) {
-      if (mounted) setState(() => _loadingRefs = false);
+  Future<void> _load() async {
+    final cargo = await _cargoService.getCargoById(widget.cargoId);
+    if (!mounted) return;
+
+    if (cargo == null) {
+      setState(() => _loading = false);
       return;
     }
 
-    try {
-      final results = await Future.wait([
-        _referenceData.getProducts(),
-        _referenceData.getMachines(),
-        _referenceData.getOstans(),
-      ]);
-      if (!mounted) return;
-      setState(() {
+    if (!ApiConfig.shouldUseMock) {
+      try {
+        final results = await Future.wait([
+          _referenceData.getProducts(),
+          _referenceData.getMachines(),
+          _referenceData.getOstans(),
+        ]);
+        if (!mounted) return;
         _products = results[0];
         _machines = results[1];
         _ostans = results[2];
-        _loadingRefs = false;
-      });
-    } catch (_) {
-      if (mounted) setState(() => _loadingRefs = false);
+      } catch (_) {}
     }
+
+    _cargo = cargo;
+    _titleController.text = cargo.title;
+    _descriptionController.text = cargo.description ?? '';
+    _originController.text = cargo.origin;
+    _destinationController.text = cargo.destination;
+    _priceController.text = '${cargo.estimatedPrice}';
+    _productId = cargo.productId;
+    _machineId = cargo.machineId;
+    _ostanMabdaId = cargo.ostanMabdaId;
+    _ostanMaghsadId = cargo.ostanMaghsadId;
+
+    if (mounted) setState(() => _loading = false);
   }
 
   @override
@@ -81,10 +96,13 @@ class _AddCargoScreenState extends State<AddCargoScreen> {
 
   Future<void> _submit() async {
     final l10n = context.l10n;
-    if (!_formKey.currentState!.validate()) return;
+    if (_cargo == null || !_formKey.currentState!.validate()) return;
 
     if (!ApiConfig.shouldUseMock) {
-      if (_productId == null || _machineId == null || _ostanMabdaId == null || _ostanMaghsadId == null) {
+      if (_productId == null ||
+          _machineId == null ||
+          _ostanMabdaId == null ||
+          _ostanMaghsadId == null) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text(l10n.selectCargoAndGoods)),
         );
@@ -93,41 +111,32 @@ class _AddCargoScreenState extends State<AddCargoScreen> {
     }
 
     setState(() => _submitting = true);
-    final user = context.read<AuthService>().currentUser;
-    final coordinatorName = user?.fullName ?? l10n.defaultCoordinatorName;
     final price = int.tryParse(_priceController.text.trim().replaceAll(',', '')) ?? 0;
 
-    try {
-      await _cargoService.createCargo(
-        title: _titleController.text.trim(),
-        description: _descriptionController.text.trim(),
-        origin: _originController.text.trim(),
-        destination: _destinationController.text.trim(),
-        cargoType: _machines.firstWhere((m) => m.id == _machineId, orElse: () => const ApiReferenceItem(id: 0, name: '')).name,
-        goodsType: _products.firstWhere((p) => p.id == _productId, orElse: () => const ApiReferenceItem(id: 0, name: '')).name,
-        weightTons: 0,
-        estimatedPrice: price,
-        coordinatorName: coordinatorName,
-        productId: _productId,
-        machineId: _machineId,
-        ostanMabdaId: _ostanMabdaId,
-        ostanMaghsadId: _ostanMaghsadId,
-      );
+    final success = await _cargoService.updateCargo(
+      cargoId: _cargo!.id,
+      title: _titleController.text.trim(),
+      description: _descriptionController.text.trim(),
+      price: price,
+      productId: _productId,
+      machineId: _machineId,
+      ostanMabdaId: _ostanMabdaId,
+      ostanMaghsadId: _ostanMaghsadId,
+      addressMabda: _originController.text.trim(),
+      addressMaghsad: _destinationController.text.trim(),
+    );
 
-      if (!mounted) return;
-      setState(() => _submitting = false);
+    if (!mounted) return;
+    setState(() => _submitting = false);
 
+    if (success) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(l10n.cargoRegistered)),
+        SnackBar(content: Text(l10n.cargoUpdated)),
       );
       context.pop();
-    } catch (_) {
-      if (!mounted) return;
-      setState(() => _submitting = false);
+    } else {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(_cargoService.lastError ?? l10n.fillRouteFields),
-        ),
+        SnackBar(content: Text(_cargoService.lastError ?? l10n.genericError)),
       );
     }
   }
@@ -136,15 +145,26 @@ class _AddCargoScreenState extends State<AddCargoScreen> {
   Widget build(BuildContext context) {
     final l10n = context.l10n;
 
-    if (_loadingRefs && !ApiConfig.shouldUseMock) {
+    if (_loading) {
       return Scaffold(
-        appBar: ModernAppBar(title: l10n.addNewCargo),
+        appBar: ModernAppBar(title: l10n.editCargo),
         body: LoadingOverlay(message: l10n.loading),
       );
     }
 
+    if (_cargo == null) {
+      return Scaffold(
+        appBar: ModernAppBar(title: l10n.editCargo),
+        body: EmptyState(
+          icon: Icons.error_outline,
+          useIllustration: true,
+          title: l10n.noCargoFound,
+        ),
+      );
+    }
+
     return Scaffold(
-      appBar: ModernAppBar(title: l10n.addNewCargo),
+      appBar: ModernAppBar(title: l10n.editCargo),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(24),
         child: FadeSlideIn(
@@ -158,7 +178,6 @@ class _AddCargoScreenState extends State<AddCargoScreen> {
                   decoration: InputDecoration(
                     labelText: l10n.cargoTitle,
                     prefixIcon: const Icon(Icons.title),
-                    hintText: l10n.cargoTitleHint,
                   ),
                   validator: (v) =>
                       v == null || v.trim().isEmpty ? l10n.titleRequired : null,
@@ -214,7 +233,6 @@ class _AddCargoScreenState extends State<AddCargoScreen> {
                   decoration: InputDecoration(
                     labelText: l10n.origin,
                     prefixIcon: const Icon(Icons.trip_origin),
-                    hintText: l10n.originHint,
                   ),
                   validator: (v) =>
                       v == null || v.trim().isEmpty ? l10n.originRequired : null,
@@ -225,7 +243,6 @@ class _AddCargoScreenState extends State<AddCargoScreen> {
                   decoration: InputDecoration(
                     labelText: l10n.destination,
                     prefixIcon: const Icon(Icons.location_on),
-                    hintText: l10n.destinationHint,
                   ),
                   validator: (v) =>
                       v == null || v.trim().isEmpty ? l10n.destinationRequired : null,
@@ -237,7 +254,6 @@ class _AddCargoScreenState extends State<AddCargoScreen> {
                   decoration: InputDecoration(
                     labelText: l10n.price,
                     prefixIcon: const Icon(Icons.payments_outlined),
-                    hintText: '5000000',
                   ),
                   validator: (v) {
                     if (v == null || v.trim().isEmpty) return l10n.priceRequired;
@@ -256,7 +272,7 @@ class _AddCargoScreenState extends State<AddCargoScreen> {
                           width: 22,
                           child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
                         )
-                      : Text(l10n.addCargo),
+                      : Text(l10n.save),
                 ),
               ],
             ),
