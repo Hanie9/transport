@@ -5,6 +5,7 @@ import '../../core/constants/app_constants.dart';
 import '../../l10n/app_localizations.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/widgets/app_drawer.dart';
+import '../../core/widgets/double_back_to_exit.dart';
 import '../../core/widgets/shell_scope.dart';
 import '../../core/widgets/common_widgets.dart';
 import '../../core/widgets/fade_slide_in.dart';
@@ -48,41 +49,44 @@ class _CoordinatorShellState extends State<CoordinatorShell> {
     final index = _indexFromLocation(location);
     final hideBottomNav = AppDrawer.hidesBottomNav(location, 'coordinator');
 
-    return ShellScope(
-      openDrawer: () => _scaffoldKey.currentState?.openDrawer(),
-      child: Scaffold(
-        key: _scaffoldKey,
-        drawer: const AppDrawer(role: 'coordinator'),
-        body: widget.child,
-        floatingActionButton: (index == 0 || index == 1) && !hideBottomNav
-            ? FloatingActionButton.extended(
-                onPressed: () => context.push('/coordinator/add-cargo'),
-                icon: const Icon(Icons.add_rounded),
-                label: Text(l10n.addCargo),
-              )
-            : null,
-        bottomNavigationBar: hideBottomNav
-            ? null
-            : ModernBottomNav(
-          currentIndex: index,
-          onTap: _onTap,
-          destinations: [
-            NavigationDestination(
-              icon: const Icon(Icons.home_outlined),
-              selectedIcon: const Icon(Icons.home_rounded),
-              label: l10n.home,
-            ),
-            NavigationDestination(
-              icon: const Icon(Icons.list_alt_outlined),
-              selectedIcon: const Icon(Icons.list_alt),
-              label: l10n.cargos,
-            ),
-            NavigationDestination(
-              icon: const Icon(Icons.person_outline),
-              selectedIcon: const Icon(Icons.person),
-              label: l10n.profile,
-            ),
-          ],
+    return DoubleBackToExit(
+      enabled: !hideBottomNav,
+      child: ShellScope(
+        openDrawer: () => _scaffoldKey.currentState?.openDrawer(),
+        child: Scaffold(
+          key: _scaffoldKey,
+          drawer: const AppDrawer(role: 'coordinator'),
+          body: widget.child,
+          floatingActionButton: (index == 0 || index == 1) && !hideBottomNav
+              ? FloatingActionButton.extended(
+                  onPressed: () => context.push('/coordinator/add-cargo'),
+                  icon: const Icon(Icons.add_rounded),
+                  label: Text(l10n.addCargo),
+                )
+              : null,
+          bottomNavigationBar: hideBottomNav
+              ? null
+              : ModernBottomNav(
+                  currentIndex: index,
+                  onTap: _onTap,
+                  destinations: [
+                    NavigationDestination(
+                      icon: const Icon(Icons.home_outlined),
+                      selectedIcon: const Icon(Icons.home_rounded),
+                      label: l10n.home,
+                    ),
+                    NavigationDestination(
+                      icon: const Icon(Icons.list_alt_outlined),
+                      selectedIcon: const Icon(Icons.list_alt),
+                      label: l10n.cargos,
+                    ),
+                    NavigationDestination(
+                      icon: const Icon(Icons.person_outline),
+                      selectedIcon: const Icon(Icons.person),
+                      label: l10n.profile,
+                    ),
+                  ],
+                ),
         ),
       ),
     );
@@ -140,38 +144,51 @@ class _CoordinatorHomeScreenState extends State<CoordinatorHomeScreen> {
               child: SizedBox(
                 height: 52,
                 child: ListView(
-                scrollDirection: Axis.horizontal,
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                children: filterOptions.map((status) {
-                  final isSelected = _filter == status;
-                  final label = status == 'همه' ? l10n.filterAll : l10n.cargoStatus(status);
-                  return Padding(
-                    padding: const EdgeInsetsDirectional.only(start: 8),
-                    child: FilterChip(
-                      label: Text(label),
-                      selected: isSelected,
-                      onSelected: (_) => setState(() => _filter = status),
-                      selectedColor: AppTheme.primary.withValues(alpha: 0.12),
-                      checkmarkColor: AppTheme.primary,
-                      labelStyle: TextStyle(
-                        color: isSelected ? AppTheme.primary : palette.textSecondary,
-                        fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                  scrollDirection: Axis.horizontal,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 8,
+                  ),
+                  children: filterOptions.map((status) {
+                    final isSelected = _filter == status;
+                    final label = status == 'همه'
+                        ? l10n.filterAll
+                        : l10n.cargoStatus(status);
+                    return Padding(
+                      padding: const EdgeInsetsDirectional.only(start: 8),
+                      child: FilterChip(
+                        label: Text(label),
+                        selected: isSelected,
+                        onSelected: (_) => setState(() => _filter = status),
+                        selectedColor: AppTheme.primary.withValues(alpha: 0.12),
+                        checkmarkColor: AppTheme.primary,
+                        labelStyle: TextStyle(
+                          color: isSelected
+                              ? AppTheme.primary
+                              : palette.textSecondary,
+                          fontWeight: isSelected
+                              ? FontWeight.w700
+                              : FontWeight.w500,
+                        ),
+                        backgroundColor: palette.cardBg,
+                        side: BorderSide(
+                          color: isSelected
+                              ? AppTheme.primary.withValues(alpha: 0.3)
+                              : palette.divider,
+                        ),
                       ),
-                      backgroundColor: palette.cardBg,
-                      side: BorderSide(
-                        color: isSelected ? AppTheme.primary.withValues(alpha: 0.3) : palette.divider,
-                      ),
-                    ),
-                  );
-                }).toList(),
+                    );
+                  }).toList(),
+                ),
               ),
-            ),
             ),
           ),
           if (_loading)
             SliverFillRemaining(
               hasScrollBody: false,
-              child: SizedBox.expand(child: LoadingOverlay(message: l10n.loading)),
+              child: SizedBox.expand(
+                child: LoadingOverlay(message: l10n.loading),
+              ),
             )
           else if (_filteredCargos.isEmpty)
             SliverFillRemaining(
@@ -185,15 +202,15 @@ class _CoordinatorHomeScreenState extends State<CoordinatorHomeScreen> {
             SliverPadding(
               padding: const EdgeInsets.fromLTRB(16, 0, 16, 96),
               sliver: SliverList(
-                delegate: SliverChildBuilderDelegate(
-                  (context, index) {
-                    final cargo = _filteredCargos[index];
-                    return Padding(
-                      padding: const EdgeInsets.only(bottom: 12),
-                      child: StaggeredItem(
-                        index: index,
-                        child: AppCard(
-                        onTap: () => context.push('/coordinator/cargo/${cargo.id}'),
+                delegate: SliverChildBuilderDelegate((context, index) {
+                  final cargo = _filteredCargos[index];
+                  return Padding(
+                    padding: const EdgeInsets.only(bottom: 12),
+                    child: StaggeredItem(
+                      index: index,
+                      child: AppCard(
+                        onTap: () =>
+                            context.push('/coordinator/cargo/${cargo.id}'),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
@@ -215,15 +232,23 @@ class _CoordinatorHomeScreenState extends State<CoordinatorHomeScreen> {
                             const SizedBox(height: 8),
                             Text(
                               cargo.routeLabel,
-                              style: TextStyle(fontSize: 13, color: palette.textSecondary),
+                              style: TextStyle(
+                                fontSize: 13,
+                                color: palette.textSecondary,
+                              ),
                             ),
                             const SizedBox(height: 12),
                             Row(
                               children: [
                                 Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 10,
+                                    vertical: 5,
+                                  ),
                                   decoration: BoxDecoration(
-                                    color: AppTheme.primary.withValues(alpha: 0.08),
+                                    color: AppTheme.primary.withValues(
+                                      alpha: 0.08,
+                                    ),
                                     borderRadius: BorderRadius.circular(10),
                                   ),
                                   child: Text(
@@ -236,21 +261,36 @@ class _CoordinatorHomeScreenState extends State<CoordinatorHomeScreen> {
                                   ),
                                 ),
                                 const Spacer(),
-                                PriceLabel(price: cargo.estimatedPrice, fontSize: 13),
+                                PriceLabel(
+                                  price: cargo.estimatedPrice,
+                                  fontSize: 13,
+                                ),
                               ],
                             ),
                             if (cargo.assignedDriverName != null) ...[
                               Padding(
-                                padding: const EdgeInsets.symmetric(vertical: 12),
-                                child: Divider(height: 1, color: palette.divider),
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 12,
+                                ),
+                                child: Divider(
+                                  height: 1,
+                                  color: palette.divider,
+                                ),
                               ),
                               Row(
                                 children: [
-                                  const Icon(Icons.person, size: 16, color: AppTheme.success),
+                                  const Icon(
+                                    Icons.person,
+                                    size: 16,
+                                    color: AppTheme.success,
+                                  ),
                                   const SizedBox(width: 6),
                                   Text(
                                     l10n.driverLabel(cargo.assignedDriverName!),
-                                    style: const TextStyle(fontSize: 13, color: AppTheme.success),
+                                    style: const TextStyle(
+                                      fontSize: 13,
+                                      color: AppTheme.success,
+                                    ),
                                   ),
                                 ],
                               ),
@@ -258,11 +298,9 @@ class _CoordinatorHomeScreenState extends State<CoordinatorHomeScreen> {
                           ],
                         ),
                       ),
-                      ),
-                    );
-                  },
-                  childCount: _filteredCargos.length,
-                ),
+                    ),
+                  );
+                }, childCount: _filteredCargos.length),
               ),
             ),
         ],

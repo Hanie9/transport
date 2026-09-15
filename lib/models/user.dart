@@ -47,6 +47,15 @@ class User {
       lastName,
     ].where((v) => v.isNotEmpty).join(' ');
     final driverInfo = json['driver_info'];
+    final embeddedVehicle = json['vehicle'] is Map<String, dynamic>
+        ? VehicleInfo.fromJson(json['vehicle'] as Map<String, dynamic>)
+        : json['vehicle_info'] is Map<String, dynamic>
+        ? VehicleInfo.fromJson(json['vehicle_info'] as Map<String, dynamic>)
+        : driverInfo is Map
+        ? VehicleInfo.fromJson(Map<String, dynamic>.from(driverInfo))
+        : null;
+    final topLevelOstanId = int.tryParse('${json['ostan_id'] ?? ''}');
+    final topLevelOstanName = json['ostan_name']?.toString();
     return User(
       id: '${json['id'] ?? ''}',
       fullName: (json['full_name'] ?? json['fullName'] ?? apiFullName)
@@ -55,13 +64,17 @@ class User {
       email: json['email']?.toString(),
       nationalCode: json['national_code']?.toString(),
       role: UserRole.fromApiUser(json),
-      vehicleInfo: json['vehicle'] is Map<String, dynamic>
-          ? VehicleInfo.fromJson(json['vehicle'] as Map<String, dynamic>)
-          : json['vehicle_info'] is Map<String, dynamic>
-          ? VehicleInfo.fromJson(json['vehicle_info'] as Map<String, dynamic>)
-          : driverInfo is Map
-          ? VehicleInfo.fromJson(Map<String, dynamic>.from(driverInfo))
-          : null,
+      vehicleInfo:
+          embeddedVehicle ??
+          (topLevelOstanId != null || topLevelOstanName?.isNotEmpty == true
+              ? VehicleInfo(
+                  plateNumber: '',
+                  cargoType: '',
+                  vehicleModel: '',
+                  ostanId: topLevelOstanId,
+                  ostanName: topLevelOstanName,
+                )
+              : null),
     );
   }
 

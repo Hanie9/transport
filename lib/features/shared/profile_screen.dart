@@ -224,6 +224,10 @@ class _VehicleSection extends StatelessWidget {
                 label: l10n.capacity,
                 value: l10n.tons(vehicle!.capacityTons!),
               ),
+            _InfoRow(
+              label: l10n.province,
+              value: vehicle!.ostanName ?? l10n.notRegistered,
+            ),
           ],
         ],
       ),
@@ -445,6 +449,12 @@ class _CoordinatorProfileScreenState extends State<_CoordinatorProfileScreen> {
                       icon: Icons.phone_rounded,
                       title: l10n.phoneNumber,
                       value: user?.phone ?? '',
+                    ),
+                    Divider(height: 1, color: context.palette.divider),
+                    _ProfileTile(
+                      icon: Icons.location_on_rounded,
+                      title: l10n.province,
+                      value: user?.vehicleInfo?.ostanName ?? l10n.notRegistered,
                     ),
                     if (user?.nationalCode?.isNotEmpty == true) ...[
                       Divider(height: 1, color: context.palette.divider),
@@ -740,7 +750,8 @@ Future<void> _editProfile(BuildContext context) async {
               decoration: InputDecoration(labelText: l10n.nationalCode),
               validator: (value) {
                 final normalized = value?.trim() ?? '';
-                if (normalized.isNotEmpty && normalized.length != 10) {
+                if (normalized.isNotEmpty &&
+                    !RegExp(r'^\d{10}$').hasMatch(normalized)) {
                   return l10n.nationalCodeInvalid;
                 }
                 return null;

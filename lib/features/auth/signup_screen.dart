@@ -8,6 +8,7 @@ import '../../l10n/app_localizations.dart';
 import '../../models/user_role.dart';
 import '../../services/auth_service.dart';
 import '../../services/settings_service.dart';
+import '../../utils/phone_utils.dart';
 import 'widgets/auth_widgets.dart';
 
 class SignupScreen extends StatefulWidget {
@@ -19,7 +20,8 @@ class SignupScreen extends StatefulWidget {
 
 class _SignupScreenState extends State<SignupScreen> {
   final _formKey = GlobalKey<FormState>();
-  final _nameController = TextEditingController();
+  final _firstNameController = TextEditingController();
+  final _lastNameController = TextEditingController();
   final _phoneController = TextEditingController();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
@@ -33,7 +35,8 @@ class _SignupScreenState extends State<SignupScreen> {
 
   @override
   void dispose() {
-    _nameController.dispose();
+    _firstNameController.dispose();
+    _lastNameController.dispose();
     _phoneController.dispose();
     _emailController.dispose();
     _passwordController.dispose();
@@ -50,7 +53,8 @@ class _SignupScreenState extends State<SignupScreen> {
 
     final auth = context.read<AuthService>();
     final success = await auth.signup(
-      fullName: _nameController.text.trim(),
+      fullName:
+          '${_firstNameController.text.trim()} ${_lastNameController.text.trim()}',
       phone: _phoneController.text.trim(),
       password: _passwordController.text,
       role: _selectedRole,
@@ -125,15 +129,30 @@ class _SignupScreenState extends State<SignupScreen> {
                           child: Column(
                             children: [
                               TextFormField(
-                                controller: _nameController,
+                                controller: _firstNameController,
                                 textCapitalization: TextCapitalization.words,
                                 enabled: !busy,
                                 decoration: InputDecoration(
-                                  labelText: l10n.fullName,
+                                  labelText: l10n.firstName,
                                   prefixIcon: const Icon(Icons.person_outline),
                                 ),
                                 validator: (v) => v == null || v.trim().isEmpty
-                                    ? l10n.nameRequired
+                                    ? l10n.firstNameRequired
+                                    : null,
+                              ),
+                              const SizedBox(height: 14),
+                              TextFormField(
+                                controller: _lastNameController,
+                                textCapitalization: TextCapitalization.words,
+                                enabled: !busy,
+                                decoration: InputDecoration(
+                                  labelText: l10n.lastName,
+                                  prefixIcon: const Icon(
+                                    Icons.person_outline_rounded,
+                                  ),
+                                ),
+                                validator: (v) => v == null || v.trim().isEmpty
+                                    ? l10n.lastNameRequired
                                     : null,
                               ),
                               const SizedBox(height: 14),
@@ -151,7 +170,9 @@ class _SignupScreenState extends State<SignupScreen> {
                                   if (v == null || v.trim().isEmpty) {
                                     return l10n.phoneRequired;
                                   }
-                                  if (v.trim().length < 11) {
+                                  if (!RegExp(
+                                    r'^09\d{9}$',
+                                  ).hasMatch(normalizeIranPhone(v))) {
                                     return l10n.phoneInvalid;
                                   }
                                   return null;
@@ -198,7 +219,8 @@ class _SignupScreenState extends State<SignupScreen> {
                                     if (_selectedRole != UserRole.driver) {
                                       return null;
                                     }
-                                    if (int.tryParse(v?.trim() ?? '') == null) {
+                                    final id = int.tryParse(v?.trim() ?? '');
+                                    if (id == null || id <= 0) {
                                       return l10n.selectMachineType;
                                     }
                                     return null;
@@ -216,6 +238,14 @@ class _SignupScreenState extends State<SignupScreen> {
                                       Icons.location_on_outlined,
                                     ),
                                   ),
+                                  validator: (v) {
+                                    final value = v?.trim() ?? '';
+                                    if (value.isEmpty) return null;
+                                    final id = int.tryParse(value);
+                                    return id == null || id <= 0
+                                        ? l10n.provinceIdInvalid
+                                        : null;
+                                  },
                                 ),
                               ],
                             ],

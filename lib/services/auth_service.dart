@@ -260,7 +260,7 @@ class AuthService extends ChangeNotifier {
           ApiConfig.registerPath,
           body: {
             'first_name': names.$1,
-            'last_name': names.$2.isEmpty ? null : names.$2,
+            'last_name': names.$2,
             'phone_number': normalizeIranPhone(phone),
             'password': password,
             'password_confirm': passwordConfirm ?? password,
@@ -384,8 +384,10 @@ class AuthService extends ChangeNotifier {
           'national_code': nationalCode?.trim().isEmpty == true
               ? null
               : nationalCode?.trim(),
-          'machine_id': ?machineId,
-          'ostan_id': ?ostanId,
+          if (_currentUser!.role == UserRole.driver) ...{
+            'machine_id': ?machineId,
+            'ostan_id': ?ostanId,
+          },
         },
       );
       _currentUser = _mergeServerUser(

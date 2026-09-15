@@ -39,8 +39,10 @@ class _VehicleInfoFormState extends State<VehicleInfoForm> {
   final _referenceData = ReferenceDataService();
   String? _selectedCargoType;
   int? _selectedMachineId;
+  int? _selectedOstanId;
   List<ApiReferenceItem> _machines = const [];
-  bool _loadingMachines = false;
+  List<ApiReferenceItem> _ostans = const [];
+  bool _loadingReferenceData = false;
   bool _saving = false;
   IranianPlateData _plateData = const IranianPlateData();
 
@@ -48,7 +50,7 @@ class _VehicleInfoFormState extends State<VehicleInfoForm> {
   void initState() {
     super.initState();
     _loadInitial(widget.initial);
-    _loadMachines();
+    _loadReferenceData();
   }
 
   @override
@@ -59,18 +61,28 @@ class _VehicleInfoFormState extends State<VehicleInfoForm> {
     }
   }
 
-  Future<void> _loadMachines() async {
-    if (ApiConfig.shouldUseMock) return;
-    setState(() => _loadingMachines = true);
+  Future<void> _loadReferenceData() async {
+    if (ApiConfig.shouldUseMock) {
+      _ostans = [
+        for (var i = 0; i < AppConstants.iranProvinces.length; i++)
+          ApiReferenceItem(id: i + 1, name: AppConstants.iranProvinces[i]),
+      ];
+      return;
+    }
+    setState(() => _loadingReferenceData = true);
     try {
-      final machines = await _referenceData.getMachines();
+      final results = await Future.wait([
+        _referenceData.getMachines(),
+        _referenceData.getOstans(),
+      ]);
       if (!mounted) return;
       setState(() {
-        _machines = machines;
-        _loadingMachines = false;
+        _machines = results[0];
+        _ostans = results[1];
+        _loadingReferenceData = false;
       });
     } catch (_) {
-      if (mounted) setState(() => _loadingMachines = false);
+      if (mounted) setState(() => _loadingReferenceData = false);
     }
   }
 
@@ -82,6 +94,7 @@ class _VehicleInfoFormState extends State<VehicleInfoForm> {
       _modelController.text = vehicle.vehicleModel;
       _selectedCargoType = vehicle.cargoType;
       _selectedMachineId = vehicle.machineId;
+      _selectedOstanId = vehicle.ostanId;
       _capacityController.text = vehicle.capacityTons?.toString() ?? '';
     }
   }
@@ -117,6 +130,12 @@ class _VehicleInfoFormState extends State<VehicleInfoForm> {
     final machineName = ApiConfig.shouldUseMock
         ? _selectedCargoType!
         : _machines.firstWhere((m) => m.id == _selectedMachineId).name;
+    final ostanName = _selectedOstanId == null
+        ? null
+        : _ostans
+              .where((ostan) => ostan.id == _selectedOstanId)
+              .map((ostan) => ostan.name)
+              .firstOrNull;
 
     final info = VehicleInfo(
       plateNumber: _plateData.toStorageString(),
@@ -124,8 +143,8 @@ class _VehicleInfoFormState extends State<VehicleInfoForm> {
       vehicleModel: _modelController.text.trim(),
       capacityTons: double.tryParse(_capacityController.text.trim()),
       machineId: _selectedMachineId,
-      ostanId: widget.initial?.ostanId,
-      ostanName: widget.initial?.ostanName,
+      ostanId: _selectedOstanId,
+      ostanName: ostanName ?? widget.initial?.ostanName,
     );
 
     await widget.onSave(info);
@@ -211,7 +230,7 @@ class _VehicleInfoFormState extends State<VehicleInfoForm> {
                 v == null || v.trim().isEmpty ? l10n.modelRequired : null,
           ),
           const SizedBox(height: 16),
-          if (_loadingMachines)
+          if (_loadingReferenceData)
             const Padding(
               padding: EdgeInsets.symmetric(vertical: 8),
               child: Center(child: CircularProgressIndicator()),
@@ -247,6 +266,25 @@ class _VehicleInfoFormState extends State<VehicleInfoForm> {
                   .toList(),
               onChanged: (v) => setState(() => _selectedCargoType = v),
             ),
+          const SizedBox(height: 16),
+          ModernDropdownField<int?>(
+            value: _selectedOstanId,
+            label: l10n.province,
+            prefixIcon: Icons.location_on_outlined,
+            items: [
+              DropdownMenuItem<int?>(
+                value: null,
+                child: Text(l10n.notRegistered),
+              ),
+              ..._ostans.map(
+                (ostan) => DropdownMenuItem<int?>(
+                  value: ostan.id,
+                  child: Text(ostan.name),
+                ),
+              ),
+            ],
+            onChanged: (value) => setState(() => _selectedOstanId = value),
+          ),
           const SizedBox(height: 16),
           TextFormField(
             controller: _capacityController,

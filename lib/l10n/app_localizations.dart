@@ -22,6 +22,8 @@ class AppLocalizations {
     'سامانه هوشمند حمل‌ونقل بار جاده‌ای',
     'Smart road freight management system',
   );
+  String get pressBackAgainToExit =>
+      _t('برای خروج، دوباره دکمه بازگشت را بزنید', 'Press back again to exit');
 
   // Settings
   String get settings => _t('تنظیمات', 'Settings');
@@ -316,6 +318,8 @@ class AppLocalizations {
   String get signup => _t('ثبت‌نام', 'Sign up');
   String get signupTitle => _t('ثبت‌نام', 'Sign up');
   String get fullName => _t('نام و نام خانوادگی', 'Full name');
+  String get firstName => _t('نام', 'First name');
+  String get lastName => _t('نام خانوادگی', 'Last name');
   String get emailOptional => _t('ایمیل (اختیاری)', 'Email (optional)');
   String get confirmPassword => _t('تکرار رمز عبور', 'Confirm password');
   String get haveAccount =>
@@ -331,6 +335,10 @@ class AppLocalizations {
     'Password must be at least 8 characters',
   );
   String get nameRequired => _t('نام الزامی است', 'Name is required');
+  String get firstNameRequired =>
+      _t('نام الزامی است', 'First name is required');
+  String get lastNameRequired =>
+      _t('نام خانوادگی الزامی است', 'Last name is required');
   String get passwordsMismatch =>
       _t('رمز عبور و تکرار آن یکسان نیست', 'Passwords do not match');
   String get createAccount => _t('ایجاد حساب کاربری', 'Create an account');
@@ -389,6 +397,7 @@ class AppLocalizations {
   String cargoTypeLabel(String type) =>
       _t('نوع بارگیر: $type', 'Trailer type: $type');
   String get notRegistered => _t('ثبت نشده', 'Not set');
+  String get province => _t('استان', 'Province');
   String get gpsEnabled => _t('GPS فعال است', 'GPS is on');
   String get gpsDisabled => _t('GPS غیرفعال است', 'GPS is off');
   String get gpsEnabledHint => _t(
@@ -601,6 +610,8 @@ class AppLocalizations {
   String get machineId => _t('شناسه ماشین', 'Machine ID');
   String get provinceIdOptional =>
       _t('شناسه استان (اختیاری)', 'Province ID (optional)');
+  String get provinceIdInvalid =>
+      _t('شناسه استان معتبر نیست', 'Invalid province ID');
   String get signupDriverMachineIdHint => _t(
     'برای ثبت‌نام راننده، شناسه ماشین دریافتی از مدیر سامانه الزامی است.',
     'Driver registration requires the machine ID provided by the system administrator.',

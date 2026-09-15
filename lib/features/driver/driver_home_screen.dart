@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import '../../core/theme/app_theme.dart';
 import '../../l10n/app_localizations.dart';
 import '../../core/widgets/app_drawer.dart';
+import '../../core/widgets/double_back_to_exit.dart';
 import '../../core/widgets/shell_scope.dart';
 import '../../core/widgets/common_widgets.dart';
 import '../../core/widgets/fade_slide_in.dart';
@@ -63,40 +64,43 @@ class _DriverShellState extends State<DriverShell> {
     final index = _indexFromLocation(location);
     final hideBottomNav = AppDrawer.hidesBottomNav(location, 'driver');
 
-    return ShellScope(
-      openDrawer: () => _scaffoldKey.currentState?.openDrawer(),
-      child: Scaffold(
-        key: _scaffoldKey,
-        drawer: const AppDrawer(role: 'driver'),
-        body: widget.child,
-        bottomNavigationBar: hideBottomNav
-            ? null
-            : ModernBottomNav(
-                currentIndex: index,
-                onTap: _onTap,
-                destinations: [
-                  NavigationDestination(
-                    icon: const Icon(Icons.home_outlined),
-                    selectedIcon: const Icon(Icons.home_rounded),
-                    label: l10n.home,
-                  ),
-                  NavigationDestination(
-                    icon: const Icon(Icons.inventory_2_outlined),
-                    selectedIcon: const Icon(Icons.inventory_2),
-                    label: l10n.cargos,
-                  ),
-                  NavigationDestination(
-                    icon: const Icon(Icons.assignment_outlined),
-                    selectedIcon: const Icon(Icons.assignment),
-                    label: l10n.missions,
-                  ),
-                  NavigationDestination(
-                    icon: const Icon(Icons.person_outline),
-                    selectedIcon: const Icon(Icons.person),
-                    label: l10n.profile,
-                  ),
-                ],
-              ),
+    return DoubleBackToExit(
+      enabled: !hideBottomNav,
+      child: ShellScope(
+        openDrawer: () => _scaffoldKey.currentState?.openDrawer(),
+        child: Scaffold(
+          key: _scaffoldKey,
+          drawer: const AppDrawer(role: 'driver'),
+          body: widget.child,
+          bottomNavigationBar: hideBottomNav
+              ? null
+              : ModernBottomNav(
+                  currentIndex: index,
+                  onTap: _onTap,
+                  destinations: [
+                    NavigationDestination(
+                      icon: const Icon(Icons.home_outlined),
+                      selectedIcon: const Icon(Icons.home_rounded),
+                      label: l10n.home,
+                    ),
+                    NavigationDestination(
+                      icon: const Icon(Icons.inventory_2_outlined),
+                      selectedIcon: const Icon(Icons.inventory_2),
+                      label: l10n.cargos,
+                    ),
+                    NavigationDestination(
+                      icon: const Icon(Icons.assignment_outlined),
+                      selectedIcon: const Icon(Icons.assignment),
+                      label: l10n.missions,
+                    ),
+                    NavigationDestination(
+                      icon: const Icon(Icons.person_outline),
+                      selectedIcon: const Icon(Icons.person),
+                      label: l10n.profile,
+                    ),
+                  ],
+                ),
+        ),
       ),
     );
   }
