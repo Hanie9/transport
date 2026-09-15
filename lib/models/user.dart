@@ -7,6 +7,7 @@ class User {
     required this.phone,
     required this.role,
     this.email,
+    this.nationalCode,
     this.vehicleInfo,
   });
 
@@ -14,6 +15,7 @@ class User {
   final String fullName;
   final String phone;
   final String? email;
+  final String? nationalCode;
   final UserRole role;
   final VehicleInfo? vehicleInfo;
 
@@ -22,6 +24,7 @@ class User {
     String? fullName,
     String? phone,
     String? email,
+    String? nationalCode,
     UserRole? role,
     VehicleInfo? vehicleInfo,
   }) {
@@ -30,34 +33,47 @@ class User {
       fullName: fullName ?? this.fullName,
       phone: phone ?? this.phone,
       email: email ?? this.email,
+      nationalCode: nationalCode ?? this.nationalCode,
       role: role ?? this.role,
       vehicleInfo: vehicleInfo ?? this.vehicleInfo,
     );
   }
 
   factory User.fromJson(Map<String, dynamic> json) {
+    final firstName = (json['first_name'] ?? '').toString().trim();
+    final lastName = (json['last_name'] ?? '').toString().trim();
+    final apiFullName = [
+      firstName,
+      lastName,
+    ].where((v) => v.isNotEmpty).join(' ');
+    final driverInfo = json['driver_info'];
     return User(
       id: '${json['id'] ?? ''}',
-      fullName: (json['full_name'] ?? json['fullName'] ?? '').toString(),
+      fullName: (json['full_name'] ?? json['fullName'] ?? apiFullName)
+          .toString(),
       phone: (json['phone_number'] ?? json['phone'] ?? '').toString(),
       email: json['email']?.toString(),
+      nationalCode: json['national_code']?.toString(),
       role: UserRole.fromApiUser(json),
       vehicleInfo: json['vehicle'] is Map<String, dynamic>
           ? VehicleInfo.fromJson(json['vehicle'] as Map<String, dynamic>)
           : json['vehicle_info'] is Map<String, dynamic>
-              ? VehicleInfo.fromJson(json['vehicle_info'] as Map<String, dynamic>)
-              : null,
+          ? VehicleInfo.fromJson(json['vehicle_info'] as Map<String, dynamic>)
+          : driverInfo is Map
+          ? VehicleInfo.fromJson(Map<String, dynamic>.from(driverInfo))
+          : null,
     );
   }
 
   Map<String, dynamic> toJson() => {
-        'id': id,
-        'full_name': fullName,
-        'phone': phone,
-        if (email != null) 'email': email,
-        'role': role.apiValue,
-        if (vehicleInfo != null) 'vehicle': vehicleInfo!.toJson(),
-      };
+    'id': id,
+    'full_name': fullName,
+    'phone': phone,
+    if (email != null) 'email': email,
+    if (nationalCode != null) 'national_code': nationalCode,
+    'role': role.apiValue,
+    if (vehicleInfo != null) 'vehicle': vehicleInfo!.toJson(),
+  };
 }
 
 class VehicleInfo {
@@ -67,6 +83,8 @@ class VehicleInfo {
     required this.vehicleModel,
     this.capacityTons,
     this.machineId,
+    this.ostanId,
+    this.ostanName,
   });
 
   final String plateNumber;
@@ -74,24 +92,39 @@ class VehicleInfo {
   final String vehicleModel;
   final double? capacityTons;
   final int? machineId;
+  final int? ostanId;
+  final String? ostanName;
 
   factory VehicleInfo.fromJson(Map<String, dynamic> json) {
     return VehicleInfo(
-      plateNumber: (json['plate_number'] ?? json['plateNumber'] ?? '').toString(),
-      cargoType: (json['cargo_type'] ?? json['cargoType'] ?? '').toString(),
-      vehicleModel: (json['vehicle_model'] ?? json['vehicleModel'] ?? '').toString(),
+      plateNumber: (json['plate_number'] ?? json['plateNumber'] ?? '')
+          .toString(),
+      cargoType:
+          (json['cargo_type'] ??
+                  json['cargoType'] ??
+                  json['machine_name'] ??
+                  '')
+              .toString(),
+      vehicleModel: (json['vehicle_model'] ?? json['vehicleModel'] ?? '')
+          .toString(),
       capacityTons: (json['capacity_tons'] ?? json['capacityTons']) == null
           ? null
           : double.tryParse('${json['capacity_tons'] ?? json['capacityTons']}'),
-      machineId: int.tryParse('${json['machine_id'] ?? json['machineId'] ?? ''}'),
+      machineId: int.tryParse(
+        '${json['machine_id'] ?? json['machineId'] ?? ''}',
+      ),
+      ostanId: int.tryParse('${json['ostan_id'] ?? json['ostanId'] ?? ''}'),
+      ostanName: json['ostan_name']?.toString(),
     );
   }
 
   Map<String, dynamic> toJson() => {
-        'plate_number': plateNumber,
-        'cargo_type': cargoType,
-        'vehicle_model': vehicleModel,
-        if (capacityTons != null) 'capacity_tons': capacityTons,
-        if (machineId != null) 'machine_id': machineId,
-      };
+    'plate_number': plateNumber,
+    'cargo_type': cargoType,
+    'vehicle_model': vehicleModel,
+    if (capacityTons != null) 'capacity_tons': capacityTons,
+    if (machineId != null) 'machine_id': machineId,
+    if (ostanId != null) 'ostan_id': ostanId,
+    if (ostanName != null) 'ostan_name': ostanName,
+  };
 }

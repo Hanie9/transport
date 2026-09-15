@@ -36,25 +36,26 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
 
     setState(() => _saving = true);
     final ok = await context.read<AuthService>().changePassword(
-          currentPassword: _currentController.text,
-          newPassword: _newController.text,
-        );
+      currentPassword: _currentController.text,
+      newPassword: _newController.text,
+      newPasswordConfirm: _confirmController.text,
+    );
     if (!mounted) return;
 
     setState(() => _saving = false);
     if (ok) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(context.l10n.passwordChanged)),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(context.l10n.passwordChanged)));
       _currentController.clear();
       _newController.clear();
       _confirmController.clear();
     } else {
       final msg = context.read<AuthService>().lastError;
       if (msg != null && msg.isNotEmpty) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(msg)),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(msg)));
       }
     }
   }
@@ -81,7 +82,8 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
                     label: l10n.currentPassword,
                     icon: Icons.lock_outline,
                     obscure: _obscureCurrent,
-                    onToggle: () => setState(() => _obscureCurrent = !_obscureCurrent),
+                    onToggle: () =>
+                        setState(() => _obscureCurrent = !_obscureCurrent),
                     validator: (v) {
                       if (v == null || v.isEmpty) return l10n.passwordRequired;
                       return null;
@@ -96,7 +98,7 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
                     onToggle: () => setState(() => _obscureNew = !_obscureNew),
                     validator: (v) {
                       if (v == null || v.isEmpty) return l10n.passwordRequired;
-                      if (v.length < 6) return l10n.passwordMinLength;
+                      if (v.length < 8) return l10n.passwordMinLength;
                       return null;
                     },
                   ),
@@ -106,9 +108,12 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
                     label: l10n.confirmPassword,
                     icon: Icons.verified_user_outlined,
                     obscure: _obscureConfirm,
-                    onToggle: () => setState(() => _obscureConfirm = !_obscureConfirm),
+                    onToggle: () =>
+                        setState(() => _obscureConfirm = !_obscureConfirm),
                     validator: (v) {
-                      if (v != _newController.text) return l10n.passwordsMismatch;
+                      if (v != _newController.text) {
+                        return l10n.passwordsMismatch;
+                      }
                       return null;
                     },
                   ),
@@ -121,16 +126,26 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
               decoration: BoxDecoration(
                 color: AppTheme.warning.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: AppTheme.warning.withValues(alpha: 0.25)),
+                border: Border.all(
+                  color: AppTheme.warning.withValues(alpha: 0.25),
+                ),
               ),
               child: Row(
                 children: [
-                  const Icon(Icons.info_outline, color: AppTheme.warning, size: 20),
+                  const Icon(
+                    Icons.info_outline,
+                    color: AppTheme.warning,
+                    size: 20,
+                  ),
                   const SizedBox(width: 10),
                   Expanded(
                     child: Text(
                       l10n.changePasswordHint,
-                      style: TextStyle(fontSize: 13, color: palette.textSecondary, height: 1.4),
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: palette.textSecondary,
+                        height: 1.4,
+                      ),
                     ),
                   ),
                 ],
@@ -145,7 +160,10 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
                     ? const SizedBox(
                         height: 22,
                         width: 22,
-                        child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: Colors.white,
+                        ),
                       )
                     : Text(l10n.savePassword),
               ),
@@ -184,7 +202,9 @@ class _PasswordField extends StatelessWidget {
         labelText: label,
         prefixIcon: Icon(icon),
         suffixIcon: IconButton(
-          icon: Icon(obscure ? Icons.visibility_off_outlined : Icons.visibility_outlined),
+          icon: Icon(
+            obscure ? Icons.visibility_off_outlined : Icons.visibility_outlined,
+          ),
           onPressed: onToggle,
         ),
       ),

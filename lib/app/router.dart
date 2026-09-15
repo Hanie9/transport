@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
-import '../api_config.dart';
 import '../core/widgets/app_page_transitions.dart';
 import '../features/auth/login_screen.dart';
 import '../features/auth/signup_screen.dart';
@@ -42,12 +41,6 @@ class AppRouter {
           final role = authService.currentUser?.role;
           return role?.name == 'driver' ? '/driver' : '/coordinator';
         }
-        if (!ApiConfig.shouldUseMock) {
-          if (path == '/signup') return '/login';
-          if (path.endsWith('/change-password')) {
-            return path.replaceAll('/change-password', '/profile');
-          }
-        }
         return null;
       },
       routes: [
@@ -77,31 +70,23 @@ class AppRouter {
           routes: [
             GoRoute(
               path: '/driver',
-              pageBuilder: (context, state) => _noTransition(
-                state,
-                const HomeScreen(role: 'driver'),
-              ),
+              pageBuilder: (context, state) =>
+                  _noTransition(state, const HomeScreen(role: 'driver')),
             ),
             GoRoute(
               path: '/driver/cargos',
-              pageBuilder: (context, state) => _noTransition(
-                state,
-                const DriverHomeScreen(),
-              ),
+              pageBuilder: (context, state) =>
+                  _noTransition(state, const DriverHomeScreen()),
             ),
             GoRoute(
               path: '/driver/missions',
-              pageBuilder: (context, state) => _noTransition(
-                state,
-                const DriverMissionsScreen(),
-              ),
+              pageBuilder: (context, state) =>
+                  _noTransition(state, const DriverMissionsScreen()),
             ),
             GoRoute(
               path: '/driver/nearby',
-              pageBuilder: (context, state) => _noTransition(
-                state,
-                const NearbyCargoScreen(),
-              ),
+              pageBuilder: (context, state) =>
+                  _noTransition(state, const NearbyCargoScreen()),
             ),
             GoRoute(
               path: '/driver/profile',
@@ -116,45 +101,48 @@ class AppRouter {
             ),
             GoRoute(
               path: '/driver/vehicle',
-              pageBuilder: (context, state) => _noTransition(
-                state,
-                const VehicleProfileScreen(),
-              ),
+              pageBuilder: (context, state) =>
+                  _noTransition(state, const VehicleProfileScreen()),
             ),
             GoRoute(
               path: '/driver/settings',
-              pageBuilder: (context, state) => AppPageTransitions.sharedAxisHorizontal(
-                key: state.pageKey,
-                child: const SettingsScreen(),
-              ),
+              pageBuilder: (context, state) =>
+                  AppPageTransitions.sharedAxisHorizontal(
+                    key: state.pageKey,
+                    child: const SettingsScreen(),
+                  ),
             ),
             GoRoute(
               path: '/driver/about',
-              pageBuilder: (context, state) => AppPageTransitions.sharedAxisHorizontal(
-                key: state.pageKey,
-                child: const AboutScreen(),
-              ),
+              pageBuilder: (context, state) =>
+                  AppPageTransitions.sharedAxisHorizontal(
+                    key: state.pageKey,
+                    child: const AboutScreen(),
+                  ),
             ),
             GoRoute(
               path: '/driver/help',
-              pageBuilder: (context, state) => AppPageTransitions.sharedAxisHorizontal(
-                key: state.pageKey,
-                child: const HelpScreen(role: 'driver'),
-              ),
+              pageBuilder: (context, state) =>
+                  AppPageTransitions.sharedAxisHorizontal(
+                    key: state.pageKey,
+                    child: const HelpScreen(role: 'driver'),
+                  ),
             ),
             GoRoute(
               path: '/driver/support',
-              pageBuilder: (context, state) => AppPageTransitions.sharedAxisHorizontal(
-                key: state.pageKey,
-                child: const SupportScreen(),
-              ),
+              pageBuilder: (context, state) =>
+                  AppPageTransitions.sharedAxisHorizontal(
+                    key: state.pageKey,
+                    child: const SupportScreen(),
+                  ),
             ),
             GoRoute(
               path: '/driver/change-password',
-              pageBuilder: (context, state) => AppPageTransitions.sharedAxisHorizontal(
-                key: state.pageKey,
-                child: const ChangePasswordScreen(),
-              ),
+              pageBuilder: (context, state) =>
+                  AppPageTransitions.sharedAxisHorizontal(
+                    key: state.pageKey,
+                    child: const ChangePasswordScreen(),
+                  ),
             ),
           ],
         ),
@@ -162,9 +150,7 @@ class AppRouter {
           path: '/driver/cargo/:id',
           pageBuilder: (context, state) => AppPageTransitions.fadeSlide(
             key: state.pageKey,
-            child: CargoDetailScreen(
-              cargoId: state.pathParameters['id']!,
-            ),
+            child: CargoDetailScreen(cargoId: state.pathParameters['id']!),
           ),
         ),
         GoRoute(
@@ -172,9 +158,7 @@ class AppRouter {
           pageBuilder: (context, state) => AppPageTransitions.fadeSlide(
             key: state.pageKey,
             beginOffset: const Offset(0, 0.06),
-            child: RouteScreen(
-              cargoId: state.pathParameters['id']!,
-            ),
+            child: RouteScreen(cargoId: state.pathParameters['id']!),
           ),
         ),
         ShellRoute(
@@ -182,25 +166,21 @@ class AppRouter {
           routes: [
             GoRoute(
               path: '/coordinator',
-              pageBuilder: (context, state) => _noTransition(
-                state,
-                const HomeScreen(role: 'coordinator'),
-              ),
+              pageBuilder: (context, state) =>
+                  _noTransition(state, const HomeScreen(role: 'coordinator')),
             ),
             GoRoute(
               path: '/coordinator/cargos',
-              pageBuilder: (context, state) => _noTransition(
-                state,
-                const CoordinatorHomeScreen(),
-              ),
+              pageBuilder: (context, state) =>
+                  _noTransition(state, const CoordinatorHomeScreen()),
             ),
             GoRoute(
               path: '/coordinator/drivers',
-              redirect: (_, __) => '/coordinator/cargos',
+              redirect: (_, _) => '/coordinator/cargos',
             ),
             GoRoute(
               path: '/coordinator/nearby-drivers',
-              redirect: (_, __) => '/coordinator/cargos',
+              redirect: (_, _) => '/coordinator/cargos',
             ),
             GoRoute(
               path: '/coordinator/profile',
@@ -211,38 +191,43 @@ class AppRouter {
             ),
             GoRoute(
               path: '/coordinator/settings',
-              pageBuilder: (context, state) => AppPageTransitions.sharedAxisHorizontal(
-                key: state.pageKey,
-                child: const SettingsScreen(),
-              ),
+              pageBuilder: (context, state) =>
+                  AppPageTransitions.sharedAxisHorizontal(
+                    key: state.pageKey,
+                    child: const SettingsScreen(),
+                  ),
             ),
             GoRoute(
               path: '/coordinator/about',
-              pageBuilder: (context, state) => AppPageTransitions.sharedAxisHorizontal(
-                key: state.pageKey,
-                child: const AboutScreen(),
-              ),
+              pageBuilder: (context, state) =>
+                  AppPageTransitions.sharedAxisHorizontal(
+                    key: state.pageKey,
+                    child: const AboutScreen(),
+                  ),
             ),
             GoRoute(
               path: '/coordinator/help',
-              pageBuilder: (context, state) => AppPageTransitions.sharedAxisHorizontal(
-                key: state.pageKey,
-                child: const HelpScreen(role: 'coordinator'),
-              ),
+              pageBuilder: (context, state) =>
+                  AppPageTransitions.sharedAxisHorizontal(
+                    key: state.pageKey,
+                    child: const HelpScreen(role: 'coordinator'),
+                  ),
             ),
             GoRoute(
               path: '/coordinator/support',
-              pageBuilder: (context, state) => AppPageTransitions.sharedAxisHorizontal(
-                key: state.pageKey,
-                child: const SupportScreen(),
-              ),
+              pageBuilder: (context, state) =>
+                  AppPageTransitions.sharedAxisHorizontal(
+                    key: state.pageKey,
+                    child: const SupportScreen(),
+                  ),
             ),
             GoRoute(
               path: '/coordinator/change-password',
-              pageBuilder: (context, state) => AppPageTransitions.sharedAxisHorizontal(
-                key: state.pageKey,
-                child: const ChangePasswordScreen(),
-              ),
+              pageBuilder: (context, state) =>
+                  AppPageTransitions.sharedAxisHorizontal(
+                    key: state.pageKey,
+                    child: const ChangePasswordScreen(),
+                  ),
             ),
           ],
         ),
@@ -257,9 +242,7 @@ class AppRouter {
           path: '/coordinator/cargo/:id/edit',
           pageBuilder: (context, state) => AppPageTransitions.fadeSlide(
             key: state.pageKey,
-            child: EditCargoScreen(
-              cargoId: state.pathParameters['id']!,
-            ),
+            child: EditCargoScreen(cargoId: state.pathParameters['id']!),
           ),
         ),
         GoRoute(
@@ -275,7 +258,10 @@ class AppRouter {
     );
   }
 
-  static NoTransitionPage<void> _noTransition(GoRouterState state, Widget child) {
+  static NoTransitionPage<void> _noTransition(
+    GoRouterState state,
+    Widget child,
+  ) {
     return NoTransitionPage<void>(key: state.pageKey, child: child);
   }
 }

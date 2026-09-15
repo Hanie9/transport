@@ -3,7 +3,7 @@
 /// Defaults to the production Liara host. Override at build time:
 /// ```bash
 /// flutter run \
-///   --dart-define=API_BASE_URL=https://transport.liara.run/api \
+///   --dart-define=API_BASE_URL=https://tran-develoop.liara.run \
 ///   --dart-define=USE_MOCK_API=false
 /// ```
 class ApiConfig {
@@ -11,7 +11,7 @@ class ApiConfig {
 
   static const String apiBaseUrl = String.fromEnvironment(
     'API_BASE_URL',
-    defaultValue: 'https://transport.liara.run/api',
+    defaultValue: 'https://tran-develoop.liara.run',
   );
 
   static const bool useMockApi = bool.fromEnvironment(
@@ -24,30 +24,35 @@ class ApiConfig {
   /// When false and base URL is set, remote repositories are used.
   static bool get shouldUseMock => useMockApi || !hasApiBaseUrl;
 
-  // ── Accounts (no trailing slash) ───────────────────────────────────────────
-  static const String loginPath = '/accounts/login';
-  static const String logoutPath = '/accounts/logout';
-  static const String profilePath = '/accounts/profile';
+  // ── Accounts ───────────────────────────────────────────────────────────────
+  static const String loginPath = '/api/accounts/login';
+  static const String logoutPath = '/api/accounts/logout';
+  static const String profilePath = '/api/accounts/profile/';
+  static const String registerPath = '/api/accounts/register/';
+  static const String changePasswordPath = '/api/accounts/change-password/';
 
   // ── Operator (coordinator) bars ────────────────────────────────────────────
-  static const String operatorBarsPath = '/operator/bars/';
-  static const String operatorBarCreatePath = '/operator/bars/create/';
+  static const String operatorBarsPath = '/api/operator/bars/';
+  static const String operatorBarCreatePath = '/api/operator/bars/create/';
 
-  static String operatorBarDetailPath(String id) => '/operator/bars/$id/';
+  static String operatorBarDetailPath(String id) => '/api/operator/bars/$id/';
 
-  static String operatorBarUpdatePath(String id) => '/operator/bars/$id/update/';
+  static String operatorBarUpdatePath(String id) =>
+      '/api/operator/bars/$id/update/';
 
-  static String operatorBarDeletePath(String id) => '/operator/bars/$id/delete/';
+  static String operatorBarDeletePath(String id) =>
+      '/api/operator/bars/$id/delete/';
 
   // ── Driver bars ────────────────────────────────────────────────────────────
-  static const String driverBarsPath = '/driver/bars/';
+  static const String driverBarsPath = '/api/driver/bars/';
 
-  static String driverBarAcceptPath(String id) => '/driver/bars/$id/accept/';
+  static String driverBarAcceptPath(String id) =>
+      '/api/driver/bars/$id/accept/';
 
   // ── Reference data ─────────────────────────────────────────────────────────
-  static const String productsPath = '/products/';
-  static const String machinesPath = '/machines/';
-  static const String ostansPath = '/ostans/';
+  static const String productsPath = '/api/products/';
+  static const String machinesPath = '/api/machines/';
+  static const String ostansPath = '/api/ostans/';
 
   // ── Neshan proxy (optional — not in Transport OpenAPI) ───────────────────
   static const String neshanGeocodePath = '/transport/neshan/geocode';

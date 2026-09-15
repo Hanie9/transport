@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
+import '../../api_config.dart';
 import '../../core/theme/app_theme.dart';
 import '../../l10n/app_localizations.dart';
 import '../../models/user_role.dart';
@@ -22,6 +23,8 @@ class _SignupScreenState extends State<SignupScreen> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
+  final _machineIdController = TextEditingController();
+  final _ostanIdController = TextEditingController();
   UserRole _selectedRole = UserRole.driver;
   bool _obscurePassword = true;
   bool _obscureConfirm = true;
@@ -34,6 +37,8 @@ class _SignupScreenState extends State<SignupScreen> {
     _emailController.dispose();
     _passwordController.dispose();
     _confirmPasswordController.dispose();
+    _machineIdController.dispose();
+    _ostanIdController.dispose();
     super.dispose();
   }
 
@@ -48,7 +53,12 @@ class _SignupScreenState extends State<SignupScreen> {
       phone: _phoneController.text.trim(),
       password: _passwordController.text,
       role: _selectedRole,
-      email: _emailController.text.trim().isEmpty ? null : _emailController.text.trim(),
+      email: _emailController.text.trim().isEmpty
+          ? null
+          : _emailController.text.trim(),
+      passwordConfirm: _confirmPasswordController.text,
+      machineId: int.tryParse(_machineIdController.text.trim()),
+      ostanId: int.tryParse(_ostanIdController.text.trim()),
     );
 
     if (!mounted) return;
@@ -60,7 +70,9 @@ class _SignupScreenState extends State<SignupScreen> {
         context.go('/coordinator');
       }
     } else {
-      setState(() => _error = auth.lastError ?? context.l10n.loginFingerprintError);
+      setState(
+        () => _error = auth.lastError ?? context.l10n.loginFingerprintError,
+      );
     }
   }
 
@@ -96,7 +108,8 @@ class _SignupScreenState extends State<SignupScreen> {
                           title: l10n.userType,
                           child: AuthRoleSelector(
                             selectedRole: _selectedRole,
-                            onRoleChanged: (role) => setState(() => _selectedRole = role),
+                            onRoleChanged: (role) =>
+                                setState(() => _selectedRole = role),
                             enabled: !busy,
                           ),
                         ),
@@ -116,8 +129,9 @@ class _SignupScreenState extends State<SignupScreen> {
                                   labelText: l10n.fullName,
                                   prefixIcon: const Icon(Icons.person_outline),
                                 ),
-                                validator: (v) =>
-                                    v == null || v.trim().isEmpty ? l10n.nameRequired : null,
+                                validator: (v) => v == null || v.trim().isEmpty
+                                    ? l10n.nameRequired
+                                    : null,
                               ),
                               const SizedBox(height: 14),
                               TextFormField(
@@ -131,22 +145,76 @@ class _SignupScreenState extends State<SignupScreen> {
                                   hintText: '09123456789',
                                 ),
                                 validator: (v) {
-                                  if (v == null || v.trim().isEmpty) return l10n.phoneRequired;
-                                  if (v.trim().length < 11) return l10n.phoneInvalid;
+                                  if (v == null || v.trim().isEmpty) {
+                                    return l10n.phoneRequired;
+                                  }
+                                  if (v.trim().length < 11) {
+                                    return l10n.phoneInvalid;
+                                  }
                                   return null;
                                 },
                               ),
-                              const SizedBox(height: 14),
-                              TextFormField(
-                                controller: _emailController,
-                                keyboardType: TextInputType.emailAddress,
-                                textDirection: TextDirection.ltr,
-                                enabled: !busy,
-                                decoration: InputDecoration(
-                                  labelText: l10n.emailOptional,
-                                  prefixIcon: const Icon(Icons.email_outlined),
+                              if (ApiConfig.shouldUseMock) ...[
+                                const SizedBox(height: 14),
+                                TextFormField(
+                                  controller: _emailController,
+                                  keyboardType: TextInputType.emailAddress,
+                                  textDirection: TextDirection.ltr,
+                                  enabled: !busy,
+                                  decoration: InputDecoration(
+                                    labelText: l10n.emailOptional,
+                                    prefixIcon: const Icon(
+                                      Icons.email_outlined,
+                                    ),
+                                  ),
                                 ),
-                              ),
+                              ],
+                              if (!ApiConfig.shouldUseMock &&
+                                  _selectedRole == UserRole.driver) ...[
+                                const SizedBox(height: 14),
+                                Text(
+                                  l10n.signupDriverMachineIdHint,
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    color: palette.textSecondary,
+                                  ),
+                                ),
+                                const SizedBox(height: 10),
+                                TextFormField(
+                                  controller: _machineIdController,
+                                  keyboardType: TextInputType.number,
+                                  textDirection: TextDirection.ltr,
+                                  enabled: !busy,
+                                  decoration: InputDecoration(
+                                    labelText: l10n.machineId,
+                                    prefixIcon: const Icon(
+                                      Icons.local_shipping_outlined,
+                                    ),
+                                  ),
+                                  validator: (v) {
+                                    if (_selectedRole != UserRole.driver) {
+                                      return null;
+                                    }
+                                    if (int.tryParse(v?.trim() ?? '') == null) {
+                                      return l10n.selectMachineType;
+                                    }
+                                    return null;
+                                  },
+                                ),
+                                const SizedBox(height: 14),
+                                TextFormField(
+                                  controller: _ostanIdController,
+                                  keyboardType: TextInputType.number,
+                                  textDirection: TextDirection.ltr,
+                                  enabled: !busy,
+                                  decoration: InputDecoration(
+                                    labelText: l10n.provinceIdOptional,
+                                    prefixIcon: const Icon(
+                                      Icons.location_on_outlined,
+                                    ),
+                                  ),
+                                ),
+                              ],
                             ],
                           ),
                         ),
@@ -167,15 +235,23 @@ class _SignupScreenState extends State<SignupScreen> {
                                   prefixIcon: const Icon(Icons.lock_outline),
                                   suffixIcon: IconButton(
                                     icon: Icon(
-                                      _obscurePassword ? Icons.visibility_off : Icons.visibility,
+                                      _obscurePassword
+                                          ? Icons.visibility_off
+                                          : Icons.visibility,
                                     ),
-                                    onPressed: () =>
-                                        setState(() => _obscurePassword = !_obscurePassword),
+                                    onPressed: () => setState(
+                                      () =>
+                                          _obscurePassword = !_obscurePassword,
+                                    ),
                                   ),
                                 ),
                                 validator: (v) {
-                                  if (v == null || v.isEmpty) return l10n.passwordRequired;
-                                  if (v.length < 6) return l10n.passwordMinLength;
+                                  if (v == null || v.isEmpty) {
+                                    return l10n.passwordRequired;
+                                  }
+                                  if (v.length < 8) {
+                                    return l10n.passwordMinLength;
+                                  }
                                   return null;
                                 },
                               ),
@@ -186,17 +262,24 @@ class _SignupScreenState extends State<SignupScreen> {
                                 enabled: !busy,
                                 decoration: InputDecoration(
                                   labelText: l10n.confirmPassword,
-                                  prefixIcon: const Icon(Icons.lock_reset_outlined),
+                                  prefixIcon: const Icon(
+                                    Icons.lock_reset_outlined,
+                                  ),
                                   suffixIcon: IconButton(
                                     icon: Icon(
-                                      _obscureConfirm ? Icons.visibility_off : Icons.visibility,
+                                      _obscureConfirm
+                                          ? Icons.visibility_off
+                                          : Icons.visibility,
                                     ),
-                                    onPressed: () =>
-                                        setState(() => _obscureConfirm = !_obscureConfirm),
+                                    onPressed: () => setState(
+                                      () => _obscureConfirm = !_obscureConfirm,
+                                    ),
                                   ),
                                 ),
                                 validator: (v) {
-                                  if (v != _passwordController.text) return l10n.passwordsMismatch;
+                                  if (v != _passwordController.text) {
+                                    return l10n.passwordsMismatch;
+                                  }
                                   return null;
                                 },
                               ),
@@ -237,9 +320,14 @@ class _SignupScreenState extends State<SignupScreen> {
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            Text(l10n.haveAccount, style: TextStyle(color: palette.textSecondary)),
+                            Text(
+                              l10n.haveAccount,
+                              style: TextStyle(color: palette.textSecondary),
+                            ),
                             TextButton(
-                              onPressed: busy ? null : () => context.go('/login'),
+                              onPressed: busy
+                                  ? null
+                                  : () => context.go('/login'),
                               child: Text(l10n.login),
                             ),
                           ],

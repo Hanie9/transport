@@ -1,12 +1,13 @@
 #!/usr/bin/env bash
-# Live API smoke test against transport.liara.run (OpenAPI)
+# Live API smoke test against tran-develoop.liara.run (OpenAPI)
 # Usage: ./scripts/test_transport_api.sh
 
 set -euo pipefail
 
-BASE="${API_BASE_URL:-https://transport.liara.run/api}"
+BASE="${API_BASE_URL:-https://tran-develoop.liara.run}"
+API="$BASE/api"
 COORD_PHONE="09355191018"
-DRIVER1="09121111111"
+DRIVER1="09121234567"
 PASS='Ab123456#'
 
 pass() { echo "✅ $*"; }
@@ -72,10 +73,10 @@ get_auth() {
 TMP=$(mktemp -d)
 trap 'rm -rf "$TMP"' EXIT
 
-info "Health check $BASE/docs/"
-code=$(http_code "$BASE/docs/" "$TMP/health.json" || true)
+info "Health check $API/docs/"
+code=$(http_code "$API/docs/" "$TMP/health.json" || true)
 if [[ "$code" == "503" ]] || grep -q 'Application Error' "$TMP/health.json" 2>/dev/null; then
-  fail "سرور transport.liara.run خاموش است (503)."
+  fail "سرور tran-develoop.liara.run خاموش است (503)."
 fi
 pass "Server reachable (HTTP $code)"
 
@@ -83,7 +84,7 @@ login() {
   local phone="$1" label="$2"
   info "Login $label ($phone)"
   local code
-  code=$(post_json "$BASE/accounts/login" \
+  code=$(post_json "$API/accounts/login" \
     "{\"phone_number\":\"$phone\",\"password\":\"$PASS\"}" \
     "$TMP/login.json")
   if [[ "$code" != "200" && "$code" != "201" ]]; then
@@ -103,7 +104,7 @@ login "$DRIVER1" "راننده"
 DRIVER_TOKEN="$ACCESS"
 
 info "GET /accounts/profile (known backend bug)"
-code=$(get_auth "$BASE/accounts/profile" "$COORD_TOKEN" "$TMP/profile.json")
+code=$(get_auth "$API/accounts/profile/" "$COORD_TOKEN" "$TMP/profile.json")
 if [[ "$code" == "200" ]]; then
   pass "profile OK"
 else
@@ -111,31 +112,31 @@ else
 fi
 
 info "GET /operator/bars/"
-code=$(get_auth "$BASE/operator/bars/" "$COORD_TOKEN" "$TMP/cargos.json")
+code=$(get_auth "$API/operator/bars/" "$COORD_TOKEN" "$TMP/cargos.json")
 [[ "$code" == "200" ]] || fail "operator bars HTTP $code"
 pass "operator bars OK"
 
 info "GET /driver/bars/ (paginated)"
-code=$(get_auth "$BASE/driver/bars/?page=1" "$DRIVER_TOKEN" "$TMP/driver_bars.json")
+code=$(get_auth "$API/driver/bars/?page=1" "$DRIVER_TOKEN" "$TMP/driver_bars.json")
 [[ "$code" == "200" ]] || fail "driver bars HTTP $code"
 pass "driver bars OK"
 
 info "GET /products/ /machines/ /ostans/"
 for path in products machines ostans; do
-  code=$(get_auth "$BASE/$path/" "$COORD_TOKEN" "$TMP/ref.json")
+  code=$(get_auth "$API/$path/" "$COORD_TOKEN" "$TMP/$path.json")
   [[ "$code" == "200" ]] || fail "$path HTTP $code"
 done
 pass "reference data OK"
 
 info "POST /operator/bars/create/ (smoke)"
-PRODUCT_ID=$(python3 -c "import json; print(json.load(open('$TMP/ref.json'))[0]['id'])" 2>/dev/null || echo 1)
-MACHINE_ID=$(curl -sS "$BASE/machines/" -H "Authorization: Bearer $COORD_TOKEN" | python3 -c "import json,sys; print(json.load(sys.stdin)[0]['id'])")
-OSTAN_ID=$(curl -sS "$BASE/ostans/" -H "Authorization: Bearer $COORD_TOKEN" | python3 -c "import json,sys; print(json.load(sys.stdin)[0]['id'])")
+PRODUCT_ID=$(python3 -c "import json; print(json.load(open('$TMP/products.json'))[0]['id'])")
+MACHINE_ID=$(python3 -c "import json; print(json.load(open('$TMP/machines.json'))[0]['id'])")
+OSTAN_ID=$(python3 -c "import json; print(json.load(open('$TMP/ostans.json'))[0]['id'])")
 CREATE_BODY=$(cat <<EOF
 {"title":"API smoke test","description":"auto test","price":1000000,"product":$PRODUCT_ID,"machine":$MACHINE_ID,"ostan_mabda":$OSTAN_ID,"ostan_maghsad":$OSTAN_ID,"address_mabda":"تهران","address_maghsad":"اصفهان","latitude_mabda":"35.6892","longitude_mabda":"51.3890","latitude_maghsad":"32.6539","longitude_maghsad":"51.6660"}
 EOF
 )
-code=$(post_auth_json "$BASE/operator/bars/create/" "$CREATE_BODY" "$TMP/create.json" "$COORD_TOKEN")
+code=$(post_auth_json "$API/operator/bars/create/" "$CREATE_BODY" "$TMP/create.json" "$COORD_TOKEN")
 [[ "$code" == "200" || "$code" == "201" ]] || { cat "$TMP/create.json"; fail "create bar HTTP $code"; }
 BAR_ID=$(json_field "$(cat "$TMP/create.json")" id)
 [[ -z "$BAR_ID" ]] && BAR_ID=$(python3 -c "import json; d=json.load(open('$TMP/create.json')); print((d.get('data') or {}).get('id',''))")
@@ -143,13 +144,13 @@ BAR_ID=$(json_field "$(cat "$TMP/create.json")" id)
 pass "create bar id=$BAR_ID"
 
 info "PATCH /operator/bars/$BAR_ID/update/"
-code=$(patch_json "$BASE/operator/bars/$BAR_ID/update/" '{"description":"patched by smoke test"}' "$TMP/patch.json" "$COORD_TOKEN")
+code=$(patch_json "$API/operator/bars/$BAR_ID/update/" '{"description":"patched by smoke test"}' "$TMP/patch.json" "$COORD_TOKEN")
 [[ "$code" == "200" ]] || { cat "$TMP/patch.json"; fail "patch bar HTTP $code"; }
 pass "patch bar OK"
 
 info "PUT /operator/bars/$BAR_ID/update/"
 code=$(curl -sS -o "$TMP/put.json" -w "%{http_code}" --max-time 25 -X PUT \
-  "$BASE/operator/bars/$BAR_ID/update/" \
+  "$API/operator/bars/$BAR_ID/update/" \
   -H "Authorization: Bearer $COORD_TOKEN" \
   -H "Content-Type: application/json" -H "Accept: application/json" \
   -d "$CREATE_BODY")
@@ -157,18 +158,18 @@ code=$(curl -sS -o "$TMP/put.json" -w "%{http_code}" --max-time 25 -X PUT \
 pass "put bar OK"
 
 info "GET /operator/bars/$BAR_ID/"
-code=$(get_auth "$BASE/operator/bars/$BAR_ID/" "$COORD_TOKEN" "$TMP/detail.json")
+code=$(get_auth "$API/operator/bars/$BAR_ID/" "$COORD_TOKEN" "$TMP/detail.json")
 [[ "$code" == "200" ]] || fail "bar detail HTTP $code"
 pass "bar detail OK"
 
 info "DELETE /operator/bars/$BAR_ID/delete/"
-code=$(delete_auth "$BASE/operator/bars/$BAR_ID/delete/" "$COORD_TOKEN" "$TMP/delete.json")
+code=$(delete_auth "$API/operator/bars/$BAR_ID/delete/" "$COORD_TOKEN" "$TMP/delete.json")
 [[ "$code" == "200" || "$code" == "204" ]] || { cat "$TMP/delete.json"; fail "delete bar HTTP $code"; }
 pass "delete bar OK"
 
 info "POST /accounts/logout"
 code=$(curl -sS -o "$TMP/logout.json" -w "%{http_code}" --max-time 25 -X POST \
-  "$BASE/accounts/logout" \
+  "$API/accounts/logout" \
   -H "Authorization: Bearer $COORD_TOKEN" \
   -H "Content-Type: application/json" \
   -d "{\"refresh\":\"$COORD_REFRESH\"}")

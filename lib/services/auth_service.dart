@@ -14,13 +14,11 @@ import 'session_service.dart';
 import 'settings_service.dart';
 import 'token_storage.dart';
 
-/// Auth facade — JWT against transport.liara.run (or mock when enabled).
+/// Auth facade — JWT against the configured Transport API (or mock).
 class AuthService extends ChangeNotifier {
-  AuthService({
-    TokenStorage? tokenStorage,
-    ApiClient? apiClient,
-  })  : _tokens = tokenStorage ?? TokenStorage(),
-        _api = apiClient ?? ApiClient();
+  AuthService({TokenStorage? tokenStorage, ApiClient? apiClient})
+    : _tokens = tokenStorage ?? TokenStorage(),
+      _api = apiClient ?? ApiClient();
 
   final TokenStorage _tokens;
   final ApiClient _api;
@@ -68,7 +66,7 @@ class AuthService extends ChangeNotifier {
     );
   }
 
-  /// Refreshes user from `/accounts/profile` when the server is healthy.
+  /// Refreshes user from the documented profile endpoint.
   Future<bool> refreshProfile() => _tryRefreshProfile();
 
   Future<bool> _tryRefreshProfile() async {
@@ -77,8 +75,8 @@ class AuthService extends ChangeNotifier {
       final me = await _api.get(ApiConfig.profilePath);
       final userJson = me.containsKey('user') && me['user'] is Map
           ? Map<String, dynamic>.from(me['user'] as Map)
-          : me;
-      _currentUser = User.fromJson(userJson);
+          : ApiResponse.extractObject(me);
+      _currentUser = _mergeServerUser(User.fromJson(userJson));
       await _tokens.saveUserJson(jsonEncode(_currentUser!.toJson()));
       notifyListeners();
       return true;
@@ -163,7 +161,10 @@ class AuthService extends ChangeNotifier {
                 )
               : null,
         );
-        await _tokens.saveTokens(access: 'mock-access-token', refresh: 'mock-refresh');
+        await _tokens.saveTokens(
+          access: 'mock-access-token',
+          refresh: 'mock-refresh',
+        );
       } else {
         final data = await _api.post(
           ApiConfig.loginPath,
@@ -193,7 +194,9 @@ class AuthService extends ChangeNotifier {
           access = (tokens['access'] ?? '').toString();
           refresh = tokens['refresh']?.toString();
         }
-        access = access.isNotEmpty ? access : (data['access'] ?? data['token'] ?? '').toString();
+        access = access.isNotEmpty
+            ? access
+            : (data['access'] ?? data['token'] ?? '').toString();
         refresh ??= data['refresh']?.toString();
         if (access.isEmpty) {
           throw ApiException(
@@ -228,6 +231,9 @@ class AuthService extends ChangeNotifier {
     required String password,
     required UserRole role,
     String? email,
+    String? passwordConfirm,
+    int? machineId,
+    int? ostanId,
   }) async {
     _isLoading = true;
     _clearError();
@@ -244,11 +250,28 @@ class AuthService extends ChangeNotifier {
           email: email,
           role: role,
         );
-        await _tokens.saveTokens(access: 'mock-access-token', refresh: 'mock-refresh');
-      } else {
-        throw ApiException(
-          ApiMessages.signupUnavailable(isEnglish: _isEnglish),
+        await _tokens.saveTokens(
+          access: 'mock-access-token',
+          refresh: 'mock-refresh',
         );
+      } else {
+        final names = _splitName(fullName);
+        await _api.post(
+          ApiConfig.registerPath,
+          body: {
+            'first_name': names.$1,
+            'last_name': names.$2.isEmpty ? null : names.$2,
+            'phone_number': normalizeIranPhone(phone),
+            'password': password,
+            'password_confirm': passwordConfirm ?? password,
+            'user_type': role == UserRole.driver ? 'driver' : 'operator',
+            if (role == UserRole.driver && machineId != null)
+              'machine_id': machineId,
+            if (role == UserRole.driver && ostanId != null) 'ostan_id': ostanId,
+          },
+        );
+        // The registration response has no JWT; log in with the new account.
+        return login(phone: phone, password: password, role: role);
       }
 
       await _tokens.saveUserJson(jsonEncode(_currentUser!.toJson()));
@@ -265,32 +288,147 @@ class AuthService extends ChangeNotifier {
     }
   }
 
-  Future<void> updateVehicleInfo(VehicleInfo info) async {
-    if (_currentUser == null) return;
+  Future<bool> updateVehicleInfo(VehicleInfo info) async {
+    if (_currentUser == null) return false;
     _clearError();
     if (ApiConfig.shouldUseMock) {
       await Future<void>.delayed(const Duration(milliseconds: 500));
+    } else {
+      if (info.machineId == null) {
+        _lastError = ApiMessages.featureUnavailable(isEnglish: _isEnglish);
+        notifyListeners();
+        return false;
+      }
+      try {
+        final response = await _api.put(
+          ApiConfig.profilePath,
+          body: {
+            'machine_id': info.machineId,
+            if (info.ostanId != null) 'ostan_id': info.ostanId,
+          },
+        );
+        final serverUser = User.fromJson(ApiResponse.extractObject(response));
+        _currentUser = _mergeServerUser(serverUser, localVehicle: info);
+        await _tokens.saveUserJson(jsonEncode(_currentUser!.toJson()));
+        notifyListeners();
+        return true;
+      } catch (e) {
+        _setError(e);
+        notifyListeners();
+        return false;
+      }
     }
     _currentUser = _currentUser!.copyWith(vehicleInfo: info);
     await _tokens.saveUserJson(jsonEncode(_currentUser!.toJson()));
     notifyListeners();
+    return true;
   }
 
   Future<bool> changePassword({
     required String currentPassword,
     required String newPassword,
+    String? newPasswordConfirm,
   }) async {
     _clearError();
     if (ApiConfig.shouldUseMock) {
       await Future<void>.delayed(const Duration(milliseconds: 700));
-      if (currentPassword.isEmpty || newPassword.length < 6) {
+      if (currentPassword.isEmpty ||
+          newPassword.length < 8 ||
+          (newPasswordConfirm ?? newPassword) != newPassword) {
         _lastError = ApiMessages.invalidPassword(isEnglish: _isEnglish);
         return false;
       }
       return true;
     }
-    _lastError = ApiMessages.featureUnavailable(isEnglish: _isEnglish);
-    return false;
+    try {
+      await _api.post(
+        ApiConfig.changePasswordPath,
+        body: {
+          'old_password': currentPassword,
+          'new_password': newPassword,
+          'new_password_confirm': newPasswordConfirm ?? newPassword,
+        },
+      );
+      return true;
+    } catch (e) {
+      _setError(e);
+      return false;
+    }
+  }
+
+  Future<bool> updateProfile({
+    required String fullName,
+    String? nationalCode,
+    int? machineId,
+    int? ostanId,
+  }) async {
+    _clearError();
+    if (_currentUser == null) return false;
+    if (ApiConfig.shouldUseMock) {
+      _currentUser = _currentUser!.copyWith(
+        fullName: fullName,
+        nationalCode: nationalCode,
+      );
+      await _tokens.saveUserJson(jsonEncode(_currentUser!.toJson()));
+      notifyListeners();
+      return true;
+    }
+
+    try {
+      final names = _splitName(fullName);
+      final response = await _api.put(
+        ApiConfig.profilePath,
+        body: {
+          'first_name': names.$1,
+          'last_name': names.$2.isEmpty ? null : names.$2,
+          'national_code': nationalCode?.trim().isEmpty == true
+              ? null
+              : nationalCode?.trim(),
+          'machine_id': ?machineId,
+          'ostan_id': ?ostanId,
+        },
+      );
+      _currentUser = _mergeServerUser(
+        User.fromJson(ApiResponse.extractObject(response)),
+      );
+      await _tokens.saveUserJson(jsonEncode(_currentUser!.toJson()));
+      notifyListeners();
+      return true;
+    } catch (e) {
+      _setError(e);
+      return false;
+    }
+  }
+
+  (String, String) _splitName(String fullName) {
+    final parts = fullName.trim().split(RegExp(r'\s+'));
+    if (parts.isEmpty || parts.first.isEmpty) return ('', '');
+    return (parts.first, parts.skip(1).join(' '));
+  }
+
+  User _mergeServerUser(User server, {VehicleInfo? localVehicle}) {
+    final current = _currentUser;
+    final local = localVehicle ?? current?.vehicleInfo;
+    final remote = server.vehicleInfo;
+    VehicleInfo? vehicle;
+    if (local != null || remote != null) {
+      vehicle = VehicleInfo(
+        plateNumber: local?.plateNumber ?? '',
+        cargoType: remote?.cargoType.isNotEmpty == true
+            ? remote!.cargoType
+            : (local?.cargoType ?? ''),
+        vehicleModel: local?.vehicleModel ?? '',
+        capacityTons: local?.capacityTons,
+        machineId: remote?.machineId ?? local?.machineId,
+        ostanId: remote?.ostanId ?? local?.ostanId,
+        ostanName: remote?.ostanName ?? local?.ostanName,
+      );
+    }
+    return server.copyWith(
+      phone: server.phone.isEmpty ? current?.phone : null,
+      fullName: server.fullName.isEmpty ? current?.fullName : null,
+      vehicleInfo: vehicle,
+    );
   }
 
   Future<void> logout() async {

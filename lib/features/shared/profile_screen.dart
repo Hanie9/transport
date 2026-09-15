@@ -58,24 +58,30 @@ class _DriverProfileScreenState extends State<_DriverProfileScreen> {
     setState(() => _refreshingProfile = false);
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(ok ? context.l10n.profileRefreshed : context.l10n.profileRefreshFailed),
+        content: Text(
+          ok
+              ? context.l10n.profileRefreshed
+              : context.l10n.profileRefreshFailed,
+        ),
       ),
     );
   }
 
   Future<void> _saveVehicle(VehicleInfo info) async {
-    await context.read<AuthService>().updateVehicleInfo(info);
+    final auth = context.read<AuthService>();
+    final saved = await auth.updateVehicleInfo(info);
     if (!mounted) return;
+    if (!saved) {
+      final message = auth.lastError ?? context.l10n.profileRefreshFailed;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(message)));
+      return;
+    }
     setState(() => _editingVehicle = false);
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          ApiConfig.shouldUseMock
-              ? context.l10n.vehicleSaved
-              : context.l10n.machineSavedLocally,
-        ),
-      ),
-    );
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(context.l10n.vehicleSaved)));
   }
 
   @override
@@ -88,6 +94,11 @@ class _DriverProfileScreenState extends State<_DriverProfileScreen> {
       appBar: ModernAppBar(
         title: l10n.profile,
         actions: [
+          IconButton(
+            tooltip: l10n.edit,
+            onPressed: () => _editProfile(context),
+            icon: const Icon(Icons.edit_outlined),
+          ),
           if (!ApiConfig.shouldUseMock)
             IconButton(
               tooltip: l10n.refreshProfile,
@@ -116,9 +127,9 @@ class _DriverProfileScreenState extends State<_DriverProfileScreen> {
             FadeSlideIn(
               delay: const Duration(milliseconds: 80),
               child: _ProfileTile(
-              icon: Icons.phone_outlined,
-              title: l10n.phoneNumber,
-              value: user?.phone ?? '',
+                icon: Icons.phone_outlined,
+                title: l10n.phoneNumber,
+                value: user?.phone ?? '',
               ),
             ),
             if (user?.email != null)
@@ -130,15 +141,24 @@ class _DriverProfileScreenState extends State<_DriverProfileScreen> {
                   value: user!.email!,
                 ),
               ),
+            if (user?.nationalCode?.isNotEmpty == true)
+              FadeSlideIn(
+                delay: const Duration(milliseconds: 140),
+                child: _ProfileTile(
+                  icon: Icons.badge_outlined,
+                  title: l10n.nationalCode,
+                  value: user!.nationalCode!,
+                ),
+              ),
             const SizedBox(height: 8),
             FadeSlideIn(
               delay: const Duration(milliseconds: 160),
               child: _VehicleSection(
-              vehicle: vehicle,
-              editing: _editingVehicle,
-              onEdit: () => setState(() => _editingVehicle = true),
-              onCancel: () => setState(() => _editingVehicle = false),
-              onSave: _saveVehicle,
+                vehicle: vehicle,
+                editing: _editingVehicle,
+                onEdit: () => setState(() => _editingVehicle = true),
+                onCancel: () => setState(() => _editingVehicle = false),
+                onSave: _saveVehicle,
               ),
             ),
           ],
@@ -188,7 +208,10 @@ class _VehicleSection extends StatelessWidget {
               if (!editing)
                 TextButton.icon(
                   onPressed: onEdit,
-                  icon: Icon(vehicle == null ? Icons.add : Icons.edit_outlined, size: 18),
+                  icon: Icon(
+                    vehicle == null ? Icons.add : Icons.edit_outlined,
+                    size: 18,
+                  ),
                   label: Text(vehicle == null ? l10n.register : l10n.edit),
                 ),
             ],
@@ -215,12 +238,20 @@ class _VehicleSection extends StatelessWidget {
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 8),
-            Center(child: IranianPlateDisplay(plateNumber: vehicle!.plateNumber)),
+            Center(
+              child: IranianPlateDisplay(plateNumber: vehicle!.plateNumber),
+            ),
             const SizedBox(height: 16),
             _InfoRow(label: l10n.vehicleModel, value: vehicle!.vehicleModel),
-            _InfoRow(label: l10n.trailerType, value: l10n.cargoType(vehicle!.cargoType)),
+            _InfoRow(
+              label: l10n.trailerType,
+              value: l10n.cargoType(vehicle!.cargoType),
+            ),
             if (vehicle!.capacityTons != null)
-              _InfoRow(label: l10n.capacity, value: l10n.tons(vehicle!.capacityTons!)),
+              _InfoRow(
+                label: l10n.capacity,
+                value: l10n.tons(vehicle!.capacityTons!),
+              ),
           ],
         ],
       ),
@@ -241,9 +272,18 @@ class _InfoRow extends StatelessWidget {
       padding: const EdgeInsets.symmetric(vertical: 6),
       child: Row(
         children: [
-          Text(label, style: TextStyle(fontSize: 13, color: palette.textSecondary)),
+          Text(
+            label,
+            style: TextStyle(fontSize: 13, color: palette.textSecondary),
+          ),
           const Spacer(),
-          Text(value, style: TextStyle(fontWeight: FontWeight.w600, color: palette.textPrimary)),
+          Text(
+            value,
+            style: TextStyle(
+              fontWeight: FontWeight.w600,
+              color: palette.textPrimary,
+            ),
+          ),
         ],
       ),
     );
@@ -254,7 +294,8 @@ class _CoordinatorProfileScreen extends StatefulWidget {
   const _CoordinatorProfileScreen();
 
   @override
-  State<_CoordinatorProfileScreen> createState() => _CoordinatorProfileScreenState();
+  State<_CoordinatorProfileScreen> createState() =>
+      _CoordinatorProfileScreenState();
 }
 
 class _CoordinatorProfileScreenState extends State<_CoordinatorProfileScreen> {
@@ -268,7 +309,11 @@ class _CoordinatorProfileScreenState extends State<_CoordinatorProfileScreen> {
     setState(() => _refreshingProfile = false);
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(ok ? context.l10n.profileRefreshed : context.l10n.profileRefreshFailed),
+        content: Text(
+          ok
+              ? context.l10n.profileRefreshed
+              : context.l10n.profileRefreshFailed,
+        ),
       ),
     );
   }
@@ -282,6 +327,11 @@ class _CoordinatorProfileScreenState extends State<_CoordinatorProfileScreen> {
       appBar: ModernAppBar(
         title: l10n.profile,
         actions: [
+          IconButton(
+            tooltip: l10n.edit,
+            onPressed: () => _editProfile(context),
+            icon: const Icon(Icons.edit_outlined),
+          ),
           if (!ApiConfig.shouldUseMock)
             IconButton(
               tooltip: l10n.refreshProfile,
@@ -310,9 +360,9 @@ class _CoordinatorProfileScreenState extends State<_CoordinatorProfileScreen> {
             FadeSlideIn(
               delay: const Duration(milliseconds: 80),
               child: _ProfileTile(
-              icon: Icons.phone_outlined,
-              title: l10n.phoneNumber,
-              value: user?.phone ?? '',
+                icon: Icons.phone_outlined,
+                title: l10n.phoneNumber,
+                value: user?.phone ?? '',
               ),
             ),
             if (user?.email != null)
@@ -324,11 +374,106 @@ class _CoordinatorProfileScreenState extends State<_CoordinatorProfileScreen> {
                   value: user!.email!,
                 ),
               ),
+            if (user?.nationalCode?.isNotEmpty == true)
+              FadeSlideIn(
+                delay: const Duration(milliseconds: 140),
+                child: _ProfileTile(
+                  icon: Icons.badge_outlined,
+                  title: l10n.nationalCode,
+                  value: user!.nationalCode!,
+                ),
+              ),
           ],
         ),
       ),
     );
   }
+}
+
+Future<void> _editProfile(BuildContext context) async {
+  final l10n = context.l10n;
+  final auth = context.read<AuthService>();
+  final user = auth.currentUser;
+  if (user == null) return;
+
+  final formKey = GlobalKey<FormState>();
+  final nameController = TextEditingController(text: user.fullName);
+  final nationalCodeController = TextEditingController(
+    text: user.nationalCode ?? '',
+  );
+  final values = await showDialog<(String, String?)>(
+    context: context,
+    builder: (dialogContext) => AlertDialog(
+      title: Text(l10n.edit),
+      content: Form(
+        key: formKey,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextFormField(
+              controller: nameController,
+              decoration: InputDecoration(labelText: l10n.fullName),
+              validator: (value) => value == null || value.trim().isEmpty
+                  ? l10n.nameRequired
+                  : null,
+            ),
+            const SizedBox(height: 12),
+            TextFormField(
+              controller: nationalCodeController,
+              keyboardType: TextInputType.number,
+              textDirection: TextDirection.ltr,
+              decoration: InputDecoration(labelText: l10n.nationalCode),
+              validator: (value) {
+                final normalized = value?.trim() ?? '';
+                if (normalized.isNotEmpty && normalized.length != 10) {
+                  return l10n.nationalCodeInvalid;
+                }
+                return null;
+              },
+            ),
+          ],
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(dialogContext),
+          child: Text(l10n.cancel),
+        ),
+        FilledButton(
+          onPressed: () {
+            if (!formKey.currentState!.validate()) return;
+            Navigator.pop(dialogContext, (
+              nameController.text.trim(),
+              nationalCodeController.text.trim().isEmpty
+                  ? null
+                  : nationalCodeController.text.trim(),
+            ));
+          },
+          child: Text(l10n.save),
+        ),
+      ],
+    ),
+  );
+  nameController.dispose();
+  nationalCodeController.dispose();
+  if (values == null || !context.mounted) return;
+
+  final saved = await auth.updateProfile(
+    fullName: values.$1,
+    nationalCode: values.$2,
+    machineId: user.vehicleInfo?.machineId,
+    ostanId: user.vehicleInfo?.ostanId,
+  );
+  if (!context.mounted) return;
+  ScaffoldMessenger.of(context).showSnackBar(
+    SnackBar(
+      content: Text(
+        saved
+            ? context.l10n.profileRefreshed
+            : (auth.lastError ?? context.l10n.profileRefreshFailed),
+      ),
+    ),
+  );
 }
 
 class _ProfileTile extends StatelessWidget {
@@ -347,8 +492,17 @@ class _ProfileTile extends StatelessWidget {
     final palette = context.palette;
     return ListTile(
       leading: Icon(icon, color: AppTheme.primaryLight),
-      title: Text(title, style: TextStyle(fontSize: 12, color: palette.textSecondary)),
-      subtitle: Text(value, style: TextStyle(fontWeight: FontWeight.w500, color: palette.textPrimary)),
+      title: Text(
+        title,
+        style: TextStyle(fontSize: 12, color: palette.textSecondary),
+      ),
+      subtitle: Text(
+        value,
+        style: TextStyle(
+          fontWeight: FontWeight.w500,
+          color: palette.textPrimary,
+        ),
+      ),
     );
   }
 }

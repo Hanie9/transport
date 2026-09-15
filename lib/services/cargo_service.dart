@@ -15,16 +15,18 @@ import 'reference_data_service.dart';
 import 'settings_service.dart';
 import 'transport_api_mapper.dart';
 
-/// Cargo / driver facade — REST API at transport.liara.run (or mock).
+/// Cargo / driver facade — configured Transport REST API (or mock).
 class CargoService extends ChangeNotifier {
   CargoService._({ApiClient? apiClient, LocationService? locationService})
-      : _api = apiClient ?? ApiClient(),
-        _location = locationService ?? LocationService();
+    : _api = apiClient ?? ApiClient(),
+      _location = locationService ?? LocationService();
 
   /// Test-only constructor with injected API client.
-  CargoService.withClient(ApiClient apiClient, {LocationService? locationService})
-      : _api = apiClient,
-        _location = locationService ?? LocationService();
+  CargoService.withClient(
+    ApiClient apiClient, {
+    LocationService? locationService,
+  }) : _api = apiClient,
+       _location = locationService ?? LocationService();
 
   static final CargoService _instance = CargoService._();
   factory CargoService() => _instance;
@@ -264,10 +266,7 @@ class CargoService extends ChangeNotifier {
   }) async {
     if (!ApiConfig.shouldUseMock) {
       try {
-        final params = {
-          ...?query?.toQueryParameters(),
-          'page': '$page',
-        };
+        final params = {...?query?.toQueryParameters(), 'page': '$page'};
         final data = await _api.get(ApiConfig.driverBarsPath, query: params);
         final list = ApiResponse.extractList(data);
         final meta = ApiResponse.extractPagination(data);
@@ -316,7 +315,9 @@ class CargoService extends ChangeNotifier {
 
     final all = await getAllCargos();
     return all
-        .where((c) => c.cargoType == cargoType && c.status == 'در انتظار راننده')
+        .where(
+          (c) => c.cargoType == cargoType && c.status == 'در انتظار راننده',
+        )
         .toList();
   }
 
@@ -326,17 +327,19 @@ class CargoService extends ChangeNotifier {
     LatLng? driverPosition,
   }) async {
     _clearError();
-    final pos = driverPosition ?? await _location.getCurrentPosition(requestIfNeeded: false);
+    final pos =
+        driverPosition ??
+        await _location.getCurrentPosition(requestIfNeeded: false);
     if (pos == null) return const [];
 
     if (!ApiConfig.shouldUseMock) {
       try {
         final open = await getCargosForDriver(cargoType ?? '');
-        final pos = driverPosition ?? await _location.getCurrentPosition(requestIfNeeded: false);
+        final pos =
+            driverPosition ??
+            await _location.getCurrentPosition(requestIfNeeded: false);
         if (pos == null) {
-          return open
-              .map((c) => c.copyWith(isNearby: true))
-              .toList();
+          return open.map((c) => c.copyWith(isNearby: true)).toList();
         }
 
         final results = <Cargo>[];
@@ -356,7 +359,8 @@ class CargoService extends ChangeNotifier {
           }
         }
         results.sort(
-          (a, b) => (a.nearbyDistanceKm ?? 0).compareTo(b.nearbyDistanceKm ?? 0),
+          (a, b) =>
+              (a.nearbyDistanceKm ?? 0).compareTo(b.nearbyDistanceKm ?? 0),
         );
         return results;
       } catch (e) {
@@ -428,7 +432,9 @@ class CargoService extends ChangeNotifier {
       if (!ApiConfig.shouldUseMock) {
         try {
           final data = await _api.get(ApiConfig.operatorBarDetailPath(id));
-          return TransportApiMapper.cargoFromBar(ApiResponse.extractObject(data));
+          return TransportApiMapper.cargoFromBar(
+            ApiResponse.extractObject(data),
+          );
         } catch (_) {}
 
         final open = await _findOpenDriverBar(id);
@@ -543,7 +549,9 @@ class CargoService extends ChangeNotifier {
         ApiConfig.operatorBarCreatePath,
         body: TransportApiMapper.barPayload(
           title: title,
-          description: description ?? '$goodsType${weightTons > 0 ? ' - ${weightTons}t' : ''}',
+          description:
+              description ??
+              '$goodsType${weightTons > 0 ? ' - ${weightTons}t' : ''}',
           price: estimatedPrice,
           productId: productId,
           machineId: machineId,
@@ -557,7 +565,9 @@ class CargoService extends ChangeNotifier {
           destinationLng: destinationLng,
         ),
       );
-      final cargo = TransportApiMapper.cargoFromBar(ApiResponse.extractObject(data));
+      final cargo = TransportApiMapper.cargoFromBar(
+        ApiResponse.extractObject(data),
+      );
       notifyListeners();
       return cargo;
     }
@@ -601,7 +611,8 @@ class CargoService extends ChangeNotifier {
         return driverName != null && mission.assignedDriverName == driverName;
       }).toList();
       filtered.sort(
-        (a, b) => (b.createdAt ?? DateTime(0)).compareTo(a.createdAt ?? DateTime(0)),
+        (a, b) =>
+            (b.createdAt ?? DateTime(0)).compareTo(a.createdAt ?? DateTime(0)),
       );
       return filtered;
     }
@@ -618,7 +629,8 @@ class CargoService extends ChangeNotifier {
         )
         .toList()
       ..sort(
-        (a, b) => (b.createdAt ?? DateTime(0)).compareTo(a.createdAt ?? DateTime(0)),
+        (a, b) =>
+            (b.createdAt ?? DateTime(0)).compareTo(a.createdAt ?? DateTime(0)),
       );
   }
 
@@ -644,7 +656,9 @@ class CargoService extends ChangeNotifier {
           );
         }
 
-        final response = await _api.post(ApiConfig.driverBarAcceptPath(cargoId));
+        final response = await _api.post(
+          ApiConfig.driverBarAcceptPath(cargoId),
+        );
         if (response['error'] != null) {
           throw ApiException(response['error'].toString());
         }
@@ -655,22 +669,27 @@ class CargoService extends ChangeNotifier {
           assignMap = Map<String, dynamic>.from(assign);
         }
 
-        final mission = (existing ?? Cargo(
-          id: cargoId,
-          title: '',
-          origin: '',
-          destination: '',
-          cargoType: '',
-          goodsType: '',
-          weightTons: 0,
-          estimatedPrice: 0,
-          status: 'تخصیص یافته',
-          coordinatorName: '',
-        )).copyWith(
-          status: 'تخصیص یافته',
-          assignedDriverName: assignMap?['driver_name']?.toString() ?? driverName,
-          assignedDriverPhone: assignMap?['driver_phone']?.toString() ?? driverPhone,
-        );
+        final mission =
+            (existing ??
+                    Cargo(
+                      id: cargoId,
+                      title: '',
+                      origin: '',
+                      destination: '',
+                      cargoType: '',
+                      goodsType: '',
+                      weightTons: 0,
+                      estimatedPrice: 0,
+                      status: 'تخصیص یافته',
+                      coordinatorName: '',
+                    ))
+                .copyWith(
+                  status: 'تخصیص یافته',
+                  assignedDriverName:
+                      assignMap?['driver_name']?.toString() ?? driverName,
+                  assignedDriverPhone:
+                      assignMap?['driver_phone']?.toString() ?? driverPhone,
+                );
         await DriverMissionStore.instance.upsert(mission);
         notifyListeners();
         NotificationService().pushLocal('بار پذیرفته شد');
@@ -685,7 +704,9 @@ class CargoService extends ChangeNotifier {
         assignedDriverName: driverName,
         assignedDriverPhone: driverPhone,
       );
-      NotificationService().pushLocal('بار «${_cargos[index].title}» پذیرفته شد');
+      NotificationService().pushLocal(
+        'بار «${_cargos[index].title}» پذیرفته شد',
+      );
       notifyListeners();
       return true;
     } catch (e) {
@@ -754,7 +775,10 @@ class CargoService extends ChangeNotifier {
         if (fullReplace) {
           await _api.put(ApiConfig.operatorBarUpdatePath(cargoId), body: body);
         } else {
-          await _api.patch(ApiConfig.operatorBarUpdatePath(cargoId), body: body);
+          await _api.patch(
+            ApiConfig.operatorBarUpdatePath(cargoId),
+            body: body,
+          );
         }
         if (status != null) {
           await DriverMissionStore.instance.updateStatus(cargoId, status);

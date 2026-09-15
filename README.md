@@ -85,20 +85,19 @@ lib/
 
 ## داده‌های نمونه و آمادگی API
 
-فعلاً `USE_MOCK_API=true` است و داده از mock می‌آید. مدل‌ها (`fromJson`/`toJson`)، `ApiClient` با JWT، و مسیرهای REST آمادهٔ اتصال به Django هستند.
+برنامه به‌صورت پیش‌فرض به API روی `https://tran-develoop.liara.run` متصل است. برای اجرای کاملاً محلی می‌توانید `USE_MOCK_API=true` را فعال کنید.
 
 ```bash
-# وقتی بک‌اند آماده شد:
 flutter run \
   --dart-define=USE_MOCK_API=false \
-  --dart-define=API_BASE_URL=https://your-server.com/api
+  --dart-define=API_BASE_URL=https://tran-develoop.liara.run
 ```
 
 برای تست mock می‌توانید با هر شماره موبایل و رمز حداقل ۶ کاراکتر وارد شوید. نشست کاربر بعد از ورود ذخیره می‌شود و در اسپلش بازیابی می‌گردد.
 
 ## نقشه راه
 
-- [ ] اتصال به API بک‌اند (Django REST) — لایه کلاینت آماده است
+- [x] اتصال endpointهای مستندشدهٔ بک‌اند (Django REST)
 - [x] یکپارچه‌سازی نقشه و مسیریابی نشان
 - [x] GPS واقعی برای پیشنهاد بار/راننده نزدیک
 - [x] ساختار JWT / ApiClient / سریالایز مدل‌ها

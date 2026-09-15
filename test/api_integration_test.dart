@@ -8,13 +8,13 @@ import 'package:http/http.dart' as http;
 
 const _baseUrl = String.fromEnvironment(
   'API_BASE_URL',
-  defaultValue: 'https://transport.liara.run/api',
+  defaultValue: 'https://tran-develoop.liara.run',
 );
 
 void main() {
   test('docs endpoint is reachable', () async {
     final res = await http
-        .get(Uri.parse('$_baseUrl/docs/'))
+        .get(Uri.parse('$_baseUrl/api/docs/'))
         .timeout(const Duration(seconds: 20));
     expect(res.statusCode, lessThan(500));
     expect(res.body.contains('Application Error'), isFalse);

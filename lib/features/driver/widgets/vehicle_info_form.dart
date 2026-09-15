@@ -75,7 +75,9 @@ class _VehicleInfoFormState extends State<VehicleInfoForm> {
 
   void _loadInitial(VehicleInfo? vehicle) {
     if (vehicle != null) {
-      _plateData = IranianPlateData.parse(vehicle.plateNumber) ?? const IranianPlateData();
+      _plateData =
+          IranianPlateData.parse(vehicle.plateNumber) ??
+          const IranianPlateData();
       _modelController.text = vehicle.vehicleModel;
       _selectedCargoType = vehicle.cargoType;
       _selectedMachineId = vehicle.machineId;
@@ -97,15 +99,15 @@ class _VehicleInfoFormState extends State<VehicleInfoForm> {
 
     if (ApiConfig.shouldUseMock) {
       if (_selectedCargoType == null) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(l10n.selectTrailerType)),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(l10n.selectTrailerType)));
         return;
       }
     } else if (_selectedMachineId == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(l10n.selectMachineType)),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(l10n.selectMachineType)));
       return;
     }
 
@@ -121,6 +123,8 @@ class _VehicleInfoFormState extends State<VehicleInfoForm> {
       vehicleModel: _modelController.text.trim(),
       capacityTons: double.tryParse(_capacityController.text.trim()),
       machineId: _selectedMachineId,
+      ostanId: widget.initial?.ostanId,
+      ostanName: widget.initial?.ostanName,
     );
 
     await widget.onSave(info);
@@ -144,7 +148,9 @@ class _VehicleInfoFormState extends State<VehicleInfoForm> {
               decoration: BoxDecoration(
                 color: AppTheme.primary.withValues(alpha: 0.06),
                 borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: AppTheme.primary.withValues(alpha: 0.1)),
+                border: Border.all(
+                  color: AppTheme.primary.withValues(alpha: 0.1),
+                ),
               ),
               child: Row(
                 children: [
@@ -153,7 +159,10 @@ class _VehicleInfoFormState extends State<VehicleInfoForm> {
                   Expanded(
                     child: Text(
                       l10n.vehicleFormHint,
-                      style: const TextStyle(fontSize: 13, color: AppTheme.textSecondary),
+                      style: const TextStyle(
+                        fontSize: 13,
+                        color: AppTheme.textSecondary,
+                      ),
                     ),
                   ),
                 ],
@@ -170,7 +179,10 @@ class _VehicleInfoFormState extends State<VehicleInfoForm> {
               ),
               child: Text(
                 ApiMessages.serverMachineNote(isEnglish: isEnglish),
-                style: const TextStyle(fontSize: 12, color: AppTheme.textSecondary),
+                style: const TextStyle(
+                  fontSize: 12,
+                  color: AppTheme.textSecondary,
+                ),
               ),
             ),
             const SizedBox(height: 16),
@@ -229,7 +241,12 @@ class _VehicleInfoFormState extends State<VehicleInfoForm> {
                 prefixIcon: const Icon(Icons.category_outlined),
               ),
               items: AppConstants.cargoTypes
-                  .map((t) => DropdownMenuItem(value: t, child: Text(l10n.cargoType(t))))
+                  .map(
+                    (t) => DropdownMenuItem(
+                      value: t,
+                      child: Text(l10n.cargoType(t)),
+                    ),
+                  )
                   .toList(),
               onChanged: (v) => setState(() => _selectedCargoType = v),
             ),
@@ -250,7 +267,10 @@ class _VehicleInfoFormState extends State<VehicleInfoForm> {
                 ? const SizedBox(
                     height: 22,
                     width: 22,
-                    child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: Colors.white,
+                    ),
                   )
                 : Text(l10n.saveVehicleInfo),
           ),

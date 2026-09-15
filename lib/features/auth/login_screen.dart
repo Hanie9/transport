@@ -4,7 +4,6 @@ import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
-import '../../api_config.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/widgets/scale_tap.dart';
 import '../../l10n/api_messages.dart';
@@ -48,10 +47,7 @@ class _LoginScreenState extends State<LoginScreen> {
     final isEnglish = context.read<SettingsService>().isEnglish;
     final sessionExpired = auth.sessionExpiredNotice;
 
-    await Future.wait([
-      _loadRememberedPhone(),
-      _initBiometricState(),
-    ]);
+    await Future.wait([_loadRememberedPhone(), _initBiometricState()]);
 
     if (!mounted) return;
     if (sessionExpired) {
@@ -141,7 +137,9 @@ class _LoginScreenState extends State<LoginScreen> {
     if (!mounted) return;
 
     if (!success) {
-      setState(() => _error = auth.lastError ?? context.l10n.loginFingerprintError);
+      setState(
+        () => _error = auth.lastError ?? context.l10n.loginFingerprintError,
+      );
       return;
     }
 
@@ -257,10 +255,7 @@ class _LoginScreenState extends State<LoginScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              AuthHeroHeader(
-                title: l10n.appName,
-                subtitle: l10n.loginTitle,
-              ),
+              AuthHeroHeader(title: l10n.appName, subtitle: l10n.loginTitle),
               Padding(
                 padding: const EdgeInsets.fromLTRB(20, 24, 20, 32),
                 child: Form(
@@ -273,7 +268,8 @@ class _LoginScreenState extends State<LoginScreen> {
                           title: l10n.userType,
                           child: AuthRoleSelector(
                             selectedRole: _selectedRole,
-                            onRoleChanged: (role) => setState(() => _selectedRole = role),
+                            onRoleChanged: (role) =>
+                                setState(() => _selectedRole = role),
                             enabled: !busy,
                           ),
                         ),
@@ -299,7 +295,9 @@ class _LoginScreenState extends State<LoginScreen> {
                                   if (v == null || v.trim().isEmpty) {
                                     return l10n.phoneRequired;
                                   }
-                                  if (v.trim().length < 11) return l10n.phoneInvalid;
+                                  if (v.trim().length < 11) {
+                                    return l10n.phoneInvalid;
+                                  }
                                   return null;
                                 },
                               ),
@@ -319,13 +317,18 @@ class _LoginScreenState extends State<LoginScreen> {
                                           : Icons.visibility,
                                     ),
                                     onPressed: () => setState(
-                                      () => _obscurePassword = !_obscurePassword,
+                                      () =>
+                                          _obscurePassword = !_obscurePassword,
                                     ),
                                   ),
                                 ),
                                 validator: (v) {
-                                  if (v == null || v.isEmpty) return l10n.passwordRequired;
-                                  if (v.length < 6) return l10n.passwordMinLength;
+                                  if (v == null || v.isEmpty) {
+                                    return l10n.passwordRequired;
+                                  }
+                                  if (v.length < 8) {
+                                    return l10n.passwordMinLength;
+                                  }
                                   return null;
                                 },
                               ),
@@ -339,7 +342,9 @@ class _LoginScreenState extends State<LoginScreen> {
                                       value: _rememberMe,
                                       onChanged: busy
                                           ? null
-                                          : (v) => setState(() => _rememberMe = v ?? false),
+                                          : (v) => setState(
+                                              () => _rememberMe = v ?? false,
+                                            ),
                                       activeColor: AppTheme.primary,
                                       shape: RoundedRectangleBorder(
                                         borderRadius: BorderRadius.circular(4),
@@ -350,7 +355,9 @@ class _LoginScreenState extends State<LoginScreen> {
                                   GestureDetector(
                                     onTap: busy
                                         ? null
-                                        : () => setState(() => _rememberMe = !_rememberMe),
+                                        : () => setState(
+                                            () => _rememberMe = !_rememberMe,
+                                          ),
                                     child: Text(
                                       l10n.rememberMe,
                                       style: TextStyle(
@@ -397,7 +404,9 @@ class _LoginScreenState extends State<LoginScreen> {
                                   onTap: _tryBiometricLogin,
                                   borderRadius: BorderRadius.circular(36),
                                   child: Opacity(
-                                    opacity: (busy || !_hasStoredCredentials) ? 0.45 : 1,
+                                    opacity: (busy || !_hasStoredCredentials)
+                                        ? 0.45
+                                        : 1,
                                     child: Container(
                                       width: 72,
                                       height: 72,
@@ -407,8 +416,12 @@ class _LoginScreenState extends State<LoginScreen> {
                                           begin: Alignment.topLeft,
                                           end: Alignment.bottomRight,
                                           colors: [
-                                            AppTheme.primary.withValues(alpha: 0.18),
-                                            AppTheme.primaryLight.withValues(alpha: 0.06),
+                                            AppTheme.primary.withValues(
+                                              alpha: 0.18,
+                                            ),
+                                            AppTheme.primaryLight.withValues(
+                                              alpha: 0.06,
+                                            ),
                                           ],
                                         ),
                                         border: Border.all(
@@ -417,7 +430,9 @@ class _LoginScreenState extends State<LoginScreen> {
                                         ),
                                         boxShadow: [
                                           BoxShadow(
-                                            color: AppTheme.primary.withValues(alpha: 0.18),
+                                            color: AppTheme.primary.withValues(
+                                              alpha: 0.18,
+                                            ),
                                             blurRadius: 16,
                                             offset: const Offset(0, 6),
                                           ),
@@ -436,7 +451,10 @@ class _LoginScreenState extends State<LoginScreen> {
                                           : Icon(
                                               Icons.fingerprint_rounded,
                                               size: 38,
-                                              color: Theme.of(context).brightness ==
+                                              color:
+                                                  Theme.of(
+                                                        context,
+                                                      ).brightness ==
                                                       Brightness.dark
                                                   ? Colors.white
                                                   : AppTheme.primary,
@@ -453,7 +471,9 @@ class _LoginScreenState extends State<LoginScreen> {
                                   style: TextStyle(
                                     fontSize: 13,
                                     fontWeight: FontWeight.w600,
-                                    color: Theme.of(context).brightness == Brightness.dark
+                                    color:
+                                        Theme.of(context).brightness ==
+                                            Brightness.dark
                                         ? Colors.white70
                                         : AppTheme.primary,
                                   ),
@@ -470,25 +490,25 @@ class _LoginScreenState extends State<LoginScreen> {
                           child: AuthErrorBanner(message: _error),
                         ),
                       ],
-                      if (ApiConfig.shouldUseMock) ...[
-                        const SizedBox(height: 16),
-                        AuthFormSection(
-                          delay: const Duration(milliseconds: 220),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Text(
-                                l10n.noAccount,
-                                style: TextStyle(color: palette.textSecondary),
-                              ),
-                              TextButton(
-                                onPressed: busy ? null : () => context.go('/signup'),
-                                child: Text(l10n.signup),
-                              ),
-                            ],
-                          ),
+                      const SizedBox(height: 16),
+                      AuthFormSection(
+                        delay: const Duration(milliseconds: 220),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Text(
+                              l10n.noAccount,
+                              style: TextStyle(color: palette.textSecondary),
+                            ),
+                            TextButton(
+                              onPressed: busy
+                                  ? null
+                                  : () => context.go('/signup'),
+                              child: Text(l10n.signup),
+                            ),
+                          ],
                         ),
-                      ],
+                      ),
                     ],
                   ),
                 ),
