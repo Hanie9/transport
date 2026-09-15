@@ -373,7 +373,7 @@ class _DriverHomeScreenState extends State<DriverHomeScreen>
                       ),
                       const SizedBox(width: 12),
                       Expanded(
-                        child: FilledButton(
+                        child: ElevatedButton(
                           onPressed: () {
                             final min = int.tryParse(minController.text.trim());
                             final max = int.tryParse(maxController.text.trim());
