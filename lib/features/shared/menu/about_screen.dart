@@ -49,12 +49,12 @@ class AboutScreen extends StatelessWidget {
                 const SizedBox(height: 16),
                 Text(
                   l10n.appName,
-                  style: const TextStyle(
+                  style: TextStyle(
                     color: Colors.white,
                     fontSize: 26,
                     fontWeight: FontWeight.w800,
                     letterSpacing: -0.5,
-                    fontFamily: AppTheme.brandFamily,
+                    fontFamily: l10n.isFa ? 'Vazir' : AppTheme.brandFamily,
                   ),
                 ),
                 const SizedBox(height: 8),

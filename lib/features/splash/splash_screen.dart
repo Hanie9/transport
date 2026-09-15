@@ -60,9 +60,7 @@ class _SplashScreenState extends State<SplashScreen>
     return Scaffold(
       body: Container(
         width: double.infinity,
-        decoration: BoxDecoration(
-          gradient: AppTheme.primaryGradient,
-        ),
+        decoration: BoxDecoration(gradient: AppTheme.primaryGradient),
         child: FadeTransition(
           opacity: _fade,
           child: Column(
@@ -84,10 +82,10 @@ class _SplashScreenState extends State<SplashScreen>
               Text(
                 l10n.appName,
                 style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                      color: Colors.white,
-                      fontWeight: FontWeight.bold,
-                      fontFamily: AppTheme.brandFamily,
-                    ),
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                  fontFamily: l10n.isFa ? 'Vazir' : AppTheme.brandFamily,
+                ),
               ),
               const SizedBox(height: 8),
               Text(

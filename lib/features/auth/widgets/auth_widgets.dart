@@ -25,10 +25,16 @@ class AuthHeroHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final topPadding = MediaQuery.paddingOf(context).top;
+    final l10n = context.l10n;
 
     return FadeSlideIn(
       child: Container(
-        padding: EdgeInsets.fromLTRB(20, topPadding + (showBack ? 8 : 24), 20, 28),
+        padding: EdgeInsets.fromLTRB(
+          20,
+          topPadding + (showBack ? 8 : 24),
+          20,
+          28,
+        ),
         decoration: BoxDecoration(
           gradient: AppTheme.primaryGradient,
           borderRadius: const BorderRadius.only(
@@ -50,16 +56,23 @@ class AuthHeroHeader extends StatelessWidget {
               Align(
                 alignment: AlignmentDirectional.centerStart,
                 child: ScaleTap(
-                  onTap: () => context.canPop() ? context.pop() : context.go('/login'),
+                  onTap: () =>
+                      context.canPop() ? context.pop() : context.go('/login'),
                   borderRadius: BorderRadius.circular(14),
                   child: Container(
                     padding: const EdgeInsets.all(10),
                     decoration: BoxDecoration(
                       color: Colors.white.withValues(alpha: 0.16),
                       borderRadius: BorderRadius.circular(14),
-                      border: Border.all(color: Colors.white.withValues(alpha: 0.22)),
+                      border: Border.all(
+                        color: Colors.white.withValues(alpha: 0.22),
+                      ),
                     ),
-                    child: const Icon(Icons.arrow_back_rounded, color: Colors.white, size: 22),
+                    child: const Icon(
+                      Icons.arrow_back_rounded,
+                      color: Colors.white,
+                      size: 22,
+                    ),
                   ),
                 ),
               ),
@@ -73,12 +86,14 @@ class AuthHeroHeader extends StatelessWidget {
                     children: [
                       Text(
                         title,
-                        style: const TextStyle(
+                        style: TextStyle(
                           color: Colors.white,
                           fontSize: 24,
                           fontWeight: FontWeight.w800,
                           letterSpacing: -0.5,
-                          fontFamily: AppTheme.brandFamily,
+                          fontFamily: l10n.isFa
+                              ? 'Vazir'
+                              : AppTheme.brandFamily,
                         ),
                       ),
                       const SizedBox(height: 6),
@@ -105,11 +120,7 @@ class AuthHeroHeader extends StatelessWidget {
 }
 
 class AuthSectionCard extends StatelessWidget {
-  const AuthSectionCard({
-    super.key,
-    required this.title,
-    required this.child,
-  });
+  const AuthSectionCard({super.key, required this.title, required this.child});
 
   final String title;
   final Widget child;
@@ -387,7 +398,11 @@ class AuthErrorBanner extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Icon(Icons.error_outline_rounded, color: AppTheme.error, size: 20),
+          const Icon(
+            Icons.error_outline_rounded,
+            color: AppTheme.error,
+            size: 20,
+          ),
           const SizedBox(width: 10),
           Expanded(
             child: Text(
