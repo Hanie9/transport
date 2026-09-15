@@ -48,6 +48,7 @@ class AppDrawer extends StatelessWidget {
     final location = GoRouterState.of(context).uri.path;
     final fullName = user?.fullName.trim() ?? '';
     final initial = fullName.isEmpty ? '?' : fullName.characters.first;
+    final viewportWidth = MediaQuery.sizeOf(context).width;
 
     final mainNavigationItems = role == 'driver'
         ? [
@@ -95,7 +96,7 @@ class AppDrawer extends StatelessWidget {
           );
 
     return Drawer(
-      width: 328,
+      width: viewportWidth < 360 ? viewportWidth * 0.9 : 328,
       backgroundColor: palette.surface,
       surfaceTintColor: Colors.transparent,
       shape: const RoundedRectangleBorder(
@@ -109,115 +110,149 @@ class AppDrawer extends StatelessWidget {
           statusBarIconBrightness: Brightness.light,
           statusBarBrightness: Brightness.dark,
         ),
-        child: Column(
-          children: [
-            _DrawerHeader(
-              initial: initial,
-              name: fullName,
-              phone: user?.phone ?? '',
-              roleLabel: l10n.roleLabel(role),
-              onlineLabel: l10n.accountActive,
-              onProfileTap: () => _navigate(context, '$_basePath/profile'),
-              onClose: () => Navigator.of(context).pop(),
-            ),
-            Expanded(
-              child: ListView(
-                padding: const EdgeInsets.fromLTRB(12, 14, 12, 20),
-                children: [
-                  _DrawerSectionLabel(l10n.drawerOperations),
-                  ...mainNavigationItems.map(
-                    (item) => _DrawerTile(
-                      icon: item.icon,
-                      title: item.title,
-                      selected: location == item.path,
-                      onTap: () => _navigate(context, item.path),
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  _DrawerSectionLabel(l10n.homeQuickActions),
-                  _DrawerTile(
-                    icon: quickAction.icon,
-                    title: quickAction.title,
-                    selected: location == quickAction.path,
-                    onTap: () => _navigate(context, quickAction.path),
-                  ),
-                  const SizedBox(height: 12),
-                  _DrawerSectionLabel(l10n.drawerAccount),
-                  _DrawerTile(
-                    icon: Icons.tune_rounded,
-                    title: l10n.settings,
-                    selected: location == '$_basePath/settings',
-                    onTap: () => _navigate(context, '$_basePath/settings'),
-                  ),
-                  _DrawerTile(
-                    icon: Icons.shield_rounded,
-                    title: l10n.changePassword,
-                    selected: location == '$_basePath/change-password',
-                    onTap: () =>
-                        _navigate(context, '$_basePath/change-password'),
-                  ),
-                  const SizedBox(height: 12),
-                  _DrawerSectionLabel(l10n.drawerAssistance),
-                  _DrawerTile(
-                    icon: Icons.menu_book_rounded,
-                    title: l10n.help,
-                    selected: location == '$_basePath/help',
-                    onTap: () => _navigate(context, '$_basePath/help'),
-                  ),
-                  _DrawerTile(
-                    icon: Icons.support_agent_rounded,
-                    title: l10n.support,
-                    selected: location == '$_basePath/support',
-                    onTap: () => _navigate(context, '$_basePath/support'),
-                  ),
-                  _DrawerTile(
-                    icon: Icons.info_rounded,
-                    title: l10n.aboutUs,
-                    selected: location == '$_basePath/about',
-                    onTap: () => _navigate(context, '$_basePath/about'),
-                  ),
-                ],
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            final compact = constraints.maxHeight < 900;
+            final veryCompact = constraints.maxHeight < 620;
+
+            Widget menuTile(_DrawerDestination item) => Expanded(
+              child: _DrawerTile(
+                icon: item.icon,
+                title: item.title,
+                selected: location == item.path,
+                compact: compact,
+                onTap: () => _navigate(context, item.path),
               ),
-            ),
-            SafeArea(
-              top: false,
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(20, 8, 20, 16),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    _DrawerTile(
-                      icon: Icons.logout_rounded,
-                      title: l10n.logout,
-                      danger: true,
-                      showChevron: false,
-                      onTap: () => confirmLogout(context),
-                    ),
-                    const SizedBox(height: 10),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        const Icon(
-                          Icons.local_shipping_rounded,
-                          size: 16,
-                          color: AppTheme.primaryLight,
-                        ),
-                        const SizedBox(width: 7),
-                        Text(
-                          '${l10n.appName} • ${l10n.versionLabel('1.0.0')}',
-                          style: TextStyle(
-                            fontSize: 11,
-                            color: palette.textSecondary,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
+            );
+
+            Widget directTile({
+              required IconData icon,
+              required String title,
+              required VoidCallback onTap,
+              bool selected = false,
+              bool danger = false,
+              bool showChevron = true,
+            }) => Expanded(
+              child: _DrawerTile(
+                icon: icon,
+                title: title,
+                selected: selected,
+                danger: danger,
+                showChevron: showChevron,
+                compact: compact,
+                onTap: onTap,
+              ),
+            );
+
+            return Column(
+              children: [
+                _DrawerHeader(
+                  initial: initial,
+                  name: fullName,
+                  phone: user?.phone ?? '',
+                  roleLabel: l10n.roleLabel(role),
+                  onlineLabel: l10n.accountActive,
+                  compact: compact,
+                  showBadges: !veryCompact,
+                  onProfileTap: () => _navigate(context, '$_basePath/profile'),
                 ),
-              ),
-            ),
-          ],
+                Expanded(
+                  child: SafeArea(
+                    top: false,
+                    child: Padding(
+                      padding: EdgeInsets.fromLTRB(
+                        compact ? 8 : 12,
+                        compact ? 5 : 10,
+                        compact ? 8 : 12,
+                        compact ? 5 : 10,
+                      ),
+                      child: Column(
+                        children: [
+                          if (!compact)
+                            _DrawerSectionLabel(l10n.drawerOperations),
+                          ...mainNavigationItems.map(menuTile),
+                          if (!compact) const SizedBox(height: 4),
+                          if (!compact)
+                            _DrawerSectionLabel(l10n.homeQuickActions),
+                          menuTile(quickAction),
+                          if (!compact) const SizedBox(height: 4),
+                          if (!compact) _DrawerSectionLabel(l10n.drawerAccount),
+                          directTile(
+                            icon: Icons.tune_rounded,
+                            title: l10n.settings,
+                            selected: location == '$_basePath/settings',
+                            onTap: () =>
+                                _navigate(context, '$_basePath/settings'),
+                          ),
+                          directTile(
+                            icon: Icons.shield_rounded,
+                            title: l10n.changePassword,
+                            selected: location == '$_basePath/change-password',
+                            onTap: () => _navigate(
+                              context,
+                              '$_basePath/change-password',
+                            ),
+                          ),
+                          if (!compact) const SizedBox(height: 4),
+                          if (!compact)
+                            _DrawerSectionLabel(l10n.drawerAssistance),
+                          directTile(
+                            icon: Icons.menu_book_rounded,
+                            title: l10n.help,
+                            selected: location == '$_basePath/help',
+                            onTap: () => _navigate(context, '$_basePath/help'),
+                          ),
+                          directTile(
+                            icon: Icons.support_agent_rounded,
+                            title: l10n.support,
+                            selected: location == '$_basePath/support',
+                            onTap: () =>
+                                _navigate(context, '$_basePath/support'),
+                          ),
+                          directTile(
+                            icon: Icons.info_rounded,
+                            title: l10n.aboutUs,
+                            selected: location == '$_basePath/about',
+                            onTap: () => _navigate(context, '$_basePath/about'),
+                          ),
+                          SizedBox(height: compact ? 7 : 14),
+                          directTile(
+                            icon: Icons.logout_rounded,
+                            title: l10n.logout,
+                            danger: true,
+                            showChevron: false,
+                            onTap: () => confirmLogout(context),
+                          ),
+                          if (!compact) ...[
+                            const SizedBox(height: 6),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                const Icon(
+                                  Icons.local_shipping_rounded,
+                                  size: 16,
+                                  color: AppTheme.primaryLight,
+                                ),
+                                const SizedBox(width: 7),
+                                Text(
+                                  '${l10n.appName} • ${l10n.versionLabel('1.0.0')}',
+                                  style: TextStyle(
+                                    fontSize: 11,
+                                    color: palette.textSecondary,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            );
+          },
         ),
       ),
     );
@@ -231,8 +266,9 @@ class _DrawerHeader extends StatelessWidget {
     required this.phone,
     required this.roleLabel,
     required this.onlineLabel,
+    required this.compact,
+    required this.showBadges,
     required this.onProfileTap,
-    required this.onClose,
   });
 
   final String initial;
@@ -240,8 +276,9 @@ class _DrawerHeader extends StatelessWidget {
   final String phone;
   final String roleLabel;
   final String onlineLabel;
+  final bool compact;
+  final bool showBadges;
   final VoidCallback onProfileTap;
-  final VoidCallback onClose;
 
   @override
   Widget build(BuildContext context) {
@@ -250,10 +287,10 @@ class _DrawerHeader extends StatelessWidget {
       child: Container(
         width: double.infinity,
         padding: EdgeInsets.fromLTRB(
-          20,
-          MediaQuery.paddingOf(context).top + 12,
-          20,
-          22,
+          compact ? 14 : 20,
+          MediaQuery.paddingOf(context).top + (compact ? 8 : 14),
+          compact ? 14 : 20,
+          compact ? 8 : 16,
         ),
         decoration: BoxDecoration(
           gradient: AppTheme.primaryGradient,
@@ -285,21 +322,11 @@ class _DrawerHeader extends StatelessWidget {
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Align(
-                  alignment: AlignmentDirectional.centerEnd,
-                  child: IconButton(
-                    tooltip: MaterialLocalizations.of(
-                      context,
-                    ).closeButtonTooltip,
-                    onPressed: onClose,
-                    icon: const Icon(Icons.close_rounded, color: Colors.white),
-                  ),
-                ),
                 Row(
                   children: [
                     Container(
-                      width: 62,
-                      height: 62,
+                      width: compact ? 44 : 62,
+                      height: compact ? 44 : 62,
                       alignment: Alignment.center,
                       decoration: BoxDecoration(
                         color: Colors.white.withValues(alpha: 0.18),
@@ -311,14 +338,14 @@ class _DrawerHeader extends StatelessWidget {
                       ),
                       child: Text(
                         initial,
-                        style: const TextStyle(
+                        style: TextStyle(
                           color: Colors.white,
-                          fontSize: 24,
+                          fontSize: compact ? 18 : 24,
                           fontWeight: FontWeight.w900,
                         ),
                       ),
                     ),
-                    const SizedBox(width: 14),
+                    SizedBox(width: compact ? 10 : 14),
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -327,9 +354,9 @@ class _DrawerHeader extends StatelessWidget {
                             name,
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(
+                            style: TextStyle(
                               color: Colors.white,
-                              fontSize: 17,
+                              fontSize: compact ? 14 : 17,
                               fontWeight: FontWeight.w800,
                             ),
                           ),
@@ -339,7 +366,7 @@ class _DrawerHeader extends StatelessWidget {
                             textDirection: TextDirection.ltr,
                             style: TextStyle(
                               color: Colors.white.withValues(alpha: 0.78),
-                              fontSize: 12,
+                              fontSize: compact ? 10 : 12,
                             ),
                           ),
                         ],
@@ -351,18 +378,25 @@ class _DrawerHeader extends StatelessWidget {
                     ),
                   ],
                 ),
-                const SizedBox(height: 14),
-                Wrap(
-                  spacing: 8,
-                  runSpacing: 8,
-                  children: [
-                    _HeaderBadge(icon: Icons.badge_outlined, label: roleLabel),
-                    _HeaderBadge(
-                      icon: Icons.verified_rounded,
-                      label: onlineLabel,
-                    ),
-                  ],
-                ),
+                if (showBadges) ...[
+                  SizedBox(height: compact ? 8 : 14),
+                  Wrap(
+                    spacing: compact ? 5 : 8,
+                    runSpacing: 5,
+                    children: [
+                      _HeaderBadge(
+                        icon: Icons.badge_outlined,
+                        label: roleLabel,
+                        compact: compact,
+                      ),
+                      _HeaderBadge(
+                        icon: Icons.verified_rounded,
+                        label: onlineLabel,
+                        compact: compact,
+                      ),
+                    ],
+                  ),
+                ],
               ],
             ),
           ],
@@ -373,14 +407,22 @@ class _DrawerHeader extends StatelessWidget {
 }
 
 class _HeaderBadge extends StatelessWidget {
-  const _HeaderBadge({required this.icon, required this.label});
+  const _HeaderBadge({
+    required this.icon,
+    required this.label,
+    required this.compact,
+  });
 
   final IconData icon;
   final String label;
+  final bool compact;
 
   @override
   Widget build(BuildContext context) => Container(
-    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+    padding: EdgeInsets.symmetric(
+      horizontal: compact ? 7 : 10,
+      vertical: compact ? 4 : 6,
+    ),
     decoration: BoxDecoration(
       color: Colors.white.withValues(alpha: 0.14),
       borderRadius: BorderRadius.circular(20),
@@ -388,13 +430,13 @@ class _HeaderBadge extends StatelessWidget {
     child: Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Icon(icon, size: 14, color: Colors.white),
-        const SizedBox(width: 5),
+        Icon(icon, size: compact ? 12 : 14, color: Colors.white),
+        SizedBox(width: compact ? 3 : 5),
         Text(
           label,
-          style: const TextStyle(
+          style: TextStyle(
             color: Colors.white,
-            fontSize: 11,
+            fontSize: compact ? 9 : 11,
             fontWeight: FontWeight.w700,
           ),
         ),
@@ -409,15 +451,19 @@ class _DrawerSectionLabel extends StatelessWidget {
   final String label;
 
   @override
-  Widget build(BuildContext context) => Padding(
-    padding: const EdgeInsetsDirectional.fromSTEB(12, 6, 12, 8),
-    child: Text(
-      label,
-      style: TextStyle(
-        color: context.palette.textSecondary,
-        fontSize: 11,
-        fontWeight: FontWeight.w800,
-        letterSpacing: 0.5,
+  Widget build(BuildContext context) => Align(
+    alignment: AlignmentDirectional.centerStart,
+    child: Padding(
+      padding: const EdgeInsetsDirectional.fromSTEB(12, 6, 12, 8),
+      child: Text(
+        label,
+        textAlign: TextAlign.start,
+        style: TextStyle(
+          color: context.palette.textSecondary,
+          fontSize: 11,
+          fontWeight: FontWeight.w800,
+          letterSpacing: 0.5,
+        ),
       ),
     ),
   );
@@ -431,6 +477,7 @@ class _DrawerTile extends StatelessWidget {
     this.selected = false,
     this.danger = false,
     this.showChevron = true,
+    this.compact = false,
   });
 
   final IconData icon;
@@ -439,6 +486,7 @@ class _DrawerTile extends StatelessWidget {
   final bool selected;
   final bool danger;
   final bool showChevron;
+  final bool compact;
 
   @override
   Widget build(BuildContext context) {
@@ -450,32 +498,41 @@ class _DrawerTile extends StatelessWidget {
         : palette.textSecondary;
 
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 2),
+      padding: EdgeInsets.symmetric(vertical: compact ? 0 : 1),
       child: Material(
         color: selected ? color.withValues(alpha: 0.11) : Colors.transparent,
         borderRadius: BorderRadius.circular(15),
         child: ListTile(
-          minTileHeight: 50,
+          dense: compact,
+          minTileHeight: compact ? 28 : 42,
+          contentPadding: EdgeInsets.symmetric(horizontal: compact ? 8 : 12),
+          horizontalTitleGap: compact ? 8 : 12,
           leading: Container(
-            width: 36,
-            height: 36,
+            width: compact ? 28 : 34,
+            height: compact ? 28 : 34,
             alignment: Alignment.center,
             decoration: BoxDecoration(
               color: color.withValues(alpha: selected ? 0.14 : 0.08),
-              borderRadius: BorderRadius.circular(11),
+              borderRadius: BorderRadius.circular(compact ? 9 : 11),
             ),
-            child: Icon(icon, color: color, size: 20),
+            child: Icon(icon, color: color, size: compact ? 17 : 20),
           ),
           title: Text(
             title,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
             style: TextStyle(
-              fontSize: 14,
+              fontSize: compact ? 11.5 : 14,
               fontWeight: selected ? FontWeight.w800 : FontWeight.w600,
               color: danger || selected ? color : palette.textPrimary,
             ),
           ),
           trailing: showChevron
-              ? Icon(Icons.chevron_right_rounded, size: 18, color: color)
+              ? Icon(
+                  Icons.chevron_right_rounded,
+                  size: compact ? 15 : 18,
+                  color: color,
+                )
               : null,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(15),

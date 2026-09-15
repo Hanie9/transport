@@ -450,12 +450,15 @@ class _CoordinatorProfileScreenState extends State<_CoordinatorProfileScreen> {
                       title: l10n.phoneNumber,
                       value: user?.phone ?? '',
                     ),
-                    Divider(height: 1, color: context.palette.divider),
-                    _ProfileTile(
-                      icon: Icons.location_on_rounded,
-                      title: l10n.province,
-                      value: user?.vehicleInfo?.ostanName ?? l10n.notRegistered,
-                    ),
+                    if (user?.vehicleInfo?.ostanName?.trim().isNotEmpty ==
+                        true) ...[
+                      Divider(height: 1, color: context.palette.divider),
+                      _ProfileTile(
+                        icon: Icons.location_on_rounded,
+                        title: l10n.province,
+                        value: user!.vehicleInfo!.ostanName!.trim(),
+                      ),
+                    ],
                     if (user?.nationalCode?.isNotEmpty == true) ...[
                       Divider(height: 1, color: context.palette.divider),
                       _ProfileTile(
