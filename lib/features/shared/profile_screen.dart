@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
-import '../../api_config.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/widgets/common_widgets.dart';
 import '../../core/widgets/fade_slide_in.dart';
@@ -45,29 +44,11 @@ class _DriverProfileScreen extends StatefulWidget {
 
 class _DriverProfileScreenState extends State<_DriverProfileScreen> {
   late bool _editingVehicle;
-  bool _refreshingProfile = false;
 
   @override
   void initState() {
     super.initState();
     _editingVehicle = widget.editVehicleInitially;
-  }
-
-  Future<void> _refreshProfile() async {
-    if (_refreshingProfile || ApiConfig.shouldUseMock) return;
-    setState(() => _refreshingProfile = true);
-    final ok = await context.read<AuthService>().refreshProfile();
-    if (!mounted) return;
-    setState(() => _refreshingProfile = false);
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          ok
-              ? context.l10n.profileRefreshed
-              : context.l10n.profileRefreshFailed,
-        ),
-      ),
-    );
   }
 
   Future<void> _saveVehicle(VehicleInfo info) async {
@@ -102,18 +83,6 @@ class _DriverProfileScreenState extends State<_DriverProfileScreen> {
             onPressed: () => _editProfile(context),
             icon: const Icon(Icons.edit_outlined),
           ),
-          if (!ApiConfig.shouldUseMock)
-            IconButton(
-              tooltip: l10n.refreshProfile,
-              onPressed: _refreshingProfile ? null : _refreshProfile,
-              icon: _refreshingProfile
-                  ? const SizedBox(
-                      width: 20,
-                      height: 20,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    )
-                  : const Icon(Icons.refresh_rounded),
-            ),
         ],
       ),
       body: SingleChildScrollView(
@@ -302,7 +271,6 @@ class _CoordinatorProfileScreen extends StatefulWidget {
 }
 
 class _CoordinatorProfileScreenState extends State<_CoordinatorProfileScreen> {
-  bool _refreshingProfile = false;
   bool _loadingCargos = true;
   List<Cargo> _cargos = const [];
 
@@ -325,26 +293,6 @@ class _CoordinatorProfileScreenState extends State<_CoordinatorProfileScreen> {
       if (mounted) setState(() => _loadingCargos = false);
       return false;
     }
-  }
-
-  Future<void> _refreshProfile() async {
-    if (_refreshingProfile || ApiConfig.shouldUseMock) return;
-    setState(() => _refreshingProfile = true);
-    final results = await Future.wait([
-      context.read<AuthService>().refreshProfile(),
-      _loadCargos(),
-    ]);
-    if (!mounted) return;
-    setState(() => _refreshingProfile = false);
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          results.every((result) => result)
-              ? context.l10n.profileRefreshed
-              : context.l10n.profileRefreshFailed,
-        ),
-      ),
-    );
   }
 
   @override
@@ -374,18 +322,6 @@ class _CoordinatorProfileScreenState extends State<_CoordinatorProfileScreen> {
             onPressed: () => _editProfile(context),
             icon: const Icon(Icons.edit_outlined),
           ),
-          if (!ApiConfig.shouldUseMock)
-            IconButton(
-              tooltip: l10n.refreshProfile,
-              onPressed: _refreshingProfile ? null : _refreshProfile,
-              icon: _refreshingProfile
-                  ? const SizedBox(
-                      width: 20,
-                      height: 20,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    )
-                  : const Icon(Icons.refresh_rounded),
-            ),
         ],
       ),
       body: SingleChildScrollView(
