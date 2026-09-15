@@ -58,34 +58,65 @@ class _ModernMenuButton extends StatelessWidget {
     final color = Theme.of(context).colorScheme.primary;
     return Padding(
       padding: const EdgeInsets.all(8),
-      child: Material(
-        color: color.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(13),
-        child: InkWell(
-          onTap: onPressed,
+      child: Tooltip(
+        message: MaterialLocalizations.of(context).openAppDrawerTooltip,
+        child: Material(
+          color: Colors.transparent,
           borderRadius: BorderRadius.circular(13),
-          child: Stack(
-            alignment: Alignment.center,
-            children: [
-              Icon(Icons.menu_open_rounded, color: color, size: 25),
-              PositionedDirectional(
-                end: 7,
-                top: 7,
-                child: Container(
-                  width: 6,
-                  height: 6,
-                  decoration: const BoxDecoration(
-                    color: AppTheme.accent,
-                    shape: BoxShape.circle,
+          child: Ink(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  color.withValues(alpha: 0.14),
+                  color.withValues(alpha: 0.06),
+                ],
+              ),
+              borderRadius: BorderRadius.circular(13),
+              border: Border.all(color: color.withValues(alpha: 0.12)),
+            ),
+            child: InkWell(
+              onTap: onPressed,
+              borderRadius: BorderRadius.circular(13),
+              child: Center(
+                child: SizedBox(
+                  width: 21,
+                  height: 17,
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _MenuLine(width: 21, color: color),
+                      _MenuLine(width: 14, color: color),
+                      _MenuLine(width: 18, color: color),
+                    ],
                   ),
                 ),
               ),
-            ],
+            ),
           ),
         ),
       ),
     );
   }
+}
+
+class _MenuLine extends StatelessWidget {
+  const _MenuLine({required this.width, required this.color});
+
+  final double width;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) => Container(
+    width: width,
+    height: 2.5,
+    decoration: BoxDecoration(
+      color: color,
+      borderRadius: BorderRadius.circular(4),
+    ),
+  );
 }
 
 class GradientHeaderCard extends StatelessWidget {
