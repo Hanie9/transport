@@ -5,6 +5,7 @@ import '../../api_config.dart';
 import '../../core/widgets/common_widgets.dart';
 import '../../core/widgets/fade_slide_in.dart';
 import '../../core/widgets/modern_app_bar.dart';
+import '../../core/widgets/modern_dropdown.dart';
 import '../../l10n/app_localizations.dart';
 import '../../models/api_reference_item.dart';
 import '../../models/cargo.dart';
@@ -85,8 +86,10 @@ class _EditCargoScreenState extends State<EditCargoScreen> {
     _machineId = cargo.machineId;
     _ostanMabdaId = cargo.ostanMabdaId;
     _ostanMaghsadId = cargo.ostanMaghsadId;
-    if (cargo.originLat != null) _originLatController.text = '${cargo.originLat}';
-    if (cargo.originLng != null) _originLngController.text = '${cargo.originLng}';
+    if (cargo.originLat != null)
+      _originLatController.text = '${cargo.originLat}';
+    if (cargo.originLng != null)
+      _originLngController.text = '${cargo.originLng}';
     if (cargo.destinationLat != null) {
       _destinationLatController.text = '${cargo.destinationLat}';
     }
@@ -120,15 +123,16 @@ class _EditCargoScreenState extends State<EditCargoScreen> {
           _machineId == null ||
           _ostanMabdaId == null ||
           _ostanMaghsadId == null) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(l10n.selectCargoAndGoods)),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(l10n.selectCargoAndGoods)));
         return;
       }
     }
 
     setState(() => _submitting = true);
-    final price = int.tryParse(_priceController.text.trim().replaceAll(',', '')) ?? 0;
+    final price =
+        int.tryParse(_priceController.text.trim().replaceAll(',', '')) ?? 0;
 
     final success = await _cargoService.updateCargo(
       cargoId: _cargo!.id,
@@ -141,10 +145,18 @@ class _EditCargoScreenState extends State<EditCargoScreen> {
       ostanMaghsadId: _ostanMaghsadId,
       addressMabda: _originController.text.trim(),
       addressMaghsad: _destinationController.text.trim(),
-      originLat: CargoCoordinatesFields.parseCoordinate(_originLatController.text),
-      originLng: CargoCoordinatesFields.parseCoordinate(_originLngController.text),
-      destinationLat: CargoCoordinatesFields.parseCoordinate(_destinationLatController.text),
-      destinationLng: CargoCoordinatesFields.parseCoordinate(_destinationLngController.text),
+      originLat: CargoCoordinatesFields.parseCoordinate(
+        _originLatController.text,
+      ),
+      originLng: CargoCoordinatesFields.parseCoordinate(
+        _originLngController.text,
+      ),
+      destinationLat: CargoCoordinatesFields.parseCoordinate(
+        _destinationLatController.text,
+      ),
+      destinationLng: CargoCoordinatesFields.parseCoordinate(
+        _destinationLngController.text,
+      ),
       fullReplace: !ApiConfig.shouldUseMock,
     );
 
@@ -152,9 +164,9 @@ class _EditCargoScreenState extends State<EditCargoScreen> {
     setState(() => _submitting = false);
 
     if (success) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(l10n.cargoUpdated)),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(l10n.cargoUpdated)));
       context.pop();
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -212,8 +224,9 @@ class _EditCargoScreenState extends State<EditCargoScreen> {
                     labelText: l10n.description,
                     prefixIcon: const Icon(Icons.notes_outlined),
                   ),
-                  validator: (v) =>
-                      v == null || v.trim().isEmpty ? l10n.descriptionRequired : null,
+                  validator: (v) => v == null || v.trim().isEmpty
+                      ? l10n.descriptionRequired
+                      : null,
                 ),
                 const SizedBox(height: 16),
                 if (!ApiConfig.shouldUseMock) ...[
@@ -256,8 +269,9 @@ class _EditCargoScreenState extends State<EditCargoScreen> {
                     labelText: l10n.origin,
                     prefixIcon: const Icon(Icons.trip_origin),
                   ),
-                  validator: (v) =>
-                      v == null || v.trim().isEmpty ? l10n.originRequired : null,
+                  validator: (v) => v == null || v.trim().isEmpty
+                      ? l10n.originRequired
+                      : null,
                 ),
                 const SizedBox(height: 16),
                 TextFormField(
@@ -266,8 +280,9 @@ class _EditCargoScreenState extends State<EditCargoScreen> {
                     labelText: l10n.destination,
                     prefixIcon: const Icon(Icons.location_on),
                   ),
-                  validator: (v) =>
-                      v == null || v.trim().isEmpty ? l10n.destinationRequired : null,
+                  validator: (v) => v == null || v.trim().isEmpty
+                      ? l10n.destinationRequired
+                      : null,
                 ),
                 const SizedBox(height: 16),
                 if (!ApiConfig.shouldUseMock) ...[
@@ -287,7 +302,8 @@ class _EditCargoScreenState extends State<EditCargoScreen> {
                     prefixIcon: const Icon(Icons.payments_outlined),
                   ),
                   validator: (v) {
-                    if (v == null || v.trim().isEmpty) return l10n.priceRequired;
+                    if (v == null || v.trim().isEmpty)
+                      return l10n.priceRequired;
                     if (int.tryParse(v.trim().replaceAll(',', '')) == null) {
                       return l10n.priceInvalid;
                     }
@@ -301,7 +317,10 @@ class _EditCargoScreenState extends State<EditCargoScreen> {
                       ? const SizedBox(
                           height: 22,
                           width: 22,
-                          child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: Colors.white,
+                          ),
                         )
                       : Text(l10n.save),
                 ),
@@ -320,18 +339,14 @@ class _EditCargoScreenState extends State<EditCargoScreen> {
     required List<ApiReferenceItem> items,
     required ValueChanged<int?> onChanged,
   }) {
-    return DropdownButtonFormField<int>(
+    return ModernDropdownField<int>(
       value: value,
-      decoration: InputDecoration(
-        labelText: label,
-        prefixIcon: Icon(icon),
-      ),
+      label: label,
+      prefixIcon: icon,
       items: items
           .map(
-            (item) => DropdownMenuItem<int>(
-              value: item.id,
-              child: Text(item.name),
-            ),
+            (item) =>
+                DropdownMenuItem<int>(value: item.id, child: Text(item.name)),
           )
           .toList(),
       onChanged: onChanged,

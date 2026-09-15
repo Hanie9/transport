@@ -10,6 +10,7 @@ import '../../core/widgets/common_widgets.dart';
 import '../../core/widgets/fade_slide_in.dart';
 import '../../core/widgets/location_access_dialog.dart';
 import '../../core/widgets/modern_app_bar.dart';
+import '../../core/widgets/modern_dropdown.dart';
 import '../../models/cargo.dart';
 import '../../models/driver_bar_query.dart';
 import '../../services/reference_data_service.dart';
@@ -30,11 +31,13 @@ class _DriverShellState extends State<DriverShell> {
   final _scaffoldKey = GlobalKey<ScaffoldState>();
 
   int _indexFromLocation(String location) {
-    if (location.startsWith('/driver/cargos') || location.startsWith('/driver/nearby')) {
+    if (location.startsWith('/driver/cargos') ||
+        location.startsWith('/driver/nearby')) {
       return 1;
     }
     if (location.startsWith('/driver/missions')) return 2;
-    if (location.startsWith('/driver/profile') || location.startsWith('/driver/vehicle')) {
+    if (location.startsWith('/driver/profile') ||
+        location.startsWith('/driver/vehicle')) {
       return 3;
     }
     return 0;
@@ -69,31 +72,31 @@ class _DriverShellState extends State<DriverShell> {
         bottomNavigationBar: hideBottomNav
             ? null
             : ModernBottomNav(
-          currentIndex: index,
-          onTap: _onTap,
-          destinations: [
-            NavigationDestination(
-              icon: const Icon(Icons.home_outlined),
-              selectedIcon: const Icon(Icons.home_rounded),
-              label: l10n.home,
-            ),
-            NavigationDestination(
-              icon: const Icon(Icons.inventory_2_outlined),
-              selectedIcon: const Icon(Icons.inventory_2),
-              label: l10n.cargos,
-            ),
-            NavigationDestination(
-              icon: const Icon(Icons.assignment_outlined),
-              selectedIcon: const Icon(Icons.assignment),
-              label: l10n.missions,
-            ),
-            NavigationDestination(
-              icon: const Icon(Icons.person_outline),
-              selectedIcon: const Icon(Icons.person),
-              label: l10n.profile,
-            ),
-          ],
-        ),
+                currentIndex: index,
+                onTap: _onTap,
+                destinations: [
+                  NavigationDestination(
+                    icon: const Icon(Icons.home_outlined),
+                    selectedIcon: const Icon(Icons.home_rounded),
+                    label: l10n.home,
+                  ),
+                  NavigationDestination(
+                    icon: const Icon(Icons.inventory_2_outlined),
+                    selectedIcon: const Icon(Icons.inventory_2),
+                    label: l10n.cargos,
+                  ),
+                  NavigationDestination(
+                    icon: const Icon(Icons.assignment_outlined),
+                    selectedIcon: const Icon(Icons.assignment),
+                    label: l10n.missions,
+                  ),
+                  NavigationDestination(
+                    icon: const Icon(Icons.person_outline),
+                    selectedIcon: const Icon(Icons.person),
+                    label: l10n.profile,
+                  ),
+                ],
+              ),
       ),
     );
   }
@@ -187,9 +190,9 @@ class _DriverHomeScreenState extends State<DriverHomeScreen>
           _nearbyCargos = [];
           _gpsBusy = false;
         });
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(context.l10n.gpsEnableFailed)),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(context.l10n.gpsEnableFailed)));
         return;
       }
 
@@ -201,7 +204,10 @@ class _DriverHomeScreenState extends State<DriverHomeScreen>
     }
   }
 
-  Future<void> _loadCargos({bool showLoader = false, bool loadMore = false}) async {
+  Future<void> _loadCargos({
+    bool showLoader = false,
+    bool loadMore = false,
+  }) async {
     if (loadMore) {
       if (_loadingMore || !_hasMore) return;
       setState(() => _loadingMore = true);
@@ -286,14 +292,21 @@ class _DriverHomeScreenState extends State<DriverHomeScreen>
                 children: [
                   Text(
                     l10n.filterCargos,
-                    style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                    style: const TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                   const SizedBox(height: 16),
-                  DropdownButtonFormField<int?>(
+                  ModernDropdownField<int?>(
                     value: ostanMabda,
-                    decoration: InputDecoration(labelText: l10n.originOstan),
+                    label: l10n.originOstan,
+                    prefixIcon: Icons.trip_origin_rounded,
                     items: [
-                      DropdownMenuItem<int?>(value: null, child: Text(l10n.filterAll)),
+                      DropdownMenuItem<int?>(
+                        value: null,
+                        child: Text(l10n.filterAll),
+                      ),
                       ...ostans.map(
                         (o) => DropdownMenuItem<int?>(
                           value: o.id,
@@ -301,14 +314,19 @@ class _DriverHomeScreenState extends State<DriverHomeScreen>
                         ),
                       ),
                     ],
-                    onChanged: (value) => setModalState(() => ostanMabda = value),
+                    onChanged: (value) =>
+                        setModalState(() => ostanMabda = value),
                   ),
                   const SizedBox(height: 12),
-                  DropdownButtonFormField<int?>(
+                  ModernDropdownField<int?>(
                     value: ostanMaghsad,
-                    decoration: InputDecoration(labelText: l10n.destinationOstan),
+                    label: l10n.destinationOstan,
+                    prefixIcon: Icons.location_on_rounded,
                     items: [
-                      DropdownMenuItem<int?>(value: null, child: Text(l10n.filterAll)),
+                      DropdownMenuItem<int?>(
+                        value: null,
+                        child: Text(l10n.filterAll),
+                      ),
                       ...ostans.map(
                         (o) => DropdownMenuItem<int?>(
                           value: o.id,
@@ -316,7 +334,8 @@ class _DriverHomeScreenState extends State<DriverHomeScreen>
                         ),
                       ),
                     ],
-                    onChanged: (value) => setModalState(() => ostanMaghsad = value),
+                    onChanged: (value) =>
+                        setModalState(() => ostanMaghsad = value),
                   ),
                   const SizedBox(height: 12),
                   Row(
@@ -343,7 +362,8 @@ class _DriverHomeScreenState extends State<DriverHomeScreen>
                     children: [
                       Expanded(
                         child: OutlinedButton(
-                          onPressed: () => Navigator.pop(context, const DriverBarQuery()),
+                          onPressed: () =>
+                              Navigator.pop(context, const DriverBarQuery()),
                           child: Text(l10n.clearFilters),
                         ),
                       ),
@@ -436,10 +456,10 @@ class _DriverHomeScreenState extends State<DriverHomeScreen>
             child: FadeSlideIn(
               delay: const Duration(milliseconds: 80),
               child: _GpsBanner(
-              enabled: _gpsEnabled,
-              busy: _gpsBusy,
-              onChanged: _onGpsChanged,
-            ),
+                enabled: _gpsEnabled,
+                busy: _gpsBusy,
+                onChanged: _onGpsChanged,
+              ),
             ),
           ),
           if (_loading)
@@ -452,59 +472,59 @@ class _DriverHomeScreenState extends State<DriverHomeScreen>
           else if (isEmpty)
             SliverFillRemaining(
               hasScrollBody: false,
-                child: SizedBox.expand(
+              child: SizedBox.expand(
                 child: EmptyState(
                   icon: Icons.inventory_2_outlined,
                   useIllustration: true,
                   title: l10n.noCargoFound,
-                  subtitle: _gpsEnabled ? l10n.noMatchingCargo : l10n.enableGpsForNearby,
+                  subtitle: _gpsEnabled
+                      ? l10n.noMatchingCargo
+                      : l10n.enableGpsForNearby,
                 ),
               ),
             )
           else ...[
             if (_gpsEnabled && _nearbyCargos.isNotEmpty) ...[
-              SliverToBoxAdapter(child: SectionHeader(title: l10n.nearbyCargos)),
+              SliverToBoxAdapter(
+                child: SectionHeader(title: l10n.nearbyCargos),
+              ),
               SliverPadding(
                 padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
                 sliver: SliverList(
-                  delegate: SliverChildBuilderDelegate(
-                    (context, index) {
-                      final cargo = _nearbyCargos[index];
-                      return Padding(
-                        padding: const EdgeInsets.only(bottom: 12),
-                        child: _NearbyCargoTile(
-                          cargo: cargo,
-                          onTap: () => context.push('/driver/cargo/${cargo.id}'),
-                        ),
-                      );
-                    },
-                    childCount: _nearbyCargos.length,
-                  ),
+                  delegate: SliverChildBuilderDelegate((context, index) {
+                    final cargo = _nearbyCargos[index];
+                    return Padding(
+                      padding: const EdgeInsets.only(bottom: 12),
+                      child: _NearbyCargoTile(
+                        cargo: cargo,
+                        onTap: () => context.push('/driver/cargo/${cargo.id}'),
+                      ),
+                    );
+                  }, childCount: _nearbyCargos.length),
                 ),
               ),
             ],
             if (otherCargos.isNotEmpty) ...[
               SliverToBoxAdapter(
                 child: SectionHeader(
-                  title: _nearbyCargos.isNotEmpty ? l10n.otherMatchingCargos : l10n.allMatchingCargos,
+                  title: _nearbyCargos.isNotEmpty
+                      ? l10n.otherMatchingCargos
+                      : l10n.allMatchingCargos,
                 ),
               ),
               SliverPadding(
                 padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
                 sliver: SliverList(
-                  delegate: SliverChildBuilderDelegate(
-                    (context, index) {
-                      final cargo = otherCargos[index];
-                      return Padding(
-                        padding: const EdgeInsets.only(bottom: 12),
-                        child: _CargoListTile(
-                          cargo: cargo,
-                          onTap: () => context.push('/driver/cargo/${cargo.id}'),
-                        ),
-                      );
-                    },
-                    childCount: otherCargos.length,
-                  ),
+                  delegate: SliverChildBuilderDelegate((context, index) {
+                    final cargo = otherCargos[index];
+                    return Padding(
+                      padding: const EdgeInsets.only(bottom: 12),
+                      child: _CargoListTile(
+                        cargo: cargo,
+                        onTap: () => context.push('/driver/cargo/${cargo.id}'),
+                      ),
+                    );
+                  }, childCount: otherCargos.length),
                 ),
               ),
             ],
@@ -513,7 +533,9 @@ class _DriverHomeScreenState extends State<DriverHomeScreen>
                 child: Padding(
                   padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
                   child: OutlinedButton(
-                    onPressed: _loadingMore ? null : () => _loadCargos(loadMore: true),
+                    onPressed: _loadingMore
+                        ? null
+                        : () => _loadCargos(loadMore: true),
                     child: _loadingMore
                         ? const SizedBox(
                             height: 20,
@@ -654,7 +676,10 @@ class _NearbyCargoTile extends StatelessWidget {
           Row(
             children: [
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 5,
+                ),
                 decoration: BoxDecoration(
                   color: AppTheme.accent.withValues(alpha: 0.12),
                   borderRadius: BorderRadius.circular(10),
@@ -689,9 +714,17 @@ class _NearbyCargoTile extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 8),
-          _RouteLine(icon: Icons.trip_origin, color: AppTheme.success, text: cargo.origin),
+          _RouteLine(
+            icon: Icons.trip_origin,
+            color: AppTheme.success,
+            text: cargo.origin,
+          ),
           const SizedBox(height: 4),
-          _RouteLine(icon: Icons.location_on, color: AppTheme.error, text: cargo.destination),
+          _RouteLine(
+            icon: Icons.location_on,
+            color: AppTheme.error,
+            text: cargo.destination,
+          ),
           Padding(
             padding: const EdgeInsets.symmetric(vertical: 12),
             child: Divider(height: 1, color: palette.divider),
@@ -741,9 +774,17 @@ class _CargoListTile extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 14),
-          _RouteLine(icon: Icons.trip_origin, color: AppTheme.success, text: cargo.origin),
+          _RouteLine(
+            icon: Icons.trip_origin,
+            color: AppTheme.success,
+            text: cargo.origin,
+          ),
           const SizedBox(height: 6),
-          _RouteLine(icon: Icons.location_on, color: AppTheme.error, text: cargo.destination),
+          _RouteLine(
+            icon: Icons.location_on,
+            color: AppTheme.error,
+            text: cargo.destination,
+          ),
           Padding(
             padding: const EdgeInsets.symmetric(vertical: 14),
             child: Divider(height: 1, color: palette.divider),
@@ -752,7 +793,10 @@ class _CargoListTile extends StatelessWidget {
             children: [
               _TagChip(label: cargo.cargoType, color: AppTheme.primary),
               const SizedBox(width: 8),
-              _TagChip(label: l10n.tons(cargo.weightTons), color: palette.textSecondary),
+              _TagChip(
+                label: l10n.tons(cargo.weightTons),
+                color: palette.textSecondary,
+              ),
               const Spacer(),
               PriceLabel(price: cargo.estimatedPrice, fontSize: 14),
             ],
@@ -764,7 +808,11 @@ class _CargoListTile extends StatelessWidget {
 }
 
 class _RouteLine extends StatelessWidget {
-  const _RouteLine({required this.icon, required this.color, required this.text});
+  const _RouteLine({
+    required this.icon,
+    required this.color,
+    required this.text,
+  });
 
   final IconData icon;
   final Color color;
@@ -778,7 +826,10 @@ class _RouteLine extends StatelessWidget {
         Icon(icon, size: 16, color: color),
         const SizedBox(width: 8),
         Expanded(
-          child: Text(text, style: TextStyle(fontSize: 13, color: palette.textSecondary)),
+          child: Text(
+            text,
+            style: TextStyle(fontSize: 13, color: palette.textSecondary),
+          ),
         ),
       ],
     );
@@ -801,7 +852,11 @@ class _TagChip extends StatelessWidget {
       ),
       child: Text(
         label,
-        style: TextStyle(color: color, fontSize: 12, fontWeight: FontWeight.w600),
+        style: TextStyle(
+          color: color,
+          fontSize: 12,
+          fontWeight: FontWeight.w600,
+        ),
       ),
     );
   }

@@ -63,9 +63,7 @@ class _HomeScreenState extends State<HomeScreen> {
         driverPhone: user.phone,
         driverName: user.fullName,
       );
-      final active = missions
-          .where((c) => c.status == 'تخصیص یافته')
-          .length;
+      final active = missions.where((c) => c.status == 'تخصیص یافته').length;
       if (!mounted) return;
       setState(() {
         _stat1 = nearby.length;
@@ -76,9 +74,12 @@ class _HomeScreenState extends State<HomeScreen> {
       });
     } else {
       final cargos = await _cargoService.getCoordinatorCargos();
-      final allCargos =
-          cargos.isNotEmpty ? cargos : await _cargoService.getAllCargos();
-      final pending = allCargos.where((c) => c.status == 'در انتظار راننده').length;
+      final allCargos = cargos.isNotEmpty
+          ? cargos
+          : await _cargoService.getAllCargos();
+      final pending = allCargos
+          .where((c) => c.status == 'در انتظار راننده')
+          .length;
       final assigned = allCargos.where((c) => c.status == 'تخصیص یافته').length;
       if (!mounted) return;
       setState(() {
@@ -136,46 +137,46 @@ class _HomeScreenState extends State<HomeScreen> {
                   delay: const Duration(milliseconds: 80),
                   child: _StatsRow(
                     items: _isDriver
-                      ? [
-                          _StatData(
-                            label: l10n.homeStatNearby,
-                            value: '$_stat1',
-                            icon: Icons.near_me_rounded,
-                            color: AppTheme.accent,
-                          ),
-                          _StatData(
-                            label: l10n.homeStatAvailable,
-                            value: '$_stat2',
-                            icon: Icons.inventory_2_rounded,
-                            color: AppTheme.primary,
-                          ),
-                          _StatData(
-                            label: l10n.homeStatActiveMissions,
-                            value: '$_stat3',
-                            icon: Icons.local_shipping_rounded,
-                            color: AppTheme.success,
-                          ),
-                        ]
-                      : [
-                          _StatData(
-                            label: l10n.homeStatTotalCargos,
-                            value: '$_stat1',
-                            icon: Icons.list_alt_rounded,
-                            color: AppTheme.primary,
-                          ),
-                          _StatData(
-                            label: l10n.homeStatActiveDrivers,
-                            value: '$_stat2',
-                            icon: Icons.people_rounded,
-                            color: AppTheme.accent,
-                          ),
-                          _StatData(
-                            label: l10n.homeStatNearbyDrivers,
-                            value: '$_stat3',
-                            icon: Icons.near_me_rounded,
-                            color: AppTheme.success,
-                          ),
-                        ],
+                        ? [
+                            _StatData(
+                              label: l10n.homeStatNearby,
+                              value: '$_stat1',
+                              icon: Icons.near_me_rounded,
+                              color: AppTheme.accent,
+                            ),
+                            _StatData(
+                              label: l10n.homeStatAvailable,
+                              value: '$_stat2',
+                              icon: Icons.inventory_2_rounded,
+                              color: AppTheme.primary,
+                            ),
+                            _StatData(
+                              label: l10n.homeStatActiveMissions,
+                              value: '$_stat3',
+                              icon: Icons.local_shipping_rounded,
+                              color: AppTheme.success,
+                            ),
+                          ]
+                        : [
+                            _StatData(
+                              label: l10n.homeStatTotalCargos,
+                              value: '$_stat1',
+                              icon: Icons.list_alt_rounded,
+                              color: AppTheme.primary,
+                            ),
+                            _StatData(
+                              label: l10n.homeStatActiveDrivers,
+                              value: '$_stat2',
+                              icon: Icons.people_rounded,
+                              color: AppTheme.accent,
+                            ),
+                            _StatData(
+                              label: l10n.homeStatNearbyDrivers,
+                              value: '$_stat3',
+                              icon: Icons.near_me_rounded,
+                              color: AppTheme.success,
+                            ),
+                          ],
                   ),
                 ),
               ),
@@ -187,29 +188,29 @@ class _HomeScreenState extends State<HomeScreen> {
                   child: FadeSlideIn(
                     delay: const Duration(milliseconds: 140),
                     child: Row(
-                    children: [
-                      Expanded(
-                        child: _MiniHintCard(
-                          icon: Icons.hourglass_top_rounded,
-                          label: l10n.homePendingCargos,
-                          value: '$_pendingHint',
-                          color: AppTheme.warning,
+                      children: [
+                        Expanded(
+                          child: _MiniHintCard(
+                            icon: Icons.hourglass_top_rounded,
+                            label: l10n.homePendingCargos,
+                            value: '$_pendingHint',
+                            color: AppTheme.warning,
+                          ),
                         ),
-                      ),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: _MiniHintCard(
-                          icon: Icons.route_rounded,
-                          label: l10n.homeInTransit,
-                          value: '$_inTransitHint',
-                          color: AppTheme.primaryLight,
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: _MiniHintCard(
+                            icon: Icons.route_rounded,
+                            label: l10n.homeInTransit,
+                            value: '$_inTransitHint',
+                            color: AppTheme.primaryLight,
+                          ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
                 ),
               ),
-            ),
             SliverToBoxAdapter(
               child: FadeSlideIn(
                 delay: const Duration(milliseconds: 180),
@@ -222,59 +223,61 @@ class _HomeScreenState extends State<HomeScreen> {
                 child: FadeSlideIn(
                   delay: const Duration(milliseconds: 220),
                   child: _QuickActionsGrid(
-                  actions: _isDriver
-                      ? [
-                          _QuickAction(
-                            icon: Icons.inventory_2_outlined,
-                            label: l10n.cargos,
-                            color: AppTheme.primary,
-                            onTap: () => context.go('/driver/cargos'),
-                          ),
-                          _QuickAction(
-                            icon: Icons.assignment_outlined,
-                            label: l10n.missions,
-                            color: AppTheme.accent,
-                            onTap: () => context.go('/driver/missions'),
-                          ),
-                          _QuickAction(
-                            icon: Icons.directions_car_outlined,
-                            label: l10n.vehicleInfo,
-                            color: AppTheme.success,
-                            onTap: () => context.go('/driver/profile?editVehicle=1'),
-                          ),
-                          _QuickAction(
-                            icon: Icons.help_outline_rounded,
-                            label: l10n.help,
-                            color: AppTheme.primaryLight,
-                            onTap: () => context.push('/driver/help'),
-                          ),
-                        ]
-                      : [
-                          _QuickAction(
-                            icon: Icons.add_box_outlined,
-                            label: l10n.addCargo,
-                            color: AppTheme.accent,
-                            onTap: () => context.push('/coordinator/add-cargo'),
-                          ),
-                          _QuickAction(
-                            icon: Icons.list_alt_outlined,
-                            label: l10n.cargos,
-                            color: AppTheme.primary,
-                            onTap: () => context.go('/coordinator/cargos'),
-                          ),
-                          _QuickAction(
-                            icon: Icons.person_outline,
-                            label: l10n.profile,
-                            color: AppTheme.success,
-                            onTap: () => context.go('/coordinator/profile'),
-                          ),
-                          _QuickAction(
-                            icon: Icons.help_outline_rounded,
-                            label: l10n.help,
-                            color: AppTheme.primaryLight,
-                            onTap: () => context.push('/coordinator/help'),
-                          ),
-                        ],
+                    actions: _isDriver
+                        ? [
+                            _QuickAction(
+                              icon: Icons.inventory_2_outlined,
+                              label: l10n.cargos,
+                              color: AppTheme.primary,
+                              onTap: () => context.go('/driver/cargos'),
+                            ),
+                            _QuickAction(
+                              icon: Icons.assignment_outlined,
+                              label: l10n.missions,
+                              color: AppTheme.accent,
+                              onTap: () => context.go('/driver/missions'),
+                            ),
+                            _QuickAction(
+                              icon: Icons.directions_car_outlined,
+                              label: l10n.vehicleInfo,
+                              color: AppTheme.success,
+                              onTap: () =>
+                                  context.go('/driver/profile?editVehicle=1'),
+                            ),
+                            _QuickAction(
+                              icon: Icons.help_outline_rounded,
+                              label: l10n.help,
+                              color: AppTheme.primaryLight,
+                              onTap: () => context.push('/driver/help'),
+                            ),
+                          ]
+                        : [
+                            _QuickAction(
+                              icon: Icons.add_box_outlined,
+                              label: l10n.addCargo,
+                              color: AppTheme.accent,
+                              onTap: () =>
+                                  context.push('/coordinator/add-cargo'),
+                            ),
+                            _QuickAction(
+                              icon: Icons.list_alt_outlined,
+                              label: l10n.cargos,
+                              color: AppTheme.primary,
+                              onTap: () => context.go('/coordinator/cargos'),
+                            ),
+                            _QuickAction(
+                              icon: Icons.person_outline,
+                              label: l10n.profile,
+                              color: AppTheme.success,
+                              onTap: () => context.go('/coordinator/profile'),
+                            ),
+                            _QuickAction(
+                              icon: Icons.help_outline_rounded,
+                              label: l10n.help,
+                              color: AppTheme.primaryLight,
+                              onTap: () => context.push('/coordinator/help'),
+                            ),
+                          ],
                   ),
                 ),
               ),
@@ -283,7 +286,9 @@ class _HomeScreenState extends State<HomeScreen> {
               child: FadeSlideIn(
                 delay: const Duration(milliseconds: 260),
                 child: SectionHeader(
-                  title: _isDriver ? l10n.homeSuggestedCargos : l10n.homeRecentCargos,
+                  title: _isDriver
+                      ? l10n.homeSuggestedCargos
+                      : l10n.homeRecentCargos,
                   actionLabel: l10n.homeViewAll,
                   action: () => context.go(
                     _isDriver ? '/driver/cargos' : '/coordinator/cargos',
@@ -297,11 +302,16 @@ class _HomeScreenState extends State<HomeScreen> {
                 sliver: SliverToBoxAdapter(
                   child: FadeSlideIn(
                     child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 28),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 20,
+                        vertical: 28,
+                      ),
                       decoration: BoxDecoration(
                         color: palette.cardBg,
                         borderRadius: BorderRadius.circular(20),
-                        border: Border.all(color: palette.divider.withValues(alpha: 0.65)),
+                        border: Border.all(
+                          color: palette.divider.withValues(alpha: 0.65),
+                        ),
                         boxShadow: palette.cardShadow,
                       ),
                       child: Column(
@@ -337,27 +347,24 @@ class _HomeScreenState extends State<HomeScreen> {
               SliverPadding(
                 padding: const EdgeInsets.fromLTRB(16, 0, 16, 100),
                 sliver: SliverList(
-                  delegate: SliverChildBuilderDelegate(
-                    (context, index) {
-                      final cargo = _recent[index];
-                      return Padding(
-                        padding: const EdgeInsets.only(bottom: 12),
-                        child: FadeSlideIn(
-                          delay: Duration(milliseconds: 80 * index),
-                          child: _HomeCargoTile(
-                            cargo: cargo,
-                            showNearby: _isDriver && cargo.isNearby,
-                            onTap: () => context.push(
-                              _isDriver
-                                  ? '/driver/cargo/${cargo.id}'
-                                  : '/coordinator/cargo/${cargo.id}',
-                            ),
+                  delegate: SliverChildBuilderDelegate((context, index) {
+                    final cargo = _recent[index];
+                    return Padding(
+                      padding: const EdgeInsets.only(bottom: 12),
+                      child: FadeSlideIn(
+                        delay: Duration(milliseconds: 80 * index),
+                        child: _HomeCargoTile(
+                          cargo: cargo,
+                          showNearby: _isDriver && cargo.isNearby,
+                          onTap: () => context.push(
+                            _isDriver
+                                ? '/driver/cargo/${cargo.id}'
+                                : '/coordinator/cargo/${cargo.id}',
                           ),
                         ),
-                      );
-                    },
-                    childCount: _recent.length,
-                  ),
+                      ),
+                    );
+                  }, childCount: _recent.length),
                 ),
               ),
           ],
@@ -396,8 +403,8 @@ class _HomeHero extends StatelessWidget {
       child: Stack(
         clipBehavior: Clip.none,
         children: [
-          Positioned(
-            left: -8,
+          PositionedDirectional(
+            end: -8,
             bottom: -6,
             child: Icon(
               Icons.local_shipping_rounded,
@@ -405,18 +412,21 @@ class _HomeHero extends StatelessWidget {
               color: Colors.white.withValues(alpha: 0.07),
             ),
           ),
-          Positioned(
-            left: 12,
+          PositionedDirectional(
+            end: 12,
             top: 0,
             child: LogisticsHeroArt(size: 96),
           ),
           Padding(
-            padding: const EdgeInsets.only(left: 108),
+            padding: const EdgeInsetsDirectional.only(end: 108),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 5,
+                  ),
                   decoration: BoxDecoration(
                     color: Colors.white.withValues(alpha: 0.18),
                     borderRadius: BorderRadius.circular(20),
@@ -510,9 +520,9 @@ class _StatCard extends StatelessWidget {
       child: Stack(
         clipBehavior: Clip.none,
         children: [
-          Positioned(
+          PositionedDirectional(
             top: -18,
-            right: -10,
+            start: -10,
             child: Container(
               width: 56,
               height: 56,
@@ -656,7 +666,9 @@ class _QuickActionsGrid extends StatelessWidget {
       mainAxisSpacing: 10,
       crossAxisSpacing: 10,
       childAspectRatio: 2.15,
-      children: actions.map((action) => _QuickActionTile(action: action)).toList(),
+      children: actions
+          .map((action) => _QuickActionTile(action: action))
+          .toList(),
     );
   }
 }
@@ -767,7 +779,10 @@ class _HomeCargoTile extends StatelessWidget {
               ),
               if (showNearby && cargo.nearbyDistanceKm != null)
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 4,
+                  ),
                   decoration: BoxDecoration(
                     color: AppTheme.accent.withValues(alpha: 0.12),
                     borderRadius: BorderRadius.circular(8),

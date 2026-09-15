@@ -39,6 +39,7 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   void initState() {
     super.initState();
+    _selectedRole = SettingsService().preferredRole;
     _bootstrap();
   }
 
@@ -158,6 +159,8 @@ class _LoginScreenState extends State<LoginScreen> {
     } catch (_) {}
 
     if (!mounted) return;
+    await context.read<SettingsService>().setPreferredRole(_selectedRole);
+    if (!mounted) return;
     _goHome(_selectedRole);
   }
 
@@ -209,6 +212,8 @@ class _LoginScreenState extends State<LoginScreen> {
       );
       if (!mounted) return;
       if (success) {
+        await context.read<SettingsService>().setPreferredRole(creds.role);
+        if (!mounted) return;
         _goHome(creds.role);
       } else {
         setState(() => _error = auth.lastError ?? l10n.loginFingerprintError);

@@ -40,7 +40,11 @@ class AboutScreen extends StatelessWidget {
                     color: Colors.white.withValues(alpha: 0.18),
                     shape: BoxShape.circle,
                   ),
-                  child: const Icon(Icons.local_shipping_rounded, size: 48, color: Colors.white),
+                  child: const Icon(
+                    Icons.local_shipping_rounded,
+                    size: 48,
+                    color: Colors.white,
+                  ),
                 ),
                 const SizedBox(height: 16),
                 Text(
@@ -55,7 +59,10 @@ class AboutScreen extends StatelessWidget {
                 ),
                 const SizedBox(height: 8),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 6,
+                  ),
                   decoration: BoxDecoration(
                     color: Colors.white.withValues(alpha: 0.15),
                     borderRadius: BorderRadius.circular(20),
@@ -76,20 +83,69 @@ class AboutScreen extends StatelessWidget {
           MenuSectionCard(
             child: Text(
               l10n.aboutDescription,
-              style: TextStyle(color: palette.textSecondary, height: 1.65, fontSize: 14),
+              style: TextStyle(
+                color: palette.textSecondary,
+                height: 1.65,
+                fontSize: 14,
+              ),
             ),
           ),
           const SizedBox(height: 14),
           MenuSectionCard(
-            title: l10n.appName,
+            title: l10n.platformCapabilities,
             child: Wrap(
               spacing: 8,
               runSpacing: 8,
               children: [
-                _FeatureChip(icon: Icons.local_shipping_outlined, label: l10n.cargos),
+                _FeatureChip(
+                  icon: Icons.local_shipping_outlined,
+                  label: l10n.cargos,
+                ),
                 _FeatureChip(icon: Icons.gps_fixed, label: 'GPS'),
                 _FeatureChip(icon: Icons.people_outline, label: l10n.drivers),
-                _FeatureChip(icon: Icons.route_outlined, label: l10n.navigation),
+                _FeatureChip(
+                  icon: Icons.route_outlined,
+                  label: l10n.navigation,
+                ),
+                _FeatureChip(
+                  icon: Icons.security_rounded,
+                  label: l10n.secureAccount,
+                ),
+                _FeatureChip(
+                  icon: Icons.dark_mode_rounded,
+                  label: l10n.darkMode,
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 14),
+          MenuSectionCard(
+            title: l10n.platformValues,
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(11),
+                  decoration: BoxDecoration(
+                    color: AppTheme.success.withValues(alpha: 0.12),
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                  child: const Icon(
+                    Icons.verified_user_rounded,
+                    color: AppTheme.success,
+                  ),
+                ),
+                const SizedBox(width: 13),
+                Expanded(
+                  child: Text(
+                    l10n.platformValuesBody,
+                    style: TextStyle(
+                      color: palette.textSecondary,
+                      height: 1.65,
+                      fontSize: 13,
+                    ),
+                  ),
+                ),
               ],
             ),
           ),

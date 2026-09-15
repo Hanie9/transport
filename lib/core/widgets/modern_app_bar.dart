@@ -27,15 +27,13 @@ class ModernAppBar extends StatelessWidget implements PreferredSizeWidget {
     final location = GoRouterState.of(context).uri.toString();
     final isMenuPage = AppDrawer.isMenuRoute(location);
 
-    final Widget? effectiveLeading = leading ??
+    final Widget? effectiveLeading =
+        leading ??
         (isMenuPage
             ? BackButton(onPressed: () => context.pop())
             : shell != null
-                ? IconButton(
-                    icon: const Icon(Icons.menu_rounded),
-                    onPressed: shell.openDrawer,
-                  )
-                : null);
+            ? _ModernMenuButton(onPressed: shell.openDrawer)
+            : null);
 
     return AppBar(
       title: Text(title),
@@ -44,9 +42,46 @@ class ModernAppBar extends StatelessWidget implements PreferredSizeWidget {
       actions: actions,
       bottom: PreferredSize(
         preferredSize: const Size.fromHeight(1),
-        child: Container(
-          height: 1,
-          color: palette.divider,
+        child: Container(height: 1, color: palette.divider),
+      ),
+    );
+  }
+}
+
+class _ModernMenuButton extends StatelessWidget {
+  const _ModernMenuButton({required this.onPressed});
+
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    final color = Theme.of(context).colorScheme.primary;
+    return Padding(
+      padding: const EdgeInsets.all(8),
+      child: Material(
+        color: color.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(13),
+        child: InkWell(
+          onTap: onPressed,
+          borderRadius: BorderRadius.circular(13),
+          child: Stack(
+            alignment: Alignment.center,
+            children: [
+              Icon(Icons.menu_open_rounded, color: color, size: 25),
+              PositionedDirectional(
+                end: 7,
+                top: 7,
+                child: Container(
+                  width: 6,
+                  height: 6,
+                  decoration: const BoxDecoration(
+                    color: AppTheme.accent,
+                    shape: BoxShape.circle,
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );

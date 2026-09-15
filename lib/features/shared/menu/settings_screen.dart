@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/dark_mode_toggle.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../services/settings_service.dart';
+import '../../../services/auth_service.dart';
 import '../profile_settings_section.dart';
 import 'widgets/menu_page_layout.dart';
 
@@ -17,6 +19,8 @@ class SettingsScreen extends StatelessWidget {
     final settings = context.watch<SettingsService>();
     final palette = context.palette;
     final isDark = settings.themeMode == ThemeMode.dark;
+    final role = context.watch<AuthService>().currentUser?.role.name;
+    final basePath = role == 'driver' ? '/driver' : '/coordinator';
 
     return MenuPageLayout(
       title: l10n.settings,
@@ -72,6 +76,24 @@ class SettingsScreen extends StatelessWidget {
                 const SizedBox(height: 14),
                 const ProfileLanguageDropdown(),
               ],
+            ),
+          ),
+          const SizedBox(height: 14),
+          MenuSectionCard(
+            title: l10n.secureAccount,
+            child: InkWell(
+              borderRadius: BorderRadius.circular(16),
+              onTap: () => context.push('$basePath/change-password'),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(vertical: 4),
+                child: MenuSettingTile(
+                  icon: Icons.password_rounded,
+                  title: l10n.changePassword,
+                  subtitle: l10n.changePasswordHint,
+                  iconColor: AppTheme.success,
+                  trailing: const Icon(Icons.chevron_right_rounded),
+                ),
+              ),
             ),
           ),
         ],

@@ -5,6 +5,7 @@ import '../../../core/constants/app_constants.dart';
 import '../../../core/models/iranian_plate.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/iranian_plate_widget.dart';
+import '../../../core/widgets/modern_dropdown.dart';
 import '../../../l10n/api_messages.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../models/api_reference_item.dart';
@@ -216,12 +217,10 @@ class _VehicleInfoFormState extends State<VehicleInfoForm> {
               child: Center(child: CircularProgressIndicator()),
             )
           else if (!ApiConfig.shouldUseMock)
-            DropdownButtonFormField<int>(
+            ModernDropdownField<int>(
               value: _selectedMachineId,
-              decoration: InputDecoration(
-                labelText: l10n.trailerType,
-                prefixIcon: const Icon(Icons.category_outlined),
-              ),
+              label: l10n.trailerType,
+              prefixIcon: Icons.category_rounded,
               items: _machines
                   .map(
                     (machine) => DropdownMenuItem<int>(
@@ -234,12 +233,10 @@ class _VehicleInfoFormState extends State<VehicleInfoForm> {
               validator: (v) => v == null ? l10n.selectMachineType : null,
             )
           else
-            DropdownButtonFormField<String>(
+            ModernDropdownField<String>(
               value: _selectedCargoType,
-              decoration: InputDecoration(
-                labelText: l10n.trailerType,
-                prefixIcon: const Icon(Icons.category_outlined),
-              ),
+              label: l10n.trailerType,
+              prefixIcon: Icons.category_rounded,
               items: AppConstants.cargoTypes
                   .map(
                     (t) => DropdownMenuItem(

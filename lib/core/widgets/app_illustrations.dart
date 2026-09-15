@@ -16,15 +16,21 @@ class LogisticsHeroArt extends StatelessWidget {
       child: Stack(
         clipBehavior: Clip.none,
         children: [
-          Positioned(
-            right: 0,
+          PositionedDirectional(
+            start: 0,
             bottom: 8,
-            child: _Orb(color: Colors.white.withValues(alpha: 0.14), size: size * 0.55),
+            child: _Orb(
+              color: Colors.white.withValues(alpha: 0.14),
+              size: size * 0.55,
+            ),
           ),
-          Positioned(
-            left: 4,
+          PositionedDirectional(
+            end: 4,
             top: 6,
-            child: _Orb(color: Colors.white.withValues(alpha: 0.1), size: size * 0.35),
+            child: _Orb(
+              color: Colors.white.withValues(alpha: 0.1),
+              size: size * 0.35,
+            ),
           ),
           Align(
             alignment: Alignment.center,
@@ -82,7 +88,9 @@ class EmptyCargoIllustration extends StatelessWidget {
             decoration: BoxDecoration(
               color: AppTheme.primary.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(24),
-              border: Border.all(color: AppTheme.primary.withValues(alpha: 0.18)),
+              border: Border.all(
+                color: AppTheme.primary.withValues(alpha: 0.18),
+              ),
             ),
             child: Icon(
               Icons.inventory_2_rounded,
@@ -90,10 +98,13 @@ class EmptyCargoIllustration extends StatelessWidget {
               color: AppTheme.primary.withValues(alpha: 0.65),
             ),
           ),
-          Positioned(
-            right: size * 0.08,
+          PositionedDirectional(
+            start: size * 0.08,
             top: size * 0.1,
-            child: _Orb(color: AppTheme.accent.withValues(alpha: 0.35), size: 14),
+            child: _Orb(
+              color: AppTheme.accent.withValues(alpha: 0.35),
+              size: 14,
+            ),
           ),
         ],
       ),

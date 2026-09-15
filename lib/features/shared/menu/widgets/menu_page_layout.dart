@@ -38,10 +38,7 @@ class MenuPageLayout extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 20),
-            FadeSlideIn(
-              delay: const Duration(milliseconds: 100),
-              child: child,
-            ),
+            FadeSlideIn(delay: const Duration(milliseconds: 100), child: child),
           ],
         ),
       ),
@@ -244,64 +241,80 @@ class MenuContactTile extends StatelessWidget {
     required this.label,
     required this.value,
     this.iconColor,
+    this.onTap,
   });
 
   final IconData icon;
   final String label;
   final String value;
   final Color? iconColor;
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
     final palette = context.palette;
     final color = iconColor ?? AppTheme.primary;
 
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: palette.cardBg,
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: palette.cardShadow,
-        border: Border.all(color: palette.divider.withValues(alpha: 0.65)),
-      ),
-      child: Row(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: [
-                  color.withValues(alpha: 0.16),
-                  color.withValues(alpha: 0.06),
-                ],
-              ),
-              borderRadius: BorderRadius.circular(14),
-            ),
-            child: Icon(icon, color: color, size: 22),
+    return Material(
+      color: palette.cardBg,
+      borderRadius: BorderRadius.circular(20),
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: onTap,
+        child: Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: palette.cardBg,
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(color: palette.divider.withValues(alpha: 0.65)),
           ),
-          const SizedBox(width: 14),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  label,
-                  style: TextStyle(fontSize: 12, color: palette.textSecondary),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  value,
-                  style: TextStyle(
-                    fontWeight: FontWeight.w700,
-                    fontSize: 15,
-                    color: palette.textPrimary,
+          child: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [
+                      color.withValues(alpha: 0.16),
+                      color.withValues(alpha: 0.06),
+                    ],
                   ),
-                  textDirection: TextDirection.ltr,
+                  borderRadius: BorderRadius.circular(14),
                 ),
+                child: Icon(icon, color: color, size: 22),
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      label,
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: palette.textSecondary,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      value,
+                      style: TextStyle(
+                        fontWeight: FontWeight.w700,
+                        fontSize: 15,
+                        color: palette.textPrimary,
+                      ),
+                      textDirection: TextDirection.ltr,
+                    ),
+                  ],
+                ),
+              ),
+              if (onTap != null) ...[
+                const SizedBox(width: 8),
+                Icon(Icons.content_copy_rounded, size: 18, color: color),
               ],
-            ),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }

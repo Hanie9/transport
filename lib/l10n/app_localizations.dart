@@ -51,6 +51,61 @@ class AppLocalizations {
   String get help => _t('راهنما', 'Help');
   String get support => _t('پشتیبانی', 'Support');
   String get changePassword => _t('تغییر رمز عبور', 'Change password');
+  String get drawerOperations => _t('عملیات حمل‌ونقل', 'TRANSPORT OPERATIONS');
+  String get drawerAccount => _t('حساب و تنظیمات', 'ACCOUNT & SETTINGS');
+  String get drawerAssistance => _t('راهنمایی و ارتباط', 'HELP & CONTACT');
+  String get accountActive => _t('حساب فعال', 'Active account');
+  String get coordinatorOverview =>
+      _t('نمای کلی عملکرد', 'Performance overview');
+  String get completedCargos => _t('تکمیل‌شده', 'Completed');
+  String get totalCargoValue => _t('ارزش کل بارها', 'Total cargo value');
+  String get accountInformation => _t('اطلاعات حساب', 'Account information');
+  String get transportTools => _t('ابزارهای مدیریت حمل', 'Transport tools');
+  String get manageCargos => _t('مدیریت بارها', 'Manage cargos');
+  String get createNewCargo => _t('ایجاد بار جدید', 'Create new cargo');
+  String get secureAccount => _t('امنیت حساب', 'Account security');
+  String get supportQuickHelp => _t(
+    'پاسخ سریع برای مشکلات حساب، بار، راننده و مسیریابی',
+    'Fast help for account, cargo, driver, and navigation issues',
+  );
+  String get copiedToClipboard =>
+      _t('در کلیپ‌بورد کپی شد', 'Copied to clipboard');
+  String get commonQuestions => _t('پرسش‌های پرتکرار', 'Common questions');
+  String get supportBeforeContact => _t(
+    'پیش از تماس، شماره موبایل حساب و شناسه بار را آماده داشته باشید.',
+    'Before contacting support, have your account phone and cargo ID ready.',
+  );
+  String get faqCargoIssueTitle =>
+      _t('چرا بار نمایش داده نمی‌شود؟', 'Why is a cargo not visible?');
+  String get faqCargoIssueBody => _t(
+    'اتصال اینترنت، فیلترهای فعال و نوع ماشین ثبت‌شده را بررسی کنید. راننده فقط بارهای باز و متناسب با ماشین خود را می‌بیند.',
+    'Check connectivity, active filters, and the registered vehicle type. Drivers only see open cargos matching their vehicle.',
+  );
+  String get faqAccountIssueTitle =>
+      _t('مشکل ورود یا انقضای نشست', 'Sign-in or expired session');
+  String get faqAccountIssueBody => _t(
+    'شماره را با قالب 09 وارد کنید. اگر نشست منقضی شد دوباره وارد شوید و در صورت تداوم مشکل با پشتیبانی تماس بگیرید.',
+    'Enter the phone in 09 format. If the session expires, sign in again and contact support if the issue continues.',
+  );
+  String get faqNavigationIssueTitle =>
+      _t('نقشه یا GPS کار نمی‌کند', 'Map or GPS is not working');
+  String get faqNavigationIssueBody => _t(
+    'دسترسی موقعیت، روشن بودن GPS و اتصال اینترنت را بررسی کنید؛ سپس صفحه مسیر را دوباره باز کنید.',
+    'Check location permission, GPS, and connectivity, then reopen the route screen.',
+  );
+  String get transportSafetyTitle =>
+      _t('ایمنی در اولویت است', 'Safety comes first');
+  String get transportSafetyBody => _t(
+    'هنگام رانندگی با برنامه کار نکنید. پیش از حرکت، مشخصات بار، مبدا، مقصد و اطلاعات طرف مقابل را کنترل کنید.',
+    'Do not operate the app while driving. Before departure, verify cargo, origin, destination, and counterparty details.',
+  );
+  String get platformCapabilities =>
+      _t('امکانات سامانه', 'Platform capabilities');
+  String get platformValues => _t('اصول کاری ما', 'Our principles');
+  String get platformValuesBody => _t(
+    'شفافیت اطلاعات، امنیت حساب، انتخاب هوشمند بار و ارتباط سریع میان راننده و متصدی، پایه‌های این سامانه هستند.',
+    'Information transparency, account security, smart cargo matching, and fast driver–coordinator communication are the foundation of this platform.',
+  );
   String get aboutDescription => _t(
     'لجستیک سامانه‌ای هوشمند برای مدیریت حمل‌ونقل بار جاده‌ای است که رانندگان و متصدیان حمل‌ونقل را به یکدیگر متصل می‌کند.',
     'Logistics is a smart road freight platform that connects drivers and transport coordinators.',
@@ -170,6 +225,18 @@ class AppLocalizations {
   String get helpCoordinatorNearbyBody => _t(
     'در تب نزدیک، رانندگان فعالی که به مبدا بار نزدیک‌تر هستند پیشنهاد می‌شوند. این بخش برای یافتن سریع راننده مناسب برای بارهای جدید مفید است.',
     'In the Nearby tab, active drivers closer to the cargo origin are suggested. This helps you quickly find a suitable driver for new loads.',
+  );
+  String get helpCoordinatorEditTitle =>
+      _t('ویرایش و حذف بار', 'Editing and deleting cargo');
+  String get helpCoordinatorEditBody => _t(
+    'از صفحه جزئیات هر بار می‌توانید اطلاعات آن را ویرایش کنید یا در صورت نیاز بار را حذف کنید. پیش از حذف، شناسه و وضعیت بار را دوباره کنترل کنید.',
+    'From cargo details, you can edit its information or delete it when needed. Before deletion, verify the cargo ID and status.',
+  );
+  String get helpCoordinatorSecurityTitle =>
+      _t('امنیت و اطلاعات حساب', 'Account information and security');
+  String get helpCoordinatorSecurityBody => _t(
+    'در پروفایل، نام و کد ملی را به‌روز کنید. از منوی امنیت نیز رمز عبور را تغییر دهید و اطلاعات ورود را در اختیار دیگران قرار ندهید.',
+    'Update your name and national code in Profile. Use Security to change your password, and never share sign-in information.',
   );
   String get helpCoordinatorProfileTitle => _t('پروفایل', 'Profile');
   String get helpCoordinatorProfileBody => _t(

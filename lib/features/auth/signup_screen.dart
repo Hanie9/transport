@@ -7,6 +7,7 @@ import '../../core/theme/app_theme.dart';
 import '../../l10n/app_localizations.dart';
 import '../../models/user_role.dart';
 import '../../services/auth_service.dart';
+import '../../services/settings_service.dart';
 import 'widgets/auth_widgets.dart';
 
 class SignupScreen extends StatefulWidget {
@@ -64,6 +65,8 @@ class _SignupScreenState extends State<SignupScreen> {
     if (!mounted) return;
 
     if (success) {
+      await context.read<SettingsService>().setPreferredRole(_selectedRole);
+      if (!mounted) return;
       if (_selectedRole == UserRole.driver) {
         context.go('/driver/profile?editVehicle=1');
       } else {

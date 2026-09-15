@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../models/user_role.dart';
+
 class SettingsService extends ChangeNotifier {
   SettingsService._();
 
@@ -9,16 +11,19 @@ class SettingsService extends ChangeNotifier {
 
   static const _localeKey = 'locale';
   static const _themeModeKey = 'theme_mode';
+  static const _preferredRoleKey = 'preferred_user_role';
 
   /// App preferences stored in SharedPreferences — survive logout and session
   /// expiry. They are removed only when the app is uninstalled or app data is cleared.
 
   Locale _locale = const Locale('fa', 'IR');
   ThemeMode _themeMode = ThemeMode.light;
+  UserRole _preferredRole = UserRole.driver;
   bool _initialized = false;
 
   Locale get locale => _locale;
   ThemeMode get themeMode => _themeMode;
+  UserRole get preferredRole => _preferredRole;
   bool get isEnglish => _locale.languageCode == 'en';
   bool get initialized => _initialized;
 
@@ -37,6 +42,11 @@ class SettingsService extends ChangeNotifier {
       'light' => ThemeMode.light,
       _ => ThemeMode.light,
     };
+
+    _preferredRole =
+        prefs.getString(_preferredRoleKey) == UserRole.coordinator.name
+        ? UserRole.coordinator
+        : UserRole.driver;
 
     _initialized = true;
     notifyListeners();
@@ -61,9 +71,15 @@ class SettingsService extends ChangeNotifier {
     );
   }
 
-  Future<void> toggleDarkMode(bool enabled) => setThemeMode(enabled ? ThemeMode.dark : ThemeMode.light);
+  Future<void> setPreferredRole(UserRole role) async {
+    _preferredRole = role;
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_preferredRoleKey, role.name);
+  }
 
-  Future<void> setEnglish(bool enabled) => setLocale(
-        enabled ? const Locale('en', 'US') : const Locale('fa', 'IR'),
-      );
+  Future<void> toggleDarkMode(bool enabled) =>
+      setThemeMode(enabled ? ThemeMode.dark : ThemeMode.light);
+
+  Future<void> setEnglish(bool enabled) =>
+      setLocale(enabled ? const Locale('en', 'US') : const Locale('fa', 'IR'));
 }
