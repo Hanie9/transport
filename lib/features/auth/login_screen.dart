@@ -254,273 +254,270 @@ class _LoginScreenState extends State<LoginScreen> {
 
     return Scaffold(
       backgroundColor: palette.surface,
-      body: SafeArea(
-        top: false,
-        child: SingleChildScrollView(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              AuthHeroHeader(title: l10n.appName, subtitle: l10n.loginTitle),
-              Padding(
-                padding: const EdgeInsets.fromLTRB(20, 24, 20, 32),
-                child: Form(
-                  key: _formKey,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      AuthFormSection(
-                        child: AuthSectionCard(
-                          title: l10n.userType,
-                          child: AuthRoleSelector(
-                            selectedRole: _selectedRole,
-                            onRoleChanged: (role) =>
-                                setState(() => _selectedRole = role),
-                            enabled: !busy,
-                          ),
-                        ),
+      body: AuthPageLayout(
+        children: [
+          AuthHeroHeader(title: l10n.appName, subtitle: l10n.loginTitle),
+          Padding(
+            padding: EdgeInsets.fromLTRB(
+              MediaQuery.sizeOf(context).width < 360 ? 12 : 20,
+              24,
+              MediaQuery.sizeOf(context).width < 360 ? 12 : 20,
+              32,
+            ),
+            child: Form(
+              key: _formKey,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  AuthFormSection(
+                    child: AuthSectionCard(
+                      title: l10n.userType,
+                      child: AuthRoleSelector(
+                        selectedRole: _selectedRole,
+                        onRoleChanged: (role) =>
+                            setState(() => _selectedRole = role),
+                        enabled: !busy,
                       ),
-                      const SizedBox(height: 16),
-                      AuthFormSection(
-                        delay: const Duration(milliseconds: 80),
-                        child: AuthSectionCard(
-                          title: l10n.loginAccountTitle,
-                          child: Column(
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  AuthFormSection(
+                    delay: const Duration(milliseconds: 80),
+                    child: AuthSectionCard(
+                      title: l10n.loginAccountTitle,
+                      child: Column(
+                        children: [
+                          TextFormField(
+                            controller: _phoneController,
+                            keyboardType: TextInputType.phone,
+                            textDirection: TextDirection.ltr,
+                            enabled: !busy,
+                            decoration: InputDecoration(
+                              labelText: l10n.phoneNumber,
+                              prefixIcon: const Icon(Icons.phone_outlined),
+                              hintText: '09123456789',
+                            ),
+                            validator: (v) {
+                              if (v == null || v.trim().isEmpty) {
+                                return l10n.phoneRequired;
+                              }
+                              if (v.trim().length < 11) {
+                                return l10n.phoneInvalid;
+                              }
+                              return null;
+                            },
+                          ),
+                          const SizedBox(height: 14),
+                          TextFormField(
+                            controller: _passwordController,
+                            obscureText: _obscurePassword,
+                            enabled: !busy,
+                            onFieldSubmitted: (_) => busy ? null : _login(),
+                            decoration: InputDecoration(
+                              labelText: l10n.password,
+                              prefixIcon: const Icon(Icons.lock_outline),
+                              suffixIcon: IconButton(
+                                icon: Icon(
+                                  _obscurePassword
+                                      ? Icons.visibility_off
+                                      : Icons.visibility,
+                                ),
+                                onPressed: () => setState(
+                                  () => _obscurePassword = !_obscurePassword,
+                                ),
+                              ),
+                            ),
+                            validator: (v) {
+                              if (v == null || v.isEmpty) {
+                                return l10n.passwordRequired;
+                              }
+                              if (v.length < 8) {
+                                return l10n.passwordMinLength;
+                              }
+                              return null;
+                            },
+                          ),
+                          const SizedBox(height: 12),
+                          Row(
                             children: [
-                              TextFormField(
-                                controller: _phoneController,
-                                keyboardType: TextInputType.phone,
-                                textDirection: TextDirection.ltr,
-                                enabled: !busy,
-                                decoration: InputDecoration(
-                                  labelText: l10n.phoneNumber,
-                                  prefixIcon: const Icon(Icons.phone_outlined),
-                                  hintText: '09123456789',
+                              SizedBox(
+                                width: 24,
+                                height: 24,
+                                child: Checkbox(
+                                  value: _rememberMe,
+                                  onChanged: busy
+                                      ? null
+                                      : (v) => setState(
+                                          () => _rememberMe = v ?? false,
+                                        ),
+                                  activeColor: AppTheme.primary,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(4),
+                                  ),
                                 ),
-                                validator: (v) {
-                                  if (v == null || v.trim().isEmpty) {
-                                    return l10n.phoneRequired;
-                                  }
-                                  if (v.trim().length < 11) {
-                                    return l10n.phoneInvalid;
-                                  }
-                                  return null;
-                                },
                               ),
-                              const SizedBox(height: 14),
-                              TextFormField(
-                                controller: _passwordController,
-                                obscureText: _obscurePassword,
-                                enabled: !busy,
-                                onFieldSubmitted: (_) => busy ? null : _login(),
-                                decoration: InputDecoration(
-                                  labelText: l10n.password,
-                                  prefixIcon: const Icon(Icons.lock_outline),
-                                  suffixIcon: IconButton(
-                                    icon: Icon(
-                                      _obscurePassword
-                                          ? Icons.visibility_off
-                                          : Icons.visibility,
-                                    ),
-                                    onPressed: () => setState(
-                                      () =>
-                                          _obscurePassword = !_obscurePassword,
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: GestureDetector(
+                                  onTap: busy
+                                      ? null
+                                      : () => setState(
+                                          () => _rememberMe = !_rememberMe,
+                                        ),
+                                  child: Text(
+                                    l10n.rememberMe,
+                                    style: TextStyle(
+                                      color: palette.textSecondary,
+                                      fontWeight: FontWeight.w500,
                                     ),
                                   ),
                                 ),
-                                validator: (v) {
-                                  if (v == null || v.isEmpty) {
-                                    return l10n.passwordRequired;
-                                  }
-                                  if (v.length < 8) {
-                                    return l10n.passwordMinLength;
-                                  }
-                                  return null;
-                                },
-                              ),
-                              const SizedBox(height: 12),
-                              Row(
-                                children: [
-                                  SizedBox(
-                                    width: 24,
-                                    height: 24,
-                                    child: Checkbox(
-                                      value: _rememberMe,
-                                      onChanged: busy
-                                          ? null
-                                          : (v) => setState(
-                                              () => _rememberMe = v ?? false,
-                                            ),
-                                      activeColor: AppTheme.primary,
-                                      shape: RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.circular(4),
-                                      ),
-                                    ),
-                                  ),
-                                  const SizedBox(width: 8),
-                                  GestureDetector(
-                                    onTap: busy
-                                        ? null
-                                        : () => setState(
-                                            () => _rememberMe = !_rememberMe,
-                                          ),
-                                    child: Text(
-                                      l10n.rememberMe,
-                                      style: TextStyle(
-                                        color: palette.textSecondary,
-                                        fontWeight: FontWeight.w500,
-                                      ),
-                                    ),
-                                  ),
-                                ],
                               ),
                             ],
                           ),
-                        ),
+                        ],
                       ),
-                      const SizedBox(height: 24),
-                      AuthFormSection(
-                        delay: const Duration(milliseconds: 140),
-                        child: SizedBox(
-                          height: 54,
-                          child: ElevatedButton(
-                            onPressed: busy ? null : _login,
-                            child: auth.isLoading
-                                ? const SizedBox(
-                                    height: 22,
-                                    width: 22,
-                                    child: CircularProgressIndicator(
-                                      strokeWidth: 2,
-                                      color: Colors.white,
-                                    ),
-                                  )
-                                : Text(l10n.login),
-                          ),
-                        ),
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+                  AuthFormSection(
+                    delay: const Duration(milliseconds: 140),
+                    child: SizedBox(
+                      height: 54,
+                      child: ElevatedButton(
+                        onPressed: busy ? null : _login,
+                        child: auth.isLoading
+                            ? const SizedBox(
+                                height: 22,
+                                width: 22,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  color: Colors.white,
+                                ),
+                              )
+                            : Text(l10n.login),
                       ),
-                      if (_authAvailable) ...[
-                        const SizedBox(height: 24),
-                        AuthFormSection(
-                          delay: const Duration(milliseconds: 180),
-                          child: Center(
-                            child: Column(
-                              children: [
-                                ScaleTap(
-                                  enabled: !busy && _hasStoredCredentials,
-                                  onTap: _tryBiometricLogin,
-                                  borderRadius: BorderRadius.circular(36),
-                                  child: Opacity(
-                                    opacity: (busy || !_hasStoredCredentials)
-                                        ? 0.45
-                                        : 1,
-                                    child: Container(
-                                      width: 72,
-                                      height: 72,
-                                      decoration: BoxDecoration(
-                                        shape: BoxShape.circle,
-                                        gradient: LinearGradient(
-                                          begin: Alignment.topLeft,
-                                          end: Alignment.bottomRight,
-                                          colors: [
-                                            AppTheme.primary.withValues(
-                                              alpha: 0.18,
-                                            ),
-                                            AppTheme.primaryLight.withValues(
-                                              alpha: 0.06,
-                                            ),
-                                          ],
-                                        ),
-                                        border: Border.all(
-                                          color: AppTheme.primaryLight,
-                                          width: 2,
-                                        ),
-                                        boxShadow: [
-                                          BoxShadow(
-                                            color: AppTheme.primary.withValues(
-                                              alpha: 0.18,
-                                            ),
-                                            blurRadius: 16,
-                                            offset: const Offset(0, 6),
-                                          ),
-                                        ],
-                                      ),
-                                      alignment: Alignment.center,
-                                      child: _biometricLoading
-                                          ? const SizedBox(
-                                              width: 26,
-                                              height: 26,
-                                              child: CircularProgressIndicator(
-                                                strokeWidth: 2.2,
-                                                color: AppTheme.primary,
-                                              ),
-                                            )
-                                          : Icon(
-                                              Icons.fingerprint_rounded,
-                                              size: 38,
-                                              color:
-                                                  Theme.of(
-                                                        context,
-                                                      ).brightness ==
-                                                      Brightness.dark
-                                                  ? Colors.white
-                                                  : AppTheme.primary,
-                                            ),
-                                    ),
-                                  ),
-                                ),
-                                const SizedBox(height: 10),
-                                Text(
-                                  _hasStoredCredentials
-                                      ? l10n.loginBiometric
-                                      : l10n.loginLoginFirst,
-                                  textAlign: TextAlign.center,
-                                  style: TextStyle(
-                                    fontSize: 13,
-                                    fontWeight: FontWeight.w600,
-                                    color:
-                                        Theme.of(context).brightness ==
-                                            Brightness.dark
-                                        ? Colors.white70
-                                        : AppTheme.primary,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ],
-                      if (_error.isNotEmpty) ...[
-                        const SizedBox(height: 16),
-                        AuthFormSection(
-                          delay: const Duration(milliseconds: 200),
-                          child: AuthErrorBanner(message: _error),
-                        ),
-                      ],
-                      const SizedBox(height: 16),
-                      AuthFormSection(
-                        delay: const Duration(milliseconds: 220),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
+                    ),
+                  ),
+                  if (_authAvailable) ...[
+                    const SizedBox(height: 24),
+                    AuthFormSection(
+                      delay: const Duration(milliseconds: 180),
+                      child: Center(
+                        child: Column(
                           children: [
-                            Text(
-                              l10n.noAccount,
-                              style: TextStyle(color: palette.textSecondary),
+                            ScaleTap(
+                              enabled: !busy && _hasStoredCredentials,
+                              onTap: _tryBiometricLogin,
+                              borderRadius: BorderRadius.circular(36),
+                              child: Opacity(
+                                opacity: (busy || !_hasStoredCredentials)
+                                    ? 0.45
+                                    : 1,
+                                child: Container(
+                                  width: 72,
+                                  height: 72,
+                                  decoration: BoxDecoration(
+                                    shape: BoxShape.circle,
+                                    gradient: LinearGradient(
+                                      begin: Alignment.topLeft,
+                                      end: Alignment.bottomRight,
+                                      colors: [
+                                        AppTheme.primary.withValues(
+                                          alpha: 0.18,
+                                        ),
+                                        AppTheme.primaryLight.withValues(
+                                          alpha: 0.06,
+                                        ),
+                                      ],
+                                    ),
+                                    border: Border.all(
+                                      color: AppTheme.primaryLight,
+                                      width: 2,
+                                    ),
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: AppTheme.primary.withValues(
+                                          alpha: 0.18,
+                                        ),
+                                        blurRadius: 16,
+                                        offset: const Offset(0, 6),
+                                      ),
+                                    ],
+                                  ),
+                                  alignment: Alignment.center,
+                                  child: _biometricLoading
+                                      ? const SizedBox(
+                                          width: 26,
+                                          height: 26,
+                                          child: CircularProgressIndicator(
+                                            strokeWidth: 2.2,
+                                            color: AppTheme.primary,
+                                          ),
+                                        )
+                                      : Icon(
+                                          Icons.fingerprint_rounded,
+                                          size: 38,
+                                          color:
+                                              Theme.of(context).brightness ==
+                                                  Brightness.dark
+                                              ? Colors.white
+                                              : AppTheme.primary,
+                                        ),
+                                ),
+                              ),
                             ),
-                            TextButton(
-                              onPressed: busy
-                                  ? null
-                                  : () => context.go('/signup'),
-                              child: Text(l10n.signup),
+                            const SizedBox(height: 10),
+                            Text(
+                              _hasStoredCredentials
+                                  ? l10n.loginBiometric
+                                  : l10n.loginLoginFirst,
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w600,
+                                color:
+                                    Theme.of(context).brightness ==
+                                        Brightness.dark
+                                    ? Colors.white70
+                                    : AppTheme.primary,
+                              ),
                             ),
                           ],
                         ),
                       ),
-                    ],
+                    ),
+                  ],
+                  if (_error.isNotEmpty) ...[
+                    const SizedBox(height: 16),
+                    AuthFormSection(
+                      delay: const Duration(milliseconds: 200),
+                      child: AuthErrorBanner(message: _error),
+                    ),
+                  ],
+                  const SizedBox(height: 16),
+                  AuthFormSection(
+                    delay: const Duration(milliseconds: 220),
+                    child: Wrap(
+                      alignment: WrapAlignment.center,
+                      crossAxisAlignment: WrapCrossAlignment.center,
+                      children: [
+                        Text(
+                          l10n.noAccount,
+                          style: TextStyle(color: palette.textSecondary),
+                        ),
+                        TextButton(
+                          onPressed: busy ? null : () => context.go('/signup'),
+                          child: Text(l10n.signup),
+                        ),
+                      ],
+                    ),
                   ),
-                ),
+                ],
               ),
-            ],
+            ),
           ),
-        ),
+        ],
       ),
     );
   }

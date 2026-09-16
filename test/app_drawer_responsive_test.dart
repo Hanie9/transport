@@ -14,11 +14,14 @@ void main() {
     WidgetTester tester, {
     required String role,
     required Size size,
+    required Locale locale,
   }) async {
     tester.view.devicePixelRatio = 1;
     tester.view.physicalSize = size;
+    tester.view.padding = const FakeViewPadding(top: 24, bottom: 24);
     addTearDown(tester.view.resetDevicePixelRatio);
     addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetPadding);
 
     final router = GoRouter(
       initialLocation: '/$role',
@@ -35,7 +38,7 @@ void main() {
       ChangeNotifierProvider(
         create: (_) => AuthService(),
         child: MaterialApp.router(
-          locale: const Locale('fa'),
+          locale: locale,
           supportedLocales: AppLocalizations.supportedLocales,
           localizationsDelegates: const [
             AppLocalizationsDelegate(),
@@ -52,14 +55,40 @@ void main() {
   }
 
   for (final role in ['driver', 'coordinator']) {
-    testWidgets('$role drawer fits a short 320x480 phone without scrolling', (
-      tester,
-    ) async {
-      await pumpDrawer(tester, role: role, size: const Size(320, 480));
+    for (final locale in [const Locale('fa'), const Locale('en')]) {
+      for (final size in [
+        const Size(320, 480),
+        const Size(360, 640),
+        const Size(390, 844),
+        const Size(430, 932),
+      ]) {
+        testWidgets('$role $locale drawer fits $size without scrolling', (
+          tester,
+        ) async {
+          await pumpDrawer(tester, role: role, size: size, locale: locale);
 
-      expect(tester.takeException(), isNull);
-      expect(find.byType(Scrollable), findsNothing);
-      expect(find.text('خروج از حساب'), findsOneWidget);
-    });
+          expect(tester.takeException(), isNull);
+          expect(find.byType(Scrollable), findsNothing);
+          expect(
+            tester.getSize(find.byType(Drawer)).width,
+            closeTo((size.width * 0.82).clamp(0.0, 304.0), 0.01),
+          );
+          final context = tester.element(find.byType(AppDrawer));
+          final l10n = AppLocalizations.of(context);
+          for (final label in [
+            l10n.logout,
+            l10n.drawerOperations,
+            l10n.homeQuickActions,
+            l10n.drawerAccount,
+            l10n.drawerAssistance,
+          ]) {
+            expect(find.text(label), findsOneWidget);
+            final rect = tester.getRect(find.text(label));
+            expect(rect.top, greaterThanOrEqualTo(0));
+            expect(rect.bottom, lessThanOrEqualTo(size.height));
+          }
+        });
+      }
+    }
   }
 }

@@ -10,6 +10,32 @@ import '../../../core/widgets/scale_tap.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../models/user_role.dart';
 
+/// A scrollable form with a comfortable width, including when the keyboard
+/// reduces the available height. Never scales down input text or tap targets.
+class AuthPageLayout extends StatelessWidget {
+  const AuthPageLayout({super.key, required this.children});
+
+  final List<Widget> children;
+
+  @override
+  Widget build(BuildContext context) => SafeArea(
+    top: false,
+    child: SingleChildScrollView(
+      keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+      child: Align(
+        alignment: Alignment.topCenter,
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 520),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: children,
+          ),
+        ),
+      ),
+    ),
+  );
+}
+
 class AuthHeroHeader extends StatelessWidget {
   const AuthHeroHeader({
     super.key,
@@ -26,14 +52,15 @@ class AuthHeroHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     final topPadding = MediaQuery.paddingOf(context).top;
     final l10n = context.l10n;
+    final narrow = MediaQuery.sizeOf(context).width < 360;
 
     return FadeSlideIn(
       child: Container(
         padding: EdgeInsets.fromLTRB(
-          20,
+          narrow ? 16 : 20,
           topPadding + (showBack ? 8 : 24),
-          20,
-          28,
+          narrow ? 16 : 20,
+          narrow ? 20 : 28,
         ),
         decoration: BoxDecoration(
           gradient: AppTheme.primaryGradient,
@@ -109,7 +136,7 @@ class AuthHeroHeader extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(width: 12),
-                const LogisticsHeroArt(size: 96),
+                LogisticsHeroArt(size: narrow ? 64 : 96),
               ],
             ),
           ],
@@ -130,7 +157,12 @@ class AuthSectionCard extends StatelessWidget {
     final palette = context.palette;
 
     return AppCard(
-      padding: const EdgeInsets.fromLTRB(18, 16, 18, 18),
+      padding: EdgeInsets.fromLTRB(
+        MediaQuery.sizeOf(context).width < 360 ? 12 : 18,
+        16,
+        MediaQuery.sizeOf(context).width < 360 ? 12 : 18,
+        18,
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [

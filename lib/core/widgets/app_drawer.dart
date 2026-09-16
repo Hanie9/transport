@@ -96,7 +96,7 @@ class AppDrawer extends StatelessWidget {
           );
 
     return Drawer(
-      width: viewportWidth < 360 ? viewportWidth * 0.9 : 328,
+      width: (viewportWidth * 0.82).clamp(0.0, 304.0),
       backgroundColor: palette.surface,
       surfaceTintColor: Colors.transparent,
       shape: const RoundedRectangleBorder(
@@ -112,10 +112,12 @@ class AppDrawer extends StatelessWidget {
         ),
         child: LayoutBuilder(
           builder: (context, constraints) {
-            final compact = constraints.maxHeight < 900;
-            final veryCompact = constraints.maxHeight < 620;
+            // Keep the reference design at every size; distribute vertical
+            // space instead of switching to a different, incomplete menu.
+            const compact = false;
 
             Widget menuTile(_DrawerDestination item) => Expanded(
+              flex: 3,
               child: _DrawerTile(
                 icon: item.icon,
                 title: item.title,
@@ -133,6 +135,7 @@ class AppDrawer extends StatelessWidget {
               bool danger = false,
               bool showChevron = true,
             }) => Expanded(
+              flex: 3,
               child: _DrawerTile(
                 icon: icon,
                 title: title,
@@ -153,29 +156,24 @@ class AppDrawer extends StatelessWidget {
                   roleLabel: l10n.roleLabel(role),
                   onlineLabel: l10n.accountActive,
                   compact: compact,
-                  showBadges: !veryCompact,
+                  showBadges: true,
                   onProfileTap: () => _navigate(context, '$_basePath/profile'),
                 ),
                 Expanded(
                   child: SafeArea(
                     top: false,
                     child: Padding(
-                      padding: EdgeInsets.fromLTRB(
-                        compact ? 8 : 12,
-                        compact ? 5 : 10,
-                        compact ? 8 : 12,
-                        compact ? 5 : 10,
-                      ),
+                      padding: const EdgeInsets.fromLTRB(12, 10, 12, 10),
                       child: Column(
                         children: [
                           if (!compact)
                             _DrawerSectionLabel(l10n.drawerOperations),
                           ...mainNavigationItems.map(menuTile),
-                          if (!compact) const SizedBox(height: 4),
+                          const Spacer(),
                           if (!compact)
                             _DrawerSectionLabel(l10n.homeQuickActions),
                           menuTile(quickAction),
-                          if (!compact) const SizedBox(height: 4),
+                          const Spacer(),
                           if (!compact) _DrawerSectionLabel(l10n.drawerAccount),
                           directTile(
                             icon: Icons.tune_rounded,
@@ -193,7 +191,7 @@ class AppDrawer extends StatelessWidget {
                               '$_basePath/change-password',
                             ),
                           ),
-                          if (!compact) const SizedBox(height: 4),
+                          const Spacer(),
                           if (!compact)
                             _DrawerSectionLabel(l10n.drawerAssistance),
                           directTile(
@@ -215,7 +213,7 @@ class AppDrawer extends StatelessWidget {
                             selected: location == '$_basePath/about',
                             onTap: () => _navigate(context, '$_basePath/about'),
                           ),
-                          SizedBox(height: compact ? 7 : 14),
+                          const Spacer(),
                           directTile(
                             icon: Icons.logout_rounded,
                             title: l10n.logout,
@@ -225,24 +223,27 @@ class AppDrawer extends StatelessWidget {
                           ),
                           if (!compact) ...[
                             const SizedBox(height: 6),
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                const Icon(
-                                  Icons.local_shipping_rounded,
-                                  size: 16,
-                                  color: AppTheme.primaryLight,
-                                ),
-                                const SizedBox(width: 7),
-                                Text(
-                                  '${l10n.appName} • ${l10n.versionLabel('1.0.0')}',
-                                  style: TextStyle(
-                                    fontSize: 11,
-                                    color: palette.textSecondary,
-                                    fontWeight: FontWeight.w600,
+                            FittedBox(
+                              fit: BoxFit.scaleDown,
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  const Icon(
+                                    Icons.local_shipping_rounded,
+                                    size: 16,
+                                    color: AppTheme.primaryLight,
                                   ),
-                                ),
-                              ],
+                                  const SizedBox(width: 7),
+                                  Text(
+                                    '${l10n.appName} • ${l10n.versionLabel('1.0.0')}',
+                                    style: TextStyle(
+                                      fontSize: 11,
+                                      color: palette.textSecondary,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                ],
+                              ),
                             ),
                           ],
                         ],
@@ -380,21 +381,24 @@ class _DrawerHeader extends StatelessWidget {
                 ),
                 if (showBadges) ...[
                   SizedBox(height: compact ? 8 : 14),
-                  Wrap(
-                    spacing: compact ? 5 : 8,
-                    runSpacing: 5,
-                    children: [
-                      _HeaderBadge(
-                        icon: Icons.badge_outlined,
-                        label: roleLabel,
-                        compact: compact,
-                      ),
-                      _HeaderBadge(
-                        icon: Icons.verified_rounded,
-                        label: onlineLabel,
-                        compact: compact,
-                      ),
-                    ],
+                  FittedBox(
+                    fit: BoxFit.scaleDown,
+                    alignment: AlignmentDirectional.centerStart,
+                    child: Row(
+                      children: [
+                        _HeaderBadge(
+                          icon: Icons.badge_outlined,
+                          label: roleLabel,
+                          compact: compact,
+                        ),
+                        const SizedBox(width: 8),
+                        _HeaderBadge(
+                          icon: Icons.verified_rounded,
+                          label: onlineLabel,
+                          compact: compact,
+                        ),
+                      ],
+                    ),
                   ),
                 ],
               ],
@@ -451,18 +455,23 @@ class _DrawerSectionLabel extends StatelessWidget {
   final String label;
 
   @override
-  Widget build(BuildContext context) => Align(
-    alignment: AlignmentDirectional.centerStart,
-    child: Padding(
-      padding: const EdgeInsetsDirectional.fromSTEB(12, 6, 12, 8),
-      child: Text(
-        label,
-        textAlign: TextAlign.start,
-        style: TextStyle(
-          color: context.palette.textSecondary,
-          fontSize: 11,
-          fontWeight: FontWeight.w800,
-          letterSpacing: 0.5,
+  Widget build(BuildContext context) => Expanded(
+    child: Align(
+      alignment: AlignmentDirectional.centerStart,
+      child: Padding(
+        padding: const EdgeInsetsDirectional.fromSTEB(12, 0, 12, 0),
+        child: FittedBox(
+          fit: BoxFit.scaleDown,
+          child: Text(
+            label,
+            textAlign: TextAlign.start,
+            style: TextStyle(
+              color: context.palette.textSecondary,
+              fontSize: 11,
+              fontWeight: FontWeight.w800,
+              letterSpacing: 0.5,
+            ),
+          ),
         ),
       ),
     ),
@@ -497,47 +506,57 @@ class _DrawerTile extends StatelessWidget {
         ? Theme.of(context).colorScheme.primary
         : palette.textSecondary;
 
-    return Padding(
-      padding: EdgeInsets.symmetric(vertical: compact ? 0 : 1),
-      child: Material(
-        color: selected ? color.withValues(alpha: 0.11) : Colors.transparent,
-        borderRadius: BorderRadius.circular(15),
-        child: ListTile(
-          dense: compact,
-          minTileHeight: compact ? 28 : 42,
-          contentPadding: EdgeInsets.symmetric(horizontal: compact ? 8 : 12),
-          horizontalTitleGap: compact ? 8 : 12,
-          leading: Container(
-            width: compact ? 28 : 34,
-            height: compact ? 28 : 34,
-            alignment: Alignment.center,
-            decoration: BoxDecoration(
-              color: color.withValues(alpha: selected ? 0.14 : 0.08),
-              borderRadius: BorderRadius.circular(compact ? 9 : 11),
-            ),
-            child: Icon(icon, color: color, size: compact ? 17 : 20),
-          ),
-          title: Text(
-            title,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: TextStyle(
-              fontSize: compact ? 11.5 : 14,
-              fontWeight: selected ? FontWeight.w800 : FontWeight.w600,
-              color: danger || selected ? color : palette.textPrimary,
-            ),
-          ),
-          trailing: showChevron
-              ? Icon(
-                  Icons.chevron_right_rounded,
-                  size: compact ? 15 : 18,
-                  color: color,
-                )
-              : null,
-          shape: RoundedRectangleBorder(
+    return Center(
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxHeight: 54),
+        child: Material(
+          color: selected ? color.withValues(alpha: 0.11) : Colors.transparent,
+          borderRadius: BorderRadius.circular(15),
+          child: InkWell(
             borderRadius: BorderRadius.circular(15),
+            onTap: onTap,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
+              child: Row(
+                children: [
+                  FittedBox(
+                    fit: BoxFit.scaleDown,
+                    child: Container(
+                      width: compact ? 28 : 34,
+                      height: compact ? 28 : 34,
+                      alignment: Alignment.center,
+                      decoration: BoxDecoration(
+                        color: color.withValues(alpha: selected ? 0.14 : 0.08),
+                        borderRadius: BorderRadius.circular(compact ? 9 : 11),
+                      ),
+                      child: Icon(icon, color: color, size: compact ? 17 : 20),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      title,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        fontSize: compact ? 11.5 : 14,
+                        fontWeight: selected
+                            ? FontWeight.w800
+                            : FontWeight.w600,
+                        color: danger || selected ? color : palette.textPrimary,
+                      ),
+                    ),
+                  ),
+                  if (showChevron)
+                    Icon(
+                      Icons.chevron_right_rounded,
+                      size: compact ? 15 : 18,
+                      color: color,
+                    ),
+                ],
+              ),
+            ),
           ),
-          onTap: onTap,
         ),
       ),
     );
