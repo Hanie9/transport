@@ -12,7 +12,6 @@ import '../../models/api_reference_item.dart';
 import '../../services/auth_service.dart';
 import '../../services/cargo_service.dart';
 import '../../services/reference_data_service.dart';
-import 'widgets/cargo_coordinates_fields.dart';
 
 class AddCargoScreen extends StatefulWidget {
   const AddCargoScreen({super.key});
@@ -30,10 +29,6 @@ class _AddCargoScreenState extends State<AddCargoScreen> {
   final _originController = TextEditingController();
   final _destinationController = TextEditingController();
   final _priceController = TextEditingController();
-  final _originLatController = TextEditingController();
-  final _originLngController = TextEditingController();
-  final _destinationLatController = TextEditingController();
-  final _destinationLngController = TextEditingController();
 
   List<ApiReferenceItem> _products = const [];
   List<ApiReferenceItem> _machines = const [];
@@ -82,10 +77,6 @@ class _AddCargoScreenState extends State<AddCargoScreen> {
     _originController.dispose();
     _destinationController.dispose();
     _priceController.dispose();
-    _originLatController.dispose();
-    _originLngController.dispose();
-    _destinationLatController.dispose();
-    _destinationLngController.dispose();
     super.dispose();
   }
 
@@ -136,18 +127,6 @@ class _AddCargoScreenState extends State<AddCargoScreen> {
         machineId: _machineId,
         ostanMabdaId: _ostanMabdaId,
         ostanMaghsadId: _ostanMaghsadId,
-        originLat: CargoCoordinatesFields.parseCoordinate(
-          _originLatController.text,
-        ),
-        originLng: CargoCoordinatesFields.parseCoordinate(
-          _originLngController.text,
-        ),
-        destinationLat: CargoCoordinatesFields.parseCoordinate(
-          _destinationLatController.text,
-        ),
-        destinationLng: CargoCoordinatesFields.parseCoordinate(
-          _destinationLngController.text,
-        ),
       );
 
       if (!mounted) return;
@@ -270,15 +249,6 @@ class _AddCargoScreenState extends State<AddCargoScreen> {
                       : null,
                 ),
                 const SizedBox(height: 16),
-                if (!ApiConfig.shouldUseMock) ...[
-                  CargoCoordinatesFields(
-                    originLatController: _originLatController,
-                    originLngController: _originLngController,
-                    destinationLatController: _destinationLatController,
-                    destinationLngController: _destinationLngController,
-                  ),
-                  const SizedBox(height: 16),
-                ],
                 TextFormField(
                   controller: _priceController,
                   keyboardType: TextInputType.number,
@@ -288,8 +258,9 @@ class _AddCargoScreenState extends State<AddCargoScreen> {
                     hintText: '5000000',
                   ),
                   validator: (v) {
-                    if (v == null || v.trim().isEmpty)
+                    if (v == null || v.trim().isEmpty) {
                       return l10n.priceRequired;
+                    }
                     if (int.tryParse(v.trim().replaceAll(',', '')) == null) {
                       return l10n.priceInvalid;
                     }

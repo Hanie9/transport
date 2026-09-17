@@ -2,9 +2,31 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:legestic/api_config.dart';
 import 'package:legestic/models/user.dart';
 import 'package:legestic/models/user_role.dart';
+import 'package:legestic/services/transport_api_mapper.dart';
 
 void main() {
   group('Transport OpenAPI contract', () {
+    test('cargo registration sends addresses without manual coordinates', () {
+      final payload = TransportApiMapper.barPayload(
+        title: 'بار جدید',
+        description: 'توضیحات بار',
+        price: 5000000,
+        addressMabda: 'تهران، خیابان آزادی',
+        addressMaghsad: 'اصفهان، خیابان چهارباغ',
+      );
+
+      expect(payload['address_mabda'], 'تهران، خیابان آزادی');
+      expect(payload['address_maghsad'], 'اصفهان، خیابان چهارباغ');
+      for (final key in [
+        'latitude_mabda',
+        'longitude_mabda',
+        'latitude_maghsad',
+        'longitude_maghsad',
+      ]) {
+        expect(payload.containsKey(key), isFalse);
+      }
+    });
+
     test('uses the develoop host and documented API paths', () {
       expect(ApiConfig.apiBaseUrl, 'https://tran-develoop.liara.run');
       expect(ApiConfig.loginPath, '/api/accounts/login');
