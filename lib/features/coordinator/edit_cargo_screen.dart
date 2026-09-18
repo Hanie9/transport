@@ -46,6 +46,7 @@ class _EditCargoScreenState extends State<EditCargoScreen> {
   int? _ostanMaghsadId;
   bool _loading = true;
   bool _submitting = false;
+  bool _fullReplace = false;
 
   @override
   void initState() {
@@ -157,7 +158,9 @@ class _EditCargoScreenState extends State<EditCargoScreen> {
       destinationLng: CargoCoordinatesFields.parseCoordinate(
         _destinationLngController.text,
       ),
-      fullReplace: !ApiConfig.shouldUseMock,
+      fullReplace: _fullReplace,
+      originalCargo: _cargo,
+      status: _fullReplace ? _cargo!.status : null,
     );
 
     if (!mounted) return;
@@ -207,6 +210,19 @@ class _EditCargoScreenState extends State<EditCargoScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
+                ModernDropdownField<bool>(
+                  label: l10n.cargoEditMode,
+                  value: _fullReplace,
+                  prefixIcon: Icons.edit_note_outlined,
+                  enabled: !_submitting,
+                  items: [
+                    ModernDropdownField.item(false, l10n.partialCargoEdit),
+                    ModernDropdownField.item(true, l10n.fullCargoEdit),
+                  ],
+                  onChanged: (value) =>
+                      setState(() => _fullReplace = value ?? false),
+                ),
+                const SizedBox(height: 16),
                 TextFormField(
                   controller: _titleController,
                   decoration: InputDecoration(

@@ -756,6 +756,7 @@ class CargoService extends ChangeNotifier {
     double? destinationLng,
     String? status,
     bool fullReplace = false,
+    Cargo? originalCargo,
   }) async {
     _clearError();
     try {
@@ -776,6 +777,26 @@ class CargoService extends ChangeNotifier {
           destinationLng: destinationLng,
           status: status,
         );
+        if (!fullReplace && originalCargo != null) {
+          final original = TransportApiMapper.barPayload(
+            title: originalCargo.title,
+            description: originalCargo.description,
+            price: originalCargo.estimatedPrice,
+            productId: originalCargo.productId,
+            machineId: originalCargo.machineId,
+            ostanMabdaId: originalCargo.ostanMabdaId,
+            ostanMaghsadId: originalCargo.ostanMaghsadId,
+            addressMabda: originalCargo.origin,
+            addressMaghsad: originalCargo.destination,
+            originLat: originalCargo.originLat,
+            originLng: originalCargo.originLng,
+            destinationLat: originalCargo.destinationLat,
+            destinationLng: originalCargo.destinationLng,
+            status: originalCargo.status,
+          );
+          body.removeWhere((key, value) => original[key] == value);
+          if (body.isEmpty) return true;
+        }
         if (fullReplace) {
           await _api.put(ApiConfig.operatorBarUpdatePath(cargoId), body: body);
         } else {

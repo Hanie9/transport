@@ -605,6 +605,13 @@ class AppLocalizations {
     'After delivery, the coordinator will update the cargo status',
   );
   String get editCargo => _t('ویرایش بار', 'Edit cargo');
+  String get cargoEditMode => _t('نوع ویرایش', 'Edit mode');
+  String get partialCargoEdit => _t(
+    'ویرایش جزئی — فقط موارد تغییرکرده',
+    'Partial edit — changed fields only',
+  );
+  String get fullCargoEdit =>
+      _t('ویرایش کامل — ذخیره همه مشخصات', 'Full edit — save all details');
   String get cargoUpdated => _t('بار به‌روزرسانی شد', 'Cargo updated');
   String get loadMore => _t('بارگذاری بیشتر', 'Load more');
   String get missionsSyncNote => _t(

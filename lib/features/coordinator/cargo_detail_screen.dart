@@ -124,13 +124,11 @@ class _CoordinatorCargoDetailScreenState
     }
 
     final cargo = _cargo!;
-    final isCancelled = cargo.status == 'لغو شده';
-    final isDone = cargo.status == 'تحویل شده';
-    final canDelete = cargo.status == 'در انتظار راننده';
+    const canDelete = true;
     final canCancel =
         cargo.status == 'در انتظار راننده' || cargo.status == 'تخصیص یافته';
     final canMarkDone = cargo.status == 'تخصیص یافته';
-    final canEdit = cargo.status == 'در انتظار راننده';
+    const canEdit = true;
 
     return Scaffold(
       appBar: ModernAppBar(title: l10n.cargoStatusTitle),
@@ -241,7 +239,7 @@ class _CoordinatorCargoDetailScreenState
               delay: const Duration(milliseconds: 160),
               child: _StatusTimeline(status: cargo.status),
             ),
-            if (!isCancelled && !isDone) ...[
+            ...[
               const SizedBox(height: 16),
               FadeSlideIn(
                 delay: const Duration(milliseconds: 200),
@@ -252,9 +250,12 @@ class _CoordinatorCargoDetailScreenState
                       OutlinedButton.icon(
                         onPressed: _busy
                             ? null
-                            : () => context.push(
-                                '/coordinator/cargo/${cargo.id}/edit',
-                              ),
+                            : () async {
+                                await context.push(
+                                  '/coordinator/cargo/${cargo.id}/edit',
+                                );
+                                if (mounted) await _loadCargo();
+                              },
                         icon: const Icon(Icons.edit_outlined),
                         label: Text(l10n.editCargo),
                       ),
