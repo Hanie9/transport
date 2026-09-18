@@ -97,6 +97,8 @@ abstract final class TransportApiMapper {
       coordinatorName: (json['operator_name'] ?? '').toString(),
       assignedDriverName: assignMap?['driver_name']?.toString(),
       assignedDriverPhone: assignMap?['driver_phone']?.toString(),
+      confirmDriver: assignMap?['confirm_driver'] == true,
+      confirmOperator: assignMap?['confirm_operator'] == true,
       createdAt: DateTime.tryParse('${json['created_at'] ?? ''}'),
       originLat: d(json['latitude_mabda']),
       originLng: d(json['longitude_mabda']),

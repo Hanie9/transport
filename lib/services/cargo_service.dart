@@ -440,7 +440,11 @@ class CargoService extends ChangeNotifier {
         final open = await _findOpenDriverBar(id);
         if (open != null) return open;
 
-        return DriverMissionStore.instance.findById(id);
+        final assigned = await getDriverMissions();
+        for (final cargo in assigned) {
+          if (cargo.id == id) return cargo;
+        }
+        return null;
       }
       await Future<void>.delayed(const Duration(milliseconds: 200));
       try {
@@ -603,19 +607,31 @@ class CargoService extends ChangeNotifier {
   }) async {
     _clearError();
     if (!ApiConfig.shouldUseMock) {
-      final missions = await DriverMissionStore.instance.load();
-      final filtered = missions.where((mission) {
-        if (driverPhone == null && driverName == null) return true;
-        if (driverPhone != null && mission.assignedDriverPhone == driverPhone) {
-          return true;
+      try {
+        final missions = <Cargo>[];
+        var page = 1;
+        while (true) {
+          final data = await _api.get(
+            ApiConfig.driverAssignedBarsPath,
+            query: {'page': '$page'},
+          );
+          missions.addAll(
+            ApiResponse.extractList(data).map(TransportApiMapper.cargoFromBar),
+          );
+          final pagination = ApiResponse.extractPagination(data);
+          if (!pagination.hasNext && page >= pagination.totalPages) break;
+          page++;
         }
-        return driverName != null && mission.assignedDriverName == driverName;
-      }).toList();
-      filtered.sort(
-        (a, b) =>
-            (b.createdAt ?? DateTime(0)).compareTo(a.createdAt ?? DateTime(0)),
-      );
-      return filtered;
+        missions.sort(
+          (a, b) => (b.createdAt ?? DateTime(0)).compareTo(
+            a.createdAt ?? DateTime(0),
+          ),
+        );
+        return missions;
+      } catch (e) {
+        _setError(e);
+        return [];
+      }
     }
 
     final all = await getAllCargos();
@@ -833,7 +849,38 @@ class CargoService extends ChangeNotifier {
   }
 
   Future<bool> updateCargoStatus(String cargoId, String status) async {
+    if (status == 'تحویل شده') return completeCargo(cargoId, asDriver: false);
     return updateCargo(cargoId: cargoId, status: status);
+  }
+
+  Future<bool> completeCargo(String cargoId, {required bool asDriver}) async {
+    _clearError();
+    try {
+      if (!ApiConfig.shouldUseMock) {
+        final response = await _api.post(
+          asDriver
+              ? ApiConfig.driverBarCompletePath(cargoId)
+              : ApiConfig.operatorBarCompletePath(cargoId),
+        );
+        if (response['error'] != null)
+          throw ApiException('${response['error']}');
+      } else {
+        final index = _cargos.indexWhere((cargo) => cargo.id == cargoId);
+        if (index < 0) return false;
+        var cargo = _cargos[index].copyWith(
+          confirmDriver: asDriver ? true : null,
+          confirmOperator: asDriver ? null : true,
+        );
+        if (cargo.confirmDriver && cargo.confirmOperator)
+          cargo = cargo.copyWith(status: 'تحویل شده');
+        _cargos[index] = cargo;
+      }
+      notifyListeners();
+      return true;
+    } catch (e) {
+      _setError(e);
+      return false;
+    }
   }
 
   Future<void> reportDriverLocation({

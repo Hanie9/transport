@@ -115,16 +115,18 @@ class VehicleInfo {
 
   factory VehicleInfo.fromJson(Map<String, dynamic> json) {
     return VehicleInfo(
-      plateNumber: (json['plate_number'] ?? json['plateNumber'] ?? '')
-          .toString(),
+      plateNumber:
+          (json['pelak'] ?? json['plate_number'] ?? json['plateNumber'] ?? '')
+              .toString(),
       cargoType:
           (json['cargo_type'] ??
                   json['cargoType'] ??
                   json['machine_name'] ??
                   '')
               .toString(),
-      vehicleModel: (json['vehicle_model'] ?? json['vehicleModel'] ?? '')
-          .toString(),
+      vehicleModel:
+          (json['model'] ?? json['vehicle_model'] ?? json['vehicleModel'] ?? '')
+              .toString(),
       capacityTons: (json['capacity_tons'] ?? json['capacityTons']) == null
           ? null
           : double.tryParse('${json['capacity_tons'] ?? json['capacityTons']}'),

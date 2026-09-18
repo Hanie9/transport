@@ -44,6 +44,26 @@ class _CoordinatorCargoDetailScreenState
 
   Future<void> _updateStatus(String status) async {
     if (_cargo == null || _busy) return;
+    if (status == 'تحویل شده') {
+      final confirmed = await showDialog<bool>(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          title: Text(context.l10n.confirmCompletion),
+          content: Text(context.l10n.completionConfirmPrompt),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx, false),
+              child: Text(context.l10n.cancel),
+            ),
+            ElevatedButton(
+              onPressed: () => Navigator.pop(ctx, true),
+              child: Text(context.l10n.confirm),
+            ),
+          ],
+        ),
+      );
+      if (confirmed != true || !mounted) return;
+    }
     setState(() => _busy = true);
     final success = await _cargoService.updateCargoStatus(_cargo!.id, status);
     if (!mounted) return;
@@ -52,7 +72,13 @@ class _CoordinatorCargoDetailScreenState
       await _loadCargo();
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(context.l10n.cargoStatusUpdated(status))),
+        SnackBar(
+          content: Text(
+            status == 'تحویل شده'
+                ? context.l10n.completionConfirmed
+                : context.l10n.cargoStatusUpdated(status),
+          ),
+        ),
       );
     } else {
       final error = _cargoService.lastError;
@@ -127,7 +153,7 @@ class _CoordinatorCargoDetailScreenState
     const canDelete = true;
     final canCancel =
         cargo.status == 'در انتظار راننده' || cargo.status == 'تخصیص یافته';
-    final canMarkDone = cargo.status == 'تخصیص یافته';
+    final canMarkDone = cargo.status == 'تخصیص یافته' && !cargo.confirmOperator;
     const canEdit = true;
 
     return Scaffold(
@@ -239,6 +265,16 @@ class _CoordinatorCargoDetailScreenState
               delay: const Duration(milliseconds: 160),
               child: _StatusTimeline(status: cargo.status),
             ),
+            if (cargo.confirmDriver)
+              Padding(
+                padding: const EdgeInsets.only(top: 12),
+                child: Text(l10n.driverCompletionConfirmed),
+              ),
+            if (cargo.confirmOperator)
+              Padding(
+                padding: const EdgeInsets.only(top: 12),
+                child: Text(l10n.operatorCompletionConfirmed),
+              ),
             ...[
               const SizedBox(height: 16),
               FadeSlideIn(
@@ -266,7 +302,7 @@ class _CoordinatorCargoDetailScreenState
                             ? null
                             : () => _updateStatus('تحویل شده'),
                         icon: const Icon(Icons.check_circle_outline),
-                        label: Text(l10n.markCargoDone),
+                        label: Text(l10n.confirmCompletion),
                       ),
                     if (canMarkDone) const SizedBox(height: 8),
                     if (canCancel)

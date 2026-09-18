@@ -221,6 +221,7 @@ class _VehicleInfoFormState extends State<VehicleInfoForm> {
           const SizedBox(height: 20),
           TextFormField(
             controller: _modelController,
+            maxLength: 40,
             decoration: InputDecoration(
               labelText: l10n.vehicleModel,
               prefixIcon: const Icon(Icons.directions_car_outlined),

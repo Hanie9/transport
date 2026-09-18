@@ -49,6 +49,9 @@ class _DriverProfileScreenState extends State<_DriverProfileScreen> {
   void initState() {
     super.initState();
     _editingVehicle = widget.editVehicleInitially;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) context.read<AuthService>().refreshProfile();
+    });
   }
 
   Future<void> _saveVehicle(VehicleInfo info) async {
@@ -282,6 +285,9 @@ class _CoordinatorProfileScreenState extends State<_CoordinatorProfileScreen> {
   void initState() {
     super.initState();
     _loadCargos();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) context.read<AuthService>().refreshProfile();
+    });
   }
 
   Future<bool> _loadCargos() async {

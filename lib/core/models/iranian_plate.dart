@@ -1,8 +1,37 @@
 class IranianPlateLetters {
   static const List<String> letters = [
-    'الف', 'ب', 'پ', 'ت', 'ث', 'ج', 'چ', 'ح', 'خ', 'د',
-    'ذ', 'ر', 'ز', 'ژ', 'س', 'ش', 'ص', 'ض', 'ط', 'ظ',
-    'ع', 'غ', 'ف', 'ق', 'ک', 'گ', 'ل', 'م', 'ن', 'و', 'ه', 'ی',
+    'الف',
+    'ب',
+    'پ',
+    'ت',
+    'ث',
+    'ج',
+    'چ',
+    'ح',
+    'خ',
+    'د',
+    'ذ',
+    'ر',
+    'ز',
+    'ژ',
+    'س',
+    'ش',
+    'ص',
+    'ض',
+    'ط',
+    'ظ',
+    'ع',
+    'غ',
+    'ف',
+    'ق',
+    'ک',
+    'گ',
+    'ل',
+    'م',
+    'ن',
+    'و',
+    'ه',
+    'ی',
   ];
 }
 
@@ -36,6 +65,9 @@ class IranianPlateData {
     return '${_toPersian(twoDigits)} $letter ${_toPersian(threeDigits)} ایران ${_toPersian(provinceCode)}';
   }
 
+  String toApiString() =>
+      '${_toEnglish(twoDigits)}$letter${_toEnglish(threeDigits)}${_toEnglish(provinceCode)}';
+
   IranianPlateData copyWith({
     String? twoDigits,
     String? letter,
@@ -55,7 +87,7 @@ class IranianPlateData {
 
     final normalized = _toEnglish(raw.trim());
     final match = RegExp(
-      r'^(\d{2})\s*([^\d\s]+)\s*(\d{3})\s*ایران\s*(\d{2})$',
+      r'^(\d{2})\s*([^\d\s]+)\s*(\d{3})\s*(?:ایران\s*)?(\d{2})$',
     ).firstMatch(normalized);
 
     if (match == null) return null;
@@ -77,7 +109,7 @@ class IranianPlateData {
       final letter = fromOriginal.group(0)!.trim();
       if (IranianPlateLetters.letters.contains(letter)) return letter;
     }
-  for (final l in IranianPlateLetters.letters) {
+    for (final l in IranianPlateLetters.letters) {
       if (normalizedLetter.contains(_toEnglish(l))) return l;
     }
     return normalizedLetter.trim();
@@ -95,6 +127,9 @@ class IranianPlateData {
 
   static String _toPersian(String input) {
     const persian = '۰۱۲۳۴۵۶۷۸۹';
-    return input.replaceAllMapped(RegExp(r'\d'), (m) => persian[int.parse(m.group(0)!)]);
+    return input.replaceAllMapped(
+      RegExp(r'\d'),
+      (m) => persian[int.parse(m.group(0)!)],
+    );
   }
 }

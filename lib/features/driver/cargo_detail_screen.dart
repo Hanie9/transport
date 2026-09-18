@@ -122,6 +122,47 @@ class _CargoDetailScreenState extends State<CargoDetailScreen> {
     }
   }
 
+  Future<void> _completeCargo() async {
+    if (_accepting || _cargo == null) return;
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(context.l10n.confirmCompletion),
+        content: Text(context.l10n.completionConfirmPrompt),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: Text(context.l10n.cancel),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: Text(context.l10n.confirm),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !mounted) return;
+    setState(() => _accepting = true);
+    final success = await _cargoService.completeCargo(
+      _cargo!.id,
+      asDriver: true,
+    );
+    if (!mounted) return;
+    final error = _cargoService.lastError;
+    if (success) await _loadCargo();
+    if (!mounted) return;
+    setState(() => _accepting = false);
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          success
+              ? context.l10n.completionConfirmed
+              : error ?? context.l10n.genericError,
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
@@ -281,6 +322,15 @@ class _CargoDetailScreenState extends State<CargoDetailScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
+                  if (cargo.confirmOperator)
+                    Text(l10n.operatorCompletionConfirmed),
+                  if (cargo.confirmDriver) Text(l10n.driverCompletionConfirmed),
+                  if (cargo.status == 'تخصیص یافته' && !cargo.confirmDriver)
+                    ElevatedButton.icon(
+                      onPressed: _accepting ? null : _completeCargo,
+                      icon: const Icon(Icons.task_alt),
+                      label: Text(l10n.confirmCompletion),
+                    ),
                   if (canAccept)
                     ElevatedButton(
                       onPressed: _accepting ? null : _acceptCargo,

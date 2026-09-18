@@ -45,6 +45,11 @@ class ApiConfig {
 
   // ── Driver bars ────────────────────────────────────────────────────────────
   static const String driverBarsPath = '/api/driver/bars/';
+  static const String driverAssignedBarsPath = '/api/driver/bars/assigned/';
+  static String driverBarCompletePath(String id) =>
+      '/api/driver/bars/$id/complete/';
+  static String operatorBarCompletePath(String id) =>
+      '/api/operator/bars/$id/complete/';
 
   static String driverBarAcceptPath(String id) =>
       '/api/driver/bars/$id/accept/';

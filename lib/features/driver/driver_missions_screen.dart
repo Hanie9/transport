@@ -23,6 +23,7 @@ class _DriverMissionsScreenState extends State<DriverMissionsScreen> {
   List<Cargo> _missions = [];
   bool _loading = true;
   String _filter = 'active';
+  String? _error;
 
   @override
   void initState() {
@@ -51,9 +52,10 @@ class _DriverMissionsScreenState extends State<DriverMissionsScreen> {
       driverName: user.fullName,
     );
 
-    if (mounted) {
+    if (mounted && context.read<AuthService>().currentUser?.id == user.id) {
       setState(() {
         _missions = missions;
+        _error = _cargoService.lastError;
         _loading = false;
       });
     }
@@ -152,9 +154,11 @@ class _DriverMissionsScreenState extends State<DriverMissionsScreen> {
               child: EmptyState(
                 icon: Icons.assignment_outlined,
                 useIllustration: true,
-                title: _filter == 'active'
-                    ? l10n.noActiveMission
-                    : l10n.noMissionFound,
+                title:
+                    _error ??
+                    (_filter == 'active'
+                        ? l10n.noActiveMission
+                        : l10n.noMissionFound),
                 subtitle: _filter == 'active' ? l10n.acceptCargoHint : null,
               ),
             )

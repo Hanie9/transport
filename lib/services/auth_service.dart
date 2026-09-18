@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 
 import '../api_config.dart';
+import '../core/models/iranian_plate.dart';
 import '../l10n/api_messages.dart';
 import '../models/user.dart';
 import '../models/user_role.dart';
@@ -70,7 +71,8 @@ class AuthService extends ChangeNotifier {
   Future<bool> refreshProfile() => _tryRefreshProfile();
 
   Future<bool> _tryRefreshProfile() async {
-    if (ApiConfig.shouldUseMock || _currentUser == null) return true;
+    if (ApiConfig.shouldUseMock) return true;
+    _clearError();
     try {
       final me = await _api.get(ApiConfig.profilePath);
       final userJson = me.containsKey('user') && me['user'] is Map
@@ -80,7 +82,8 @@ class AuthService extends ChangeNotifier {
       await _tokens.saveUserJson(jsonEncode(_currentUser!.toJson()));
       notifyListeners();
       return true;
-    } catch (_) {
+    } catch (e) {
+      _setError(e);
       return false;
     }
   }
@@ -117,7 +120,8 @@ class AuthService extends ChangeNotifier {
       if (_currentUser != null) {
         await SessionService().clearBackgroundMarker();
       }
-    } catch (_) {
+    } catch (e) {
+      _setError(e);
       await _tokens.clear();
       _currentUser = null;
     } finally {
@@ -304,7 +308,11 @@ class AuthService extends ChangeNotifier {
           ApiConfig.profilePath,
           body: {
             'machine_id': info.machineId,
-            if (info.ostanId != null) 'ostan_id': info.ostanId,
+            'ostan_id': info.ostanId,
+            'pelak':
+                IranianPlateData.parse(info.plateNumber)?.toApiString() ??
+                info.plateNumber.trim(),
+            'model': info.vehicleModel.trim(),
           },
         );
         final serverUser = User.fromJson(ApiResponse.extractObject(response));
@@ -380,10 +388,11 @@ class AuthService extends ChangeNotifier {
         ApiConfig.profilePath,
         body: {
           'first_name': names.$1,
-          'last_name': names.$2.isEmpty ? null : names.$2,
-          'national_code': nationalCode?.trim().isEmpty == true
-              ? null
-              : nationalCode?.trim(),
+          'last_name': names.$2,
+          if (nationalCode != null)
+            'national_code': nationalCode.trim().isEmpty
+                ? null
+                : nationalCode.trim(),
           if (_currentUser!.role == UserRole.driver) ...{
             'machine_id': ?machineId,
             'ostan_id': ?ostanId,
@@ -415,15 +424,15 @@ class AuthService extends ChangeNotifier {
     VehicleInfo? vehicle;
     if (local != null || remote != null) {
       vehicle = VehicleInfo(
-        plateNumber: local?.plateNumber ?? '',
+        plateNumber: remote?.plateNumber ?? local?.plateNumber ?? '',
         cargoType: remote?.cargoType.isNotEmpty == true
             ? remote!.cargoType
             : (local?.cargoType ?? ''),
-        vehicleModel: local?.vehicleModel ?? '',
+        vehicleModel: remote?.vehicleModel ?? local?.vehicleModel ?? '',
         capacityTons: local?.capacityTons,
         machineId: remote?.machineId ?? local?.machineId,
-        ostanId: remote?.ostanId ?? local?.ostanId,
-        ostanName: remote?.ostanName ?? local?.ostanName,
+        ostanId: remote != null ? remote.ostanId : local?.ostanId,
+        ostanName: remote != null ? remote.ostanName : local?.ostanName,
       );
     }
     return server.copyWith(

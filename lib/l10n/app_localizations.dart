@@ -463,6 +463,23 @@ class AppLocalizations {
 
   // Missions
   String get myMissions => _t('ماموریت‌های من', 'My missions');
+  String get confirmCompletion => _t('تأیید اتمام کار', 'Confirm completion');
+  String get completionConfirmed => _t(
+    'تأیید شما ثبت شد؛ اتمام نهایی نیازمند تأیید هر دو طرف است.',
+    'Your confirmation was recorded. Final completion requires both parties to confirm.',
+  );
+  String get completionConfirmPrompt => _t(
+    'آیا انجام کار این بار را تأیید می‌کنید؟',
+    'Do you confirm that this cargo job is complete?',
+  );
+  String get driverCompletionConfirmed => _t(
+    'راننده اتمام کار را تأیید کرده است.',
+    'The driver has confirmed completion.',
+  );
+  String get operatorCompletionConfirmed => _t(
+    'متصدی اتمام کار را تأیید کرده است.',
+    'The operator has confirmed completion.',
+  );
   String activeMissionsCount(int count) =>
       _t('$count ماموریت فعال', '$count active missions');
   String get missionsSubtitle => _t(
@@ -615,10 +632,8 @@ class AppLocalizations {
   String get cargoUpdated => _t('بار به‌روزرسانی شد', 'Cargo updated');
   String get loadMore => _t('بارگذاری بیشتر', 'Load more');
   String get missionsSyncNote => _t(
-    'مأموریت‌های پذیرفته‌شده روی این دستگاه ذخیره می‌شوند. '
-        'وضعیت نهایی تحویل توسط متصدی ثبت می‌شود.',
-    'Accepted missions are stored on this device. '
-        'Final delivery status is updated by the coordinator.',
+    'مأموریت‌های حساب شما از سرور دریافت می‌شوند. اتمام کار نیازمند تأیید راننده و متصدی است.',
+    'Your account missions are loaded from the server. Completion requires confirmation from both driver and operator.',
   );
   String get selectMachineType =>
       _t('نوع ماشین را انتخاب کنید', 'Select machine type');
