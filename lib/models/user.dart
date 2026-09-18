@@ -108,6 +108,11 @@ class VehicleInfo {
   final int? ostanId;
   final String? ostanName;
 
+  bool get isCompleteForCargoAcceptance =>
+      plateNumber.trim().isNotEmpty &&
+      vehicleModel.trim().isNotEmpty &&
+      cargoType.trim().isNotEmpty;
+
   factory VehicleInfo.fromJson(Map<String, dynamic> json) {
     return VehicleInfo(
       plateNumber: (json['plate_number'] ?? json['plateNumber'] ?? '')

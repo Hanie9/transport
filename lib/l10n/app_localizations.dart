@@ -492,6 +492,14 @@ class AppLocalizations {
     'Are you sure you want to sign out?',
   );
   String get vehicleInfo => _t('اطلاعات خودرو', 'Vehicle info');
+  String get completeVehicleProfile =>
+      _t('تکمیل مشخصات خودرو', 'Complete vehicle details');
+  String get completeVehicleBeforeAccepting => _t(
+    'برای پذیرش بار، به پروفایل بروید و ابتدا پلاک، مدل خودرو و نوع بارگیر خود را وارد کنید.',
+    'To accept a cargo, go to your profile and first enter your license plate, vehicle model, and trailer type.',
+  );
+  String get goToProfile => _t('رفتن به پروفایل', 'Go to profile');
+  String get notNow => _t('فعلاً نه', 'Not now');
   String get edit => _t('ویرایش', 'Edit');
   String get save => _t('ذخیره', 'Save');
   String get register => _t('ثبت', 'Add');

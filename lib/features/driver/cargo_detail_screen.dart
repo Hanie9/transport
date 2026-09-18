@@ -50,6 +50,31 @@ class _CargoDetailScreenState extends State<CargoDetailScreen> {
     if (user == null || _cargo == null) return;
     final l10n = context.l10n;
 
+    if (user.vehicleInfo?.isCompleteForCargoAcceptance != true) {
+      final goToProfile = await showDialog<bool>(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          icon: const Icon(Icons.local_shipping_outlined),
+          title: Text(l10n.completeVehicleProfile),
+          content: Text(l10n.completeVehicleBeforeAccepting),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx, false),
+              child: Text(l10n.notNow),
+            ),
+            ElevatedButton(
+              onPressed: () => Navigator.pop(ctx, true),
+              child: Text(l10n.goToProfile),
+            ),
+          ],
+        ),
+      );
+      if (goToProfile == true && mounted) {
+        context.go('/driver/profile?editVehicle=1');
+      }
+      return;
+    }
+
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
