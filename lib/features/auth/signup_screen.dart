@@ -4,10 +4,13 @@ import 'package:provider/provider.dart';
 
 import '../../api_config.dart';
 import '../../core/theme/app_theme.dart';
+import '../../core/widgets/modern_dropdown.dart';
 import '../../l10n/app_localizations.dart';
+import '../../models/api_reference_item.dart';
 import '../../models/user_role.dart';
 import '../../services/auth_service.dart';
 import '../../services/settings_service.dart';
+import '../../services/reference_data_service.dart';
 import '../../utils/phone_utils.dart';
 import 'widgets/auth_widgets.dart';
 
@@ -26,12 +29,49 @@ class _SignupScreenState extends State<SignupScreen> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
-  final _machineIdController = TextEditingController();
-  final _ostanIdController = TextEditingController();
+  final _referenceData = ReferenceDataService();
+  List<ApiReferenceItem> _machines = const [];
+  List<ApiReferenceItem> _ostans = const [];
+  int? _machineId;
+  int? _ostanId;
+  bool _loadingReferences = false;
+  bool _referenceLoadFailed = false;
   UserRole _selectedRole = UserRole.driver;
   bool _obscurePassword = true;
   bool _obscureConfirm = true;
   String _error = '';
+
+  @override
+  void initState() {
+    super.initState();
+    if (!ApiConfig.shouldUseMock) _loadReferences();
+  }
+
+  Future<void> _loadReferences() async {
+    setState(() {
+      _loadingReferences = true;
+      _referenceLoadFailed = false;
+    });
+    try {
+      final lists = await Future.wait([
+        _referenceData.getMachines(),
+        _referenceData.getOstans(),
+      ]);
+      if (!mounted) return;
+      setState(() {
+        _machines = lists[0];
+        _ostans = lists[1];
+        _referenceLoadFailed = _machines.isEmpty || _ostans.isEmpty;
+        _loadingReferences = false;
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _referenceLoadFailed = true;
+        _loadingReferences = false;
+      });
+    }
+  }
 
   @override
   void dispose() {
@@ -41,8 +81,6 @@ class _SignupScreenState extends State<SignupScreen> {
     _emailController.dispose();
     _passwordController.dispose();
     _confirmPasswordController.dispose();
-    _machineIdController.dispose();
-    _ostanIdController.dispose();
     super.dispose();
   }
 
@@ -62,8 +100,8 @@ class _SignupScreenState extends State<SignupScreen> {
           ? null
           : _emailController.text.trim(),
       passwordConfirm: _confirmPasswordController.text,
-      machineId: int.tryParse(_machineIdController.text.trim()),
-      ostanId: int.tryParse(_ostanIdController.text.trim()),
+      machineId: _selectedRole == UserRole.driver ? _machineId : null,
+      ostanId: _selectedRole == UserRole.driver ? _ostanId : null,
     );
 
     if (!mounted) return;
@@ -203,48 +241,62 @@ class _SignupScreenState extends State<SignupScreen> {
                               ),
                             ),
                             const SizedBox(height: 10),
-                            TextFormField(
-                              controller: _machineIdController,
-                              keyboardType: TextInputType.number,
-                              textDirection: TextDirection.ltr,
-                              enabled: !busy,
-                              decoration: InputDecoration(
-                                labelText: l10n.machineId,
-                                prefixIcon: const Icon(
-                                  Icons.local_shipping_outlined,
-                                ),
+                            if (_loadingReferences) ...[
+                              const LinearProgressIndicator(),
+                              const SizedBox(height: 10),
+                              Text(l10n.loading),
+                            ],
+                            if (_referenceLoadFailed)
+                              TextButton.icon(
+                                onPressed: busy ? null : _loadReferences,
+                                icon: const Icon(Icons.refresh),
+                                label: Text(l10n.signupReferencesRetry),
                               ),
-                              validator: (v) {
-                                if (_selectedRole != UserRole.driver) {
-                                  return null;
-                                }
-                                final id = int.tryParse(v?.trim() ?? '');
-                                if (id == null || id <= 0) {
-                                  return l10n.selectMachineType;
-                                }
-                                return null;
-                              },
+                            ModernDropdownField<int>(
+                              label: l10n.selectMachineType,
+                              value: _machineId,
+                              prefixIcon: Icons.local_shipping_outlined,
+                              enabled:
+                                  !busy &&
+                                  !_loadingReferences &&
+                                  _machines.isNotEmpty,
+                              items: _machines
+                                  .map(
+                                    (item) => ModernDropdownField.item(
+                                      item.id,
+                                      item.name,
+                                    ),
+                                  )
+                                  .toList(),
+                              onChanged: (value) =>
+                                  setState(() => _machineId = value),
+                              validator: (value) =>
+                                  value == null ? l10n.selectMachineType : null,
                             ),
                             const SizedBox(height: 14),
-                            TextFormField(
-                              controller: _ostanIdController,
-                              keyboardType: TextInputType.number,
-                              textDirection: TextDirection.ltr,
-                              enabled: !busy,
-                              decoration: InputDecoration(
-                                labelText: l10n.provinceIdOptional,
-                                prefixIcon: const Icon(
-                                  Icons.location_on_outlined,
+                            ModernDropdownField<int>(
+                              label: l10n.provinceOptional,
+                              value: _ostanId,
+                              prefixIcon: Icons.location_on_outlined,
+                              enabled:
+                                  !busy &&
+                                  !_loadingReferences &&
+                                  _ostans.isNotEmpty,
+                              items: [
+                                ModernDropdownField.item(
+                                  0,
+                                  l10n.provinceNotSelected,
                                 ),
+                                ..._ostans.map(
+                                  (item) => ModernDropdownField.item(
+                                    item.id,
+                                    item.name,
+                                  ),
+                                ),
+                              ],
+                              onChanged: (value) => setState(
+                                () => _ostanId = value == 0 ? null : value,
                               ),
-                              validator: (v) {
-                                final value = v?.trim() ?? '';
-                                if (value.isEmpty) return null;
-                                final id = int.tryParse(value);
-                                return id == null || id <= 0
-                                    ? l10n.provinceIdInvalid
-                                    : null;
-                              },
                             ),
                           ],
                         ],

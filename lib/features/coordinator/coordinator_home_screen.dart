@@ -226,7 +226,10 @@ class _CoordinatorHomeScreenState extends State<CoordinatorHomeScreen> {
                                     ),
                                   ),
                                 ),
-                                StatusChip(status: cargo.status),
+                                StatusChip(
+                                  status: cargo.status,
+                                  date: cargo.createdAt,
+                                ),
                               ],
                             ),
                             const SizedBox(height: 8),

@@ -549,9 +549,10 @@ class CargoService extends ChangeNotifier {
         ApiConfig.operatorBarCreatePath,
         body: TransportApiMapper.barPayload(
           title: title,
-          description:
-              description ??
-              '$goodsType${weightTons > 0 ? ' - ${weightTons}t' : ''}',
+          description: TransportApiMapper.descriptionWithWeight(
+            description ?? goodsType,
+            weightTons,
+          ),
           price: estimatedPrice,
           productId: productId,
           machineId: machineId,
@@ -656,8 +657,8 @@ class CargoService extends ChangeNotifier {
           );
         }
 
-        final response = await _api.post(
-          ApiConfig.driverBarAcceptPath(cargoId),
+        final response = ApiResponse.extractObject(
+          await _api.post(ApiConfig.driverBarAcceptPath(cargoId)),
         );
         if (response['error'] != null) {
           throw ApiException(response['error'].toString());
@@ -685,6 +686,9 @@ class CargoService extends ChangeNotifier {
                     ))
                 .copyWith(
                   status: 'تخصیص یافته',
+                  createdAt:
+                      existing?.createdAt ??
+                      DateTime.tryParse('${assignMap?['created_at'] ?? ''}'),
                   assignedDriverName:
                       assignMap?['driver_name']?.toString() ?? driverName,
                   assignedDriverPhone:

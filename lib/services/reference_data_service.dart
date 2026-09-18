@@ -10,19 +10,25 @@ import 'api_response.dart';
 import 'transport_api_mapper.dart';
 
 class ReferenceDataService {
-  ReferenceDataService({ApiClient? apiClient}) : _api = apiClient ?? ApiClient();
+  ReferenceDataService({ApiClient? apiClient})
+    : _api = apiClient ?? ApiClient();
 
   final ApiClient _api;
 
-  Future<List<ApiReferenceItem>> getProducts() => _fetchList(ApiConfig.productsPath);
+  Future<List<ApiReferenceItem>> getProducts() =>
+      _fetchList(ApiConfig.productsPath);
 
-  Future<List<ApiReferenceItem>> getMachines() => _fetchList(ApiConfig.machinesPath);
+  Future<List<ApiReferenceItem>> getMachines() =>
+      _fetchList(ApiConfig.machinesPath);
 
-  Future<List<ApiReferenceItem>> getOstans() => _fetchList(ApiConfig.ostansPath);
+  Future<List<ApiReferenceItem>> getOstans() =>
+      _fetchList(ApiConfig.ostansPath);
 
   Future<List<ApiReferenceItem>> _fetchList(String path) async {
     final data = await _api.get(path);
-    return ApiResponse.extractList(data).map(ApiReferenceItem.fromJson).toList();
+    return ApiResponse.extractList(
+      data,
+    ).map(ApiReferenceItem.fromJson).toList();
   }
 }
 
@@ -42,7 +48,10 @@ class DriverMissionStore {
       if (list is! List) return const [];
       return list
           .whereType<Map>()
-          .map((e) => TransportApiMapper.cargoFromBar(Map<String, dynamic>.from(e)))
+          .map(
+            (e) =>
+                TransportApiMapper.cargoFromBar(Map<String, dynamic>.from(e)),
+          )
           .toList();
     } catch (_) {
       return const [];
@@ -50,7 +59,7 @@ class DriverMissionStore {
   }
 
   Future<void> upsert(Cargo cargo) async {
-    final missions = await load();
+    final missions = (await load()).toList();
     final index = missions.indexWhere((m) => m.id == cargo.id);
     if (index >= 0) {
       missions[index] = cargo;
@@ -69,13 +78,13 @@ class DriverMissionStore {
   }
 
   Future<void> remove(String id) async {
-    final missions = await load();
+    final missions = (await load()).toList();
     missions.removeWhere((m) => m.id == id);
     await _save(missions);
   }
 
   Future<void> updateStatus(String id, String status) async {
-    final missions = await load();
+    final missions = (await load()).toList();
     final index = missions.indexWhere((m) => m.id == id);
     if (index == -1) return;
     missions[index] = missions[index].copyWith(status: status);

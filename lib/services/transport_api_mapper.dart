@@ -2,6 +2,28 @@ import '../models/cargo.dart';
 
 /// Maps Transport API (`bars`, `accounts`) payloads to app models.
 abstract final class TransportApiMapper {
+  // The current API has no weight field; keep a readable suffix in description.
+  static final _weightSuffix = RegExp(r'(?:\n)?وزن: ([0-9]+(?:\.[0-9]+)?) تن$');
+
+  static double? parseWeightTons(String value) {
+    const persian = '۰۱۲۳۴۵۶۷۸۹';
+    const arabic = '٠١٢٣٤٥٦٧٨٩';
+    var normalized = value.trim().replaceAll('٫', '.');
+    for (var i = 0; i < 10; i++) {
+      normalized = normalized
+          .replaceAll(persian[i], '$i')
+          .replaceAll(arabic[i], '$i');
+    }
+    final weight = double.tryParse(normalized);
+    return weight != null && weight.isFinite && weight > 0 ? weight : null;
+  }
+
+  static String descriptionWithWeight(String description, double weightTons) {
+    final base = description.replaceFirst(_weightSuffix, '').trimRight();
+    if (!weightTons.isFinite || weightTons <= 0) return base;
+    return '${base.isEmpty ? '' : '$base\n'}وزن: $weightTons تن';
+  }
+
   static String appStatus(Map<String, dynamic> json) {
     switch (json['status']?.toString()) {
       case 'open':
@@ -62,7 +84,14 @@ abstract final class TransportApiMapper {
       destination: destination,
       cargoType: (json['machine_name'] ?? '').toString(),
       goodsType: (json['product_name'] ?? '').toString(),
-      weightTons: 0,
+      weightTons:
+          double.tryParse(
+            _weightSuffix
+                    .firstMatch(json['description']?.toString() ?? '')
+                    ?.group(1) ??
+                '',
+          ) ??
+          0,
       estimatedPrice: int.tryParse('${json['price'] ?? 0}') ?? 0,
       status: appStatus(json),
       coordinatorName: (json['operator_name'] ?? '').toString(),
@@ -119,7 +148,8 @@ abstract final class TransportApiMapper {
       if (originLat != null) 'latitude_mabda': originLat.toString(),
       if (originLng != null) 'longitude_mabda': originLng.toString(),
       if (destinationLat != null) 'latitude_maghsad': destinationLat.toString(),
-      if (destinationLng != null) 'longitude_maghsad': destinationLng.toString(),
+      if (destinationLng != null)
+        'longitude_maghsad': destinationLng.toString(),
       if (status != null) 'status': apiStatusForApp(status) ?? status,
     };
   }

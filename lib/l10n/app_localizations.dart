@@ -613,8 +613,15 @@ class AppLocalizations {
   String get provinceIdInvalid =>
       _t('شناسه استان معتبر نیست', 'Invalid province ID');
   String get signupDriverMachineIdHint => _t(
-    'برای ثبت‌نام راننده، شناسه ماشین دریافتی از مدیر سامانه الزامی است.',
-    'Driver registration requires the machine ID provided by the system administrator.',
+    'نوع ماشین خود را انتخاب کنید. انتخاب استان اختیاری است.',
+    'Select your machine type. Choosing a province is optional.',
+  );
+  String get provinceOptional => _t('استان (اختیاری)', 'Province (optional)');
+  String get provinceNotSelected =>
+      _t('بدون انتخاب استان', 'No province selected');
+  String get signupReferencesRetry => _t(
+    'دریافت لیست ناموفق بود؛ تلاش دوباره',
+    'Could not load options; retry',
   );
   String get machineSavedLocally => _t(
     'اطلاعات خودرو روی دستگاه ذخیره شد. تطابق با سرور هنگام پذیرش بار بررسی می‌شود.',

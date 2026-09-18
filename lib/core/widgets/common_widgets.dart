@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:shamsi_date/shamsi_date.dart';
 
 import '../theme/app_theme.dart';
 import '../../l10n/app_localizations.dart';
@@ -42,10 +43,7 @@ class AppCard extends StatelessWidget {
     return ScaleTap(
       onTap: onTap,
       borderRadius: BorderRadius.circular(20),
-      child: DecoratedBox(
-        decoration: decoration,
-        child: content,
-      ),
+      child: DecoratedBox(decoration: decoration, child: content),
     );
   }
 }
@@ -79,9 +77,10 @@ class AppRefreshIndicator extends StatelessWidget {
 }
 
 class StatusChip extends StatelessWidget {
-  const StatusChip({super.key, required this.status});
+  const StatusChip({super.key, required this.status, this.date});
 
   final String status;
+  final DateTime? date;
 
   Color get _color {
     switch (status) {
@@ -102,20 +101,49 @@ class StatusChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
+    final chip = Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
       decoration: BoxDecoration(
         color: _color.withValues(alpha: 0.12),
         borderRadius: BorderRadius.circular(10),
       ),
       child: Text(
-        status,
+        context.l10n.cargoStatus(status),
         style: TextStyle(
           color: _color,
           fontSize: 11,
           fontWeight: FontWeight.w700,
         ),
       ),
+    );
+    if (date == null) return chip;
+    final jalali = Jalali.fromDateTime(date!.toLocal());
+    var label =
+        '${jalali.year}/${jalali.month.toString().padLeft(2, '0')}/${jalali.day.toString().padLeft(2, '0')}';
+    if (context.l10n.isFa) {
+      label = label.replaceAllMapped(
+        RegExp(r'\d'),
+        (match) => '۰۱۲۳۴۵۶۷۸۹'[int.parse(match[0]!)],
+      );
+    }
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.end,
+      children: [
+        chip,
+        const SizedBox(height: 5),
+        Tooltip(
+          message: context.l10n.isFa ? 'تاریخ ثبت (شمسی)' : 'Created (Jalali)',
+          child: Text(
+            label,
+            textDirection: TextDirection.ltr,
+            style: TextStyle(
+              fontSize: 11,
+              color: context.palette.textSecondary,
+            ),
+          ),
+        ),
+      ],
     );
   }
 }
@@ -162,9 +190,9 @@ class SectionHeader extends StatelessWidget {
             child: Text(
               title,
               style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.w800,
-                    letterSpacing: -0.3,
-                  ),
+                fontWeight: FontWeight.w800,
+                letterSpacing: -0.3,
+              ),
             ),
           ),
           if (action != null && actionLabel != null)
@@ -207,7 +235,11 @@ class EmptyState extends StatelessWidget {
                   color: AppTheme.primary.withValues(alpha: 0.08),
                   shape: BoxShape.circle,
                 ),
-                child: Icon(icon, size: 48, color: AppTheme.primary.withValues(alpha: 0.5)),
+                child: Icon(
+                  icon,
+                  size: 48,
+                  color: AppTheme.primary.withValues(alpha: 0.5),
+                ),
               ),
             const SizedBox(height: 20),
             Text(
@@ -249,7 +281,10 @@ class LoadingOverlay extends StatelessWidget {
           const SizedBox(
             width: 36,
             height: 36,
-            child: CircularProgressIndicator(strokeWidth: 2.5, color: AppTheme.primary),
+            child: CircularProgressIndicator(
+              strokeWidth: 2.5,
+              color: AppTheme.primary,
+            ),
           ),
           if (message != null) ...[
             const SizedBox(height: 16),
@@ -301,7 +336,10 @@ class InfoRow extends StatelessWidget {
                 const SizedBox(height: 2),
                 Text(
                   value,
-                  style: TextStyle(fontWeight: FontWeight.w600, color: palette.textPrimary),
+                  style: TextStyle(
+                    fontWeight: FontWeight.w600,
+                    color: palette.textPrimary,
+                  ),
                 ),
               ],
             ),
@@ -352,10 +390,7 @@ class InfoBanner extends StatelessWidget {
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         gradient: LinearGradient(
-          colors: [
-            color.withValues(alpha: 0.1),
-            color.withValues(alpha: 0.04),
-          ],
+          colors: [color.withValues(alpha: 0.1), color.withValues(alpha: 0.04)],
         ),
         borderRadius: BorderRadius.circular(18),
         border: Border.all(color: color.withValues(alpha: 0.18)),
@@ -443,7 +478,10 @@ class ProfileHeroHeader extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 4,
+                  ),
                   decoration: BoxDecoration(
                     color: Colors.white.withValues(alpha: 0.18),
                     borderRadius: BorderRadius.circular(20),
@@ -506,7 +544,11 @@ class ModernBottomNav extends StatelessWidget {
         color: palette.cardBg,
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: Theme.of(context).brightness == Brightness.dark ? 0.25 : 0.06),
+            color: Colors.black.withValues(
+              alpha: Theme.of(context).brightness == Brightness.dark
+                  ? 0.25
+                  : 0.06,
+            ),
             blurRadius: 20,
             offset: const Offset(0, -4),
           ),

@@ -19,7 +19,8 @@ class CoordinatorCargoDetailScreen extends StatefulWidget {
       _CoordinatorCargoDetailScreenState();
 }
 
-class _CoordinatorCargoDetailScreenState extends State<CoordinatorCargoDetailScreen> {
+class _CoordinatorCargoDetailScreenState
+    extends State<CoordinatorCargoDetailScreen> {
   final _cargoService = CargoService();
   Cargo? _cargo;
   bool _loading = true;
@@ -89,15 +90,13 @@ class _CoordinatorCargoDetailScreenState extends State<CoordinatorCargoDetailScr
     if (!mounted) return;
     setState(() => _busy = false);
     if (success) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(l10n.cargoDeleted)),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(l10n.cargoDeleted)));
       context.pop();
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(_cargoService.lastError ?? l10n.genericError),
-        ),
+        SnackBar(content: Text(_cargoService.lastError ?? l10n.genericError)),
       );
     }
   }
@@ -128,7 +127,8 @@ class _CoordinatorCargoDetailScreenState extends State<CoordinatorCargoDetailScr
     final isCancelled = cargo.status == 'لغو شده';
     final isDone = cargo.status == 'تحویل شده';
     final canDelete = cargo.status == 'در انتظار راننده';
-    final canCancel = cargo.status == 'در انتظار راننده' || cargo.status == 'تخصیص یافته';
+    final canCancel =
+        cargo.status == 'در انتظار راننده' || cargo.status == 'تخصیص یافته';
     final canMarkDone = cargo.status == 'تخصیص یافته';
     final canEdit = cargo.status == 'در انتظار راننده';
 
@@ -155,7 +155,7 @@ class _CoordinatorCargoDetailScreenState extends State<CoordinatorCargoDetailScr
                             ),
                           ),
                         ),
-                        StatusChip(status: cargo.status),
+                        StatusChip(status: cargo.status, date: cargo.createdAt),
                       ],
                     ),
                     const SizedBox(height: 12),
@@ -170,15 +170,28 @@ class _CoordinatorCargoDetailScreenState extends State<CoordinatorCargoDetailScr
               child: AppCard(
                 child: Column(
                   children: [
-                    InfoRow(icon: Icons.trip_origin, label: l10n.origin, value: cargo.origin),
+                    InfoRow(
+                      icon: Icons.trip_origin,
+                      label: l10n.origin,
+                      value: cargo.origin,
+                    ),
                     InfoRow(
                       icon: Icons.location_on,
                       label: l10n.destination,
                       value: cargo.destination,
                     ),
-                    InfoRow(icon: Icons.category, label: l10n.trailerType, value: cargo.cargoType),
-                    InfoRow(icon: Icons.inventory, label: l10n.goodsType, value: cargo.goodsType),
-                    if (cargo.description != null && cargo.description!.trim().isNotEmpty)
+                    InfoRow(
+                      icon: Icons.category,
+                      label: l10n.trailerType,
+                      value: cargo.cargoType,
+                    ),
+                    InfoRow(
+                      icon: Icons.inventory,
+                      label: l10n.goodsType,
+                      value: cargo.goodsType,
+                    ),
+                    if (cargo.description != null &&
+                        cargo.description!.trim().isNotEmpty)
                       InfoRow(
                         icon: Icons.notes,
                         label: l10n.description,
@@ -239,21 +252,27 @@ class _CoordinatorCargoDetailScreenState extends State<CoordinatorCargoDetailScr
                       OutlinedButton.icon(
                         onPressed: _busy
                             ? null
-                            : () => context.push('/coordinator/cargo/${cargo.id}/edit'),
+                            : () => context.push(
+                                '/coordinator/cargo/${cargo.id}/edit',
+                              ),
                         icon: const Icon(Icons.edit_outlined),
                         label: Text(l10n.editCargo),
                       ),
                     if (canEdit) const SizedBox(height: 8),
                     if (canMarkDone)
                       FilledButton.icon(
-                        onPressed: _busy ? null : () => _updateStatus('تحویل شده'),
+                        onPressed: _busy
+                            ? null
+                            : () => _updateStatus('تحویل شده'),
                         icon: const Icon(Icons.check_circle_outline),
                         label: Text(l10n.markCargoDone),
                       ),
                     if (canMarkDone) const SizedBox(height: 8),
                     if (canCancel)
                       OutlinedButton.icon(
-                        onPressed: _busy ? null : () => _updateStatus('لغو شده'),
+                        onPressed: _busy
+                            ? null
+                            : () => _updateStatus('لغو شده'),
                         icon: const Icon(Icons.cancel_outlined),
                         label: Text(l10n.cancelCargo),
                       ),
@@ -262,7 +281,9 @@ class _CoordinatorCargoDetailScreenState extends State<CoordinatorCargoDetailScr
                       OutlinedButton.icon(
                         onPressed: _busy ? null : _deleteCargo,
                         icon: const Icon(Icons.delete_outline),
-                        style: OutlinedButton.styleFrom(foregroundColor: AppTheme.error),
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: AppTheme.error,
+                        ),
                         label: Text(l10n.deleteCargo),
                       ),
                     ],
@@ -282,11 +303,7 @@ class _StatusTimeline extends StatelessWidget {
 
   final String status;
 
-  static const _steps = [
-    'در انتظار راننده',
-    'تخصیص یافته',
-    'تحویل شده',
-  ];
+  static const _steps = ['در انتظار راننده', 'تخصیص یافته', 'تحویل شده'];
 
   @override
   Widget build(BuildContext context) {
@@ -318,7 +335,10 @@ class _StatusTimeline extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(l10n.shippingProgress, style: const TextStyle(fontWeight: FontWeight.bold)),
+          Text(
+            l10n.shippingProgress,
+            style: const TextStyle(fontWeight: FontWeight.bold),
+          ),
           const SizedBox(height: 16),
           ...List.generate(_steps.length, (index) {
             final isCompleted = currentIndex >= 0 && index <= currentIndex;
@@ -329,9 +349,15 @@ class _StatusTimeline extends StatelessWidget {
                   children: [
                     CircleAvatar(
                       radius: 12,
-                      backgroundColor: isCompleted ? AppTheme.success : Colors.grey.shade300,
+                      backgroundColor: isCompleted
+                          ? AppTheme.success
+                          : Colors.grey.shade300,
                       child: isCompleted
-                          ? const Icon(Icons.check, size: 14, color: Colors.white)
+                          ? const Icon(
+                              Icons.check,
+                              size: 14,
+                              color: Colors.white,
+                            )
                           : null,
                     ),
                     if (index < _steps.length - 1)
@@ -351,7 +377,9 @@ class _StatusTimeline extends StatelessWidget {
                     child: Text(
                       l10n.cargoStatus(_steps[index]),
                       style: TextStyle(
-                        fontWeight: isCurrent ? FontWeight.bold : FontWeight.normal,
+                        fontWeight: isCurrent
+                            ? FontWeight.bold
+                            : FontWeight.normal,
                         color: isCompleted ? AppTheme.primary : Colors.grey,
                       ),
                     ),

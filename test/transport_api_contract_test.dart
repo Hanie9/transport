@@ -6,6 +6,35 @@ import 'package:legestic/services/transport_api_mapper.dart';
 
 void main() {
   group('Transport OpenAPI contract', () {
+    test('weight accepts localized decimals and rejects invalid values', () {
+      expect(TransportApiMapper.parseWeightTons('۱۲٫۵'), 12.5);
+      expect(TransportApiMapper.parseWeightTons('١٢.٥'), 12.5);
+      for (final value in ['', '0', '-1', 'NaN', 'Infinity', 'abc']) {
+        expect(TransportApiMapper.parseWeightTons(value), isNull);
+      }
+    });
+
+    test('weight survives the documented description round trip', () {
+      final description = TransportApiMapper.descriptionWithWeight(
+        'بار آهن',
+        12.5,
+      );
+      final payload = TransportApiMapper.barPayload(description: description);
+      final cargo = TransportApiMapper.cargoFromBar({'id': 1, ...payload});
+      expect(cargo.weightTons, 12.5);
+      expect(cargo.description, 'بار آهن\nوزن: 12.5 تن');
+      expect(
+        TransportApiMapper.descriptionWithWeight(description, 10),
+        'بار آهن\nوزن: 10.0 تن',
+      );
+      expect(
+        TransportApiMapper.cargoFromBar({
+          'description': 'بار قدیمی',
+        }).weightTons,
+        0,
+      );
+    });
+
     test('cargo registration sends addresses without manual coordinates', () {
       final payload = TransportApiMapper.barPayload(
         title: 'بار جدید',

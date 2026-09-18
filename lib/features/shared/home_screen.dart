@@ -795,9 +795,8 @@ class _HomeCargoTile extends StatelessWidget {
                       fontSize: 12,
                     ),
                   ),
-                )
-              else
-                StatusChip(status: cargo.status),
+                ),
+              StatusChip(status: cargo.status, date: cargo.createdAt),
             ],
           ),
           const SizedBox(height: 10),

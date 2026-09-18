@@ -45,6 +45,7 @@ class _CargoDetailScreenState extends State<CargoDetailScreen> {
   }
 
   Future<void> _acceptCargo() async {
+    if (_accepting) return;
     final user = context.read<AuthService>().currentUser;
     if (user == null || _cargo == null) return;
     final l10n = context.l10n;
@@ -55,13 +56,19 @@ class _CargoDetailScreenState extends State<CargoDetailScreen> {
         title: Text(l10n.acceptCargo),
         content: Text(l10n.acceptCargoConfirm(_cargo!.title)),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text(l10n.cancel)),
-          ElevatedButton(onPressed: () => Navigator.pop(ctx, true), child: Text(l10n.confirm)),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: Text(l10n.cancel),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: Text(l10n.confirm),
+          ),
         ],
       ),
     );
 
-    if (confirmed != true) return;
+    if (confirmed != true || !mounted || _accepting) return;
 
     setState(() => _accepting = true);
     final success = await _cargoService.acceptCargo(
@@ -75,16 +82,17 @@ class _CargoDetailScreenState extends State<CargoDetailScreen> {
     setState(() => _accepting = false);
 
     if (success) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(context.l10n.cargoAccepted)),
-      );
+      setState(() => _cargo = _cargo!.copyWith(status: 'تخصیص یافته'));
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(context.l10n.cargoAccepted)));
       context.push('/driver/route/${_cargo!.id}');
     } else {
       final msg = _cargoService.lastError;
       if (msg != null && msg.isNotEmpty) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(msg)),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(msg)));
       }
     }
   }
@@ -115,14 +123,14 @@ class _CargoDetailScreenState extends State<CargoDetailScreen> {
     final canAccept = cargo.status == 'در انتظار راننده';
     final user = context.watch<AuthService>().currentUser;
     final driverMachineId = user?.vehicleInfo?.machineId;
-    final machineMismatch = canAccept &&
+    final machineMismatch =
+        canAccept &&
         !ApiConfig.shouldUseMock &&
         cargo.machineId != null &&
         driverMachineId != null &&
         cargo.machineId != driverMachineId;
-    final machineNotSet = canAccept &&
-        !ApiConfig.shouldUseMock &&
-        driverMachineId == null;
+    final machineNotSet =
+        canAccept && !ApiConfig.shouldUseMock && driverMachineId == null;
 
     return Scaffold(
       appBar: ModernAppBar(title: l10n.cargoDetails),
@@ -147,7 +155,7 @@ class _CargoDetailScreenState extends State<CargoDetailScreen> {
                             ),
                           ),
                         ),
-                        StatusChip(status: cargo.status),
+                        StatusChip(status: cargo.status, date: cargo.createdAt),
                       ],
                     ),
                     const SizedBox(height: 16),
@@ -162,8 +170,16 @@ class _CargoDetailScreenState extends State<CargoDetailScreen> {
               child: AppCard(
                 child: Column(
                   children: [
-                    InfoRow(icon: Icons.trip_origin, label: l10n.origin, value: cargo.origin),
-                    InfoRow(icon: Icons.location_on, label: l10n.destination, value: cargo.destination),
+                    InfoRow(
+                      icon: Icons.trip_origin,
+                      label: l10n.origin,
+                      value: cargo.origin,
+                    ),
+                    InfoRow(
+                      icon: Icons.location_on,
+                      label: l10n.destination,
+                      value: cargo.destination,
+                    ),
                     if (cargo.distanceKm != null)
                       InfoRow(
                         icon: Icons.straighten,
@@ -180,8 +196,16 @@ class _CargoDetailScreenState extends State<CargoDetailScreen> {
               child: AppCard(
                 child: Column(
                   children: [
-                    InfoRow(icon: Icons.category, label: l10n.trailerType, value: cargo.cargoType),
-                    InfoRow(icon: Icons.inventory, label: l10n.goodsType, value: cargo.goodsType),
+                    InfoRow(
+                      icon: Icons.category,
+                      label: l10n.trailerType,
+                      value: cargo.cargoType,
+                    ),
+                    InfoRow(
+                      icon: Icons.inventory,
+                      label: l10n.goodsType,
+                      value: cargo.goodsType,
+                    ),
                     InfoRow(
                       icon: Icons.scale,
                       label: l10n.weight,
@@ -239,13 +263,17 @@ class _CargoDetailScreenState extends State<CargoDetailScreen> {
                           ? const SizedBox(
                               height: 22,
                               width: 22,
-                              child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: Colors.white,
+                              ),
                             )
                           : Text(l10n.acceptCargo),
                     ),
                   if (!canAccept && cargo.status != 'در انتظار راننده')
                     OutlinedButton.icon(
-                      onPressed: () => context.push('/driver/route/${cargo.id}'),
+                      onPressed: () =>
+                          context.push('/driver/route/${cargo.id}'),
                       icon: const Icon(Icons.map_outlined),
                       label: Text(l10n.viewRoute),
                     ),

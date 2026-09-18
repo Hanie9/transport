@@ -62,9 +62,7 @@ class _DriverMissionsScreenState extends State<DriverMissionsScreen> {
   List<Cargo> get _filteredMissions {
     if (_filter == 'all') return _missions;
     if (_filter == 'active') {
-      return _missions
-          .where((m) => m.status == 'تخصیص یافته')
-          .toList();
+      return _missions.where((m) => m.status == 'تخصیص یافته').toList();
     }
     return _missions.where((m) => m.status == 'تحویل شده').toList();
   }
@@ -129,8 +127,12 @@ class _DriverMissionsScreenState extends State<DriverMissionsScreen> {
                       selectedColor: AppTheme.primary.withValues(alpha: 0.12),
                       checkmarkColor: AppTheme.primary,
                       labelStyle: TextStyle(
-                        color: selected ? AppTheme.primary : palette.textSecondary,
-                        fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
+                        color: selected
+                            ? AppTheme.primary
+                            : palette.textSecondary,
+                        fontWeight: selected
+                            ? FontWeight.w700
+                            : FontWeight.w500,
                       ),
                     ),
                   );
@@ -141,14 +143,18 @@ class _DriverMissionsScreenState extends State<DriverMissionsScreen> {
           if (_loading)
             SliverFillRemaining(
               hasScrollBody: false,
-              child: SizedBox.expand(child: LoadingOverlay(message: l10n.loadingMissions)),
+              child: SizedBox.expand(
+                child: LoadingOverlay(message: l10n.loadingMissions),
+              ),
             )
           else if (_filteredMissions.isEmpty)
             SliverFillRemaining(
               child: EmptyState(
                 icon: Icons.assignment_outlined,
                 useIllustration: true,
-                title: _filter == 'active' ? l10n.noActiveMission : l10n.noMissionFound,
+                title: _filter == 'active'
+                    ? l10n.noActiveMission
+                    : l10n.noMissionFound,
                 subtitle: _filter == 'active' ? l10n.acceptCargoHint : null,
               ),
             )
@@ -156,23 +162,22 @@ class _DriverMissionsScreenState extends State<DriverMissionsScreen> {
             SliverPadding(
               padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
               sliver: SliverList(
-                delegate: SliverChildBuilderDelegate(
-                  (context, index) {
-                    final mission = _filteredMissions[index];
-                    return Padding(
-                      padding: const EdgeInsets.only(bottom: 12),
-                      child: StaggeredItem(
-                        index: index,
-                        child: _MissionCard(
+                delegate: SliverChildBuilderDelegate((context, index) {
+                  final mission = _filteredMissions[index];
+                  return Padding(
+                    padding: const EdgeInsets.only(bottom: 12),
+                    child: StaggeredItem(
+                      index: index,
+                      child: _MissionCard(
                         mission: mission,
-                        onTap: () => context.push('/driver/cargo/${mission.id}'),
-                        onRoute: () => context.push('/driver/route/${mission.id}'),
-                        ),
+                        onTap: () =>
+                            context.push('/driver/cargo/${mission.id}'),
+                        onRoute: () =>
+                            context.push('/driver/route/${mission.id}'),
                       ),
-                    );
-                  },
-                  childCount: _filteredMissions.length,
-                ),
+                    ),
+                  );
+                }, childCount: _filteredMissions.length),
               ),
             ),
         ],
@@ -192,8 +197,7 @@ class _MissionCard extends StatelessWidget {
   final VoidCallback onTap;
   final VoidCallback onRoute;
 
-  bool get _isActive =>
-      mission.status == 'تخصیص یافته';
+  bool get _isActive => mission.status == 'تخصیص یافته';
 
   @override
   Widget build(BuildContext context) {
@@ -216,7 +220,7 @@ class _MissionCard extends StatelessWidget {
                   ),
                 ),
               ),
-              StatusChip(status: mission.status),
+              StatusChip(status: mission.status, date: mission.createdAt),
             ],
           ),
           const SizedBox(height: 10),
@@ -225,7 +229,10 @@ class _MissionCard extends StatelessWidget {
               const Icon(Icons.trip_origin, size: 15, color: AppTheme.success),
               const SizedBox(width: 6),
               Expanded(
-                child: Text(mission.origin, style: TextStyle(fontSize: 13, color: palette.textSecondary)),
+                child: Text(
+                  mission.origin,
+                  style: TextStyle(fontSize: 13, color: palette.textSecondary),
+                ),
               ),
             ],
           ),
@@ -235,7 +242,10 @@ class _MissionCard extends StatelessWidget {
               const Icon(Icons.location_on, size: 15, color: AppTheme.error),
               const SizedBox(width: 6),
               Expanded(
-                child: Text(mission.destination, style: TextStyle(fontSize: 13, color: palette.textSecondary)),
+                child: Text(
+                  mission.destination,
+                  style: TextStyle(fontSize: 13, color: palette.textSecondary),
+                ),
               ),
             ],
           ),

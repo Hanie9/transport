@@ -12,6 +12,7 @@ import '../../models/api_reference_item.dart';
 import '../../services/auth_service.dart';
 import '../../services/cargo_service.dart';
 import '../../services/reference_data_service.dart';
+import '../../services/transport_api_mapper.dart';
 
 class AddCargoScreen extends StatefulWidget {
   const AddCargoScreen({super.key});
@@ -29,6 +30,7 @@ class _AddCargoScreenState extends State<AddCargoScreen> {
   final _originController = TextEditingController();
   final _destinationController = TextEditingController();
   final _priceController = TextEditingController();
+  final _weightController = TextEditingController();
 
   List<ApiReferenceItem> _products = const [];
   List<ApiReferenceItem> _machines = const [];
@@ -77,6 +79,7 @@ class _AddCargoScreenState extends State<AddCargoScreen> {
     _originController.dispose();
     _destinationController.dispose();
     _priceController.dispose();
+    _weightController.dispose();
     super.dispose();
   }
 
@@ -120,7 +123,7 @@ class _AddCargoScreenState extends State<AddCargoScreen> {
               orElse: () => const ApiReferenceItem(id: 0, name: ''),
             )
             .name,
-        weightTons: 0,
+        weightTons: TransportApiMapper.parseWeightTons(_weightController.text)!,
         estimatedPrice: price,
         coordinatorName: coordinatorName,
         productId: _productId,
@@ -181,6 +184,7 @@ class _AddCargoScreenState extends State<AddCargoScreen> {
                 const SizedBox(height: 16),
                 TextFormField(
                   controller: _descriptionController,
+                  maxLength: 450,
                   maxLines: 3,
                   decoration: InputDecoration(
                     labelText: l10n.description,
@@ -247,6 +251,27 @@ class _AddCargoScreenState extends State<AddCargoScreen> {
                   validator: (v) => v == null || v.trim().isEmpty
                       ? l10n.destinationRequired
                       : null,
+                ),
+                const SizedBox(height: 16),
+                TextFormField(
+                  controller: _weightController,
+                  maxLength: 20,
+                  keyboardType: const TextInputType.numberWithOptions(
+                    decimal: true,
+                  ),
+                  decoration: InputDecoration(
+                    labelText: l10n.weightTonsLabel,
+                    prefixIcon: const Icon(Icons.scale_outlined),
+                    hintText: '12.5',
+                  ),
+                  validator: (value) {
+                    if (value == null || value.trim().isEmpty) {
+                      return l10n.weightRequired;
+                    }
+                    return TransportApiMapper.parseWeightTons(value) == null
+                        ? l10n.weightInvalid
+                        : null;
+                  },
                 ),
                 const SizedBox(height: 16),
                 TextFormField(
