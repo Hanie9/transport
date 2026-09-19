@@ -2,7 +2,7 @@ import '../models/cargo.dart';
 
 /// Maps Transport API (`bars`, `accounts`) payloads to app models.
 abstract final class TransportApiMapper {
-  // The current API has no weight field; keep a readable suffix in description.
+  // Keep a readable suffix until every deployed backend supports `weight`.
   static final _weightSuffix = RegExp(r'(?:\n)?وزن: ([0-9]+(?:\.[0-9]+)?) تن$');
 
   static double? parseWeightTons(String value) {
@@ -85,6 +85,7 @@ abstract final class TransportApiMapper {
       cargoType: (json['machine_name'] ?? '').toString(),
       goodsType: (json['product_name'] ?? '').toString(),
       weightTons:
+          d(json['weight'] ?? json['weight_tons'] ?? json['weightTons']) ??
           double.tryParse(
             _weightSuffix
                     .firstMatch(json['description']?.toString() ?? '')
@@ -125,6 +126,7 @@ abstract final class TransportApiMapper {
     String? title,
     String? description,
     int? price,
+    double? weight,
     int? productId,
     int? machineId,
     int? ostanMabdaId,
@@ -141,6 +143,7 @@ abstract final class TransportApiMapper {
       if (title != null) 'title': title,
       if (description != null) 'description': description,
       if (price != null) 'price': price,
+      if (weight != null) 'weight': weight,
       if (productId != null) 'product': productId,
       if (machineId != null) 'machine': machineId,
       if (ostanMabdaId != null) 'ostan_mabda': ostanMabdaId,

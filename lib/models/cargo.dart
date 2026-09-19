@@ -130,7 +130,8 @@ class Cargo {
       destination: (json['destination'] ?? '').toString(),
       cargoType: (json['cargo_type'] ?? json['cargoType'] ?? '').toString(),
       goodsType: (json['goods_type'] ?? json['goodsType'] ?? '').toString(),
-      weightTons: d(json['weight_tons'] ?? json['weightTons']) ?? 0,
+      weightTons:
+          d(json['weight'] ?? json['weight_tons'] ?? json['weightTons']) ?? 0,
       estimatedPrice:
           int.tryParse(
             '${json['estimated_price'] ?? json['estimatedPrice'] ?? 0}',
@@ -168,6 +169,7 @@ class Cargo {
     'destination': destination,
     'cargo_type': cargoType,
     'goods_type': goodsType,
+    'weight': weightTons,
     'weight_tons': weightTons,
     'estimated_price': estimatedPrice,
     'status': status,

@@ -35,6 +35,22 @@ void main() {
       );
     });
 
+    test('weight field is ready for the future API contract', () {
+      final payload = TransportApiMapper.barPayload(weight: 12.5);
+      expect(payload, {'weight': 12.5});
+      expect(
+        TransportApiMapper.cargoFromBar({
+          'weight': '18.75',
+          'description': 'وزن: 12.5 تن',
+        }).weightTons,
+        18.75,
+      );
+      expect(
+        TransportApiMapper.cargoFromBar({'weight_tons': 14}).weightTons,
+        14,
+      );
+    });
+
     test('cargo registration sends addresses without manual coordinates', () {
       final payload = TransportApiMapper.barPayload(
         title: 'بار جدید',

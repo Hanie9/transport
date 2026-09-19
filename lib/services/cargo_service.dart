@@ -549,26 +549,28 @@ class CargoService extends ChangeNotifier {
   }) async {
     _clearError();
     if (!ApiConfig.shouldUseMock) {
-      final data = await _api.post(
-        ApiConfig.operatorBarCreatePath,
-        body: TransportApiMapper.barPayload(
-          title: title,
-          description: TransportApiMapper.descriptionWithWeight(
-            description ?? goodsType,
-            weightTons,
-          ),
-          price: estimatedPrice,
-          productId: productId,
-          machineId: machineId,
-          ostanMabdaId: ostanMabdaId,
-          ostanMaghsadId: ostanMaghsadId,
-          addressMabda: origin,
-          addressMaghsad: destination,
-          originLat: originLat,
-          originLng: originLng,
-          destinationLat: destinationLat,
-          destinationLng: destinationLng,
+      final body = TransportApiMapper.barPayload(
+        title: title,
+        description: TransportApiMapper.descriptionWithWeight(
+          description ?? goodsType,
+          weightTons,
         ),
+        price: estimatedPrice,
+        weight: weightTons,
+        productId: productId,
+        machineId: machineId,
+        ostanMabdaId: ostanMabdaId,
+        ostanMaghsadId: ostanMaghsadId,
+        addressMabda: origin,
+        addressMaghsad: destination,
+        originLat: originLat,
+        originLng: originLng,
+        destinationLat: destinationLat,
+        destinationLng: destinationLng,
+      );
+      final data = await _sendWithWeightCompatibility(
+        body,
+        (payload) => _api.post(ApiConfig.operatorBarCreatePath, body: payload),
       );
       final cargo = TransportApiMapper.cargoFromBar(
         ApiResponse.extractObject(data),
@@ -760,6 +762,7 @@ class CargoService extends ChangeNotifier {
     String? title,
     String? description,
     int? price,
+    double? weightTons,
     int? productId,
     int? machineId,
     int? ostanMabdaId,
@@ -781,6 +784,7 @@ class CargoService extends ChangeNotifier {
           title: title,
           description: description,
           price: price,
+          weight: weightTons,
           productId: productId,
           machineId: machineId,
           ostanMabdaId: ostanMabdaId,
@@ -798,6 +802,7 @@ class CargoService extends ChangeNotifier {
             title: originalCargo.title,
             description: originalCargo.description,
             price: originalCargo.estimatedPrice,
+            weight: originalCargo.weightTons,
             productId: originalCargo.productId,
             machineId: originalCargo.machineId,
             ostanMabdaId: originalCargo.ostanMabdaId,
@@ -813,14 +818,18 @@ class CargoService extends ChangeNotifier {
           body.removeWhere((key, value) => original[key] == value);
           if (body.isEmpty) return true;
         }
-        if (fullReplace) {
-          await _api.put(ApiConfig.operatorBarUpdatePath(cargoId), body: body);
-        } else {
-          await _api.patch(
+        await _sendWithWeightCompatibility(body, (payload) {
+          if (fullReplace) {
+            return _api.put(
+              ApiConfig.operatorBarUpdatePath(cargoId),
+              body: payload,
+            );
+          }
+          return _api.patch(
             ApiConfig.operatorBarUpdatePath(cargoId),
-            body: body,
+            body: payload,
           );
-        }
+        });
         if (status != null) {
           await DriverMissionStore.instance.updateStatus(cargoId, status);
         }
@@ -835,6 +844,7 @@ class CargoService extends ChangeNotifier {
         title: title,
         description: description,
         estimatedPrice: price,
+        weightTons: weightTons,
         status: status,
       );
       if (status != null) {
@@ -851,6 +861,25 @@ class CargoService extends ChangeNotifier {
   Future<bool> updateCargoStatus(String cargoId, String status) async {
     if (status == 'تحویل شده') return completeCargo(cargoId, asDriver: false);
     return updateCargo(cargoId: cargoId, status: status);
+  }
+
+  Future<Map<String, dynamic>> _sendWithWeightCompatibility(
+    Map<String, dynamic> body,
+    Future<Map<String, dynamic>> Function(Map<String, dynamic>) send,
+  ) async {
+    try {
+      return await send(body);
+    } on ApiException catch (error) {
+      final raw = error.body?.toLowerCase() ?? '';
+      final unsupported =
+          raw.contains('weight') &&
+          (raw.contains('unknown') ||
+              raw.contains('unexpected') ||
+              raw.contains('not a valid field'));
+      if (!body.containsKey('weight') || !unsupported) rethrow;
+      final compatibleBody = Map<String, dynamic>.from(body)..remove('weight');
+      return send(compatibleBody);
+    }
   }
 
   Future<bool> completeCargo(String cargoId, {required bool asDriver}) async {

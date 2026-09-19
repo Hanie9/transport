@@ -1,6 +1,6 @@
 'use strict';
 
-const CACHE_NAME = 'logistics-pwa-v1.0.0-1-20260919-2';
+const CACHE_NAME = 'logistics-pwa-v1.0.0-1-20260919-4';
 const APP_SHELL = [
   './',
   './index.html',

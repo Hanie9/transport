@@ -11,6 +11,7 @@ import '../../models/api_reference_item.dart';
 import '../../models/cargo.dart';
 import '../../services/cargo_service.dart';
 import '../../services/reference_data_service.dart';
+import '../../services/transport_api_mapper.dart';
 
 class EditCargoScreen extends StatefulWidget {
   const EditCargoScreen({super.key, required this.cargoId});
@@ -30,6 +31,7 @@ class _EditCargoScreenState extends State<EditCargoScreen> {
   final _originController = TextEditingController();
   final _destinationController = TextEditingController();
   final _priceController = TextEditingController();
+  final _weightController = TextEditingController();
 
   List<ApiReferenceItem> _products = const [];
   List<ApiReferenceItem> _machines = const [];
@@ -78,6 +80,7 @@ class _EditCargoScreenState extends State<EditCargoScreen> {
     _originController.text = cargo.origin;
     _destinationController.text = cargo.destination;
     _priceController.text = '${cargo.estimatedPrice}';
+    _weightController.text = cargo.weightTons > 0 ? '${cargo.weightTons}' : '';
     _productId = cargo.productId;
     _machineId = cargo.machineId;
     _ostanMabdaId = cargo.ostanMabdaId;
@@ -92,6 +95,7 @@ class _EditCargoScreenState extends State<EditCargoScreen> {
     _originController.dispose();
     _destinationController.dispose();
     _priceController.dispose();
+    _weightController.dispose();
     super.dispose();
   }
 
@@ -114,12 +118,18 @@ class _EditCargoScreenState extends State<EditCargoScreen> {
     setState(() => _submitting = true);
     final price =
         int.tryParse(_priceController.text.trim().replaceAll(',', '')) ?? 0;
+    final weight = TransportApiMapper.parseWeightTons(_weightController.text)!;
+    final description = TransportApiMapper.descriptionWithWeight(
+      _descriptionController.text.trim(),
+      weight,
+    );
 
     final success = await _cargoService.updateCargo(
       cargoId: _cargo!.id,
       title: _titleController.text.trim(),
-      description: _descriptionController.text.trim(),
+      description: description,
       price: price,
+      weightTons: weight,
       productId: _productId,
       machineId: _machineId,
       ostanMabdaId: _ostanMabdaId,
@@ -271,6 +281,27 @@ class _EditCargoScreenState extends State<EditCargoScreen> {
                   validator: (v) => v == null || v.trim().isEmpty
                       ? l10n.destinationRequired
                       : null,
+                ),
+                const SizedBox(height: 16),
+                TextFormField(
+                  controller: _weightController,
+                  maxLength: 20,
+                  keyboardType: const TextInputType.numberWithOptions(
+                    decimal: true,
+                  ),
+                  decoration: InputDecoration(
+                    labelText: l10n.weightTonsLabel,
+                    prefixIcon: const Icon(Icons.scale_outlined),
+                    hintText: '12.5',
+                  ),
+                  validator: (value) {
+                    if (value == null || value.trim().isEmpty) {
+                      return l10n.weightRequired;
+                    }
+                    return TransportApiMapper.parseWeightTons(value) == null
+                        ? l10n.weightInvalid
+                        : null;
+                  },
                 ),
                 const SizedBox(height: 16),
                 TextFormField(
