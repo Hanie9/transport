@@ -295,13 +295,14 @@ class _CoordinatorCargoDetailScreenState
                       ),
                     if (canEdit) const SizedBox(height: 8),
                     if (canMarkDone)
-                      OutlinedButton.icon(
+                      ElevatedButton.icon(
                         onPressed: _busy
                             ? null
                             : () => _updateStatus('تحویل شده'),
                         icon: const Icon(Icons.check_circle_outline),
-                        style: OutlinedButton.styleFrom(
-                          foregroundColor: AppTheme.primary,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppTheme.success,
+                          foregroundColor: Colors.white,
                         ),
                         label: Text(l10n.confirmCompletion),
                       ),

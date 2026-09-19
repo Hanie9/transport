@@ -1,0 +1,363 @@
+% !TeX program = xelatex
+% گزارش پروژه کارشناسی — سامانه لجستیک
+\documentclass[12pt,a4paper,oneside]{report}
+
+\usepackage{geometry}
+\geometry{a4paper,top=22mm,bottom=22mm,right=28mm,left=22mm}
+
+\usepackage{fontspec}
+\usepackage{xcolor}
+\usepackage{colortbl}
+\usepackage{graphicx}
+\usepackage{setspace}
+\usepackage{titlesec}
+\usepackage{fancyhdr}
+\usepackage{booktabs}
+\usepackage{longtable}
+\usepackage{array}
+\usepackage{tabularx}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta,positioning,fit,calc,shapes.geometric,shapes.multipart}
+\usepackage{enumitem}
+\usepackage{caption}
+\usepackage{hyperref}
+
+\usepackage{polyglossia}
+\setmainlanguage{persian}
+\setotherlanguage{english}
+
+\setmainfont{Vazir}[
+  Path=../../assets/fonts/vazir-font-v16.1.0/,
+  Extension=.ttf,
+  UprightFont=*,
+  BoldFont=*-Bold,
+  ItalicFont=*,
+  BoldItalicFont=*-Bold,
+  Script=Arabic
+]
+\newfontfamily\englishfont{Inter Regular}[
+  Path=../../assets/fonts/InterFont/,
+  Extension=.otf,
+  UprightFont=Inter Regular,
+  BoldFont=Inter SemiBold,
+  ItalicFont=Inter Regular Italic,
+  BoldItalicFont=Inter SemiBold Italic,
+  Ligatures=TeX,
+  Scale=MatchLowercase
+]
+\newfontfamily\enidentfont{Inter Medium}[
+  Path=../../assets/fonts/InterFont/,
+  Extension=.otf,
+  UprightFont=Inter Medium,
+  BoldFont=Inter SemiBold,
+  Scale=MatchLowercase
+]
+\setmonofont{AdwaitaMono-Regular.ttf}[
+  Path=/usr/share/fonts/adwaita-mono-fonts/,
+  BoldFont=AdwaitaMono-Bold.ttf,
+  ItalicFont=AdwaitaMono-Italic.ttf,
+  BoldItalicFont=AdwaitaMono-BoldItalic.ttf,
+  Scale=MatchLowercase
+]
+\newfontfamily\arabicfonttt{AdwaitaMono-Regular.ttf}[
+  Path=/usr/share/fonts/adwaita-mono-fonts/,
+  BoldFont=AdwaitaMono-Bold.ttf,
+  Scale=MatchLowercase
+]
+
+\setlength{\headheight}{26pt}
+\setlength{\headsep}{10pt}
+
+\definecolor{brand}{HTML}{0F766E}
+\definecolor{brandlight}{HTML}{14B8A6}
+\definecolor{accent}{HTML}{F97316}
+\definecolor{ink}{HTML}{0F172A}
+\definecolor{muted}{HTML}{64748B}
+\definecolor{soft}{HTML}{F0FDFA}
+\definecolor{tablehead}{HTML}{CCFBF1}
+
+\hypersetup{
+  colorlinks=true,
+  linkcolor=brand,
+  urlcolor=brand,
+  citecolor=brand,
+  pdftitle={گزارش پروژه سامانه لجستیک},
+  pdfauthor={حانیه نباتی و مهیار عامری},
+  pdfsubject={سامانه هوشمند مدیریت حمل‌ونقل بار جاده‌ای}
+}
+
+\setstretch{1.28}
+\setlength{\parskip}{0.32em}
+\setlength{\parindent}{0pt}
+\setlength{\emergencystretch}{3.5em}
+\tolerance=3000
+\hbadness=10000
+\hfuzz=0.8pt
+\vfuzz=0.8pt
+\XeTeXlinebreaklocale "en"
+\XeTeXlinebreakskip=0pt plus 1.5pt minus 0.5pt
+\XeTeXlinebreakpenalty=10
+\raggedbottom
+\clubpenalty=10000
+\widowpenalty=10000
+\displaywidowpenalty=10000
+\renewcommand{\arraystretch}{1.32}
+\setlength{\tabcolsep}{9pt}
+\arrayrulecolor{brand}
+\setlength{\aboverulesep}{0pt}
+\setlength{\belowrulesep}{0pt}
+\setlength{\extrarowheight}{3.2pt}
+\newcommand{\thcell}[1]{\cellcolor{tablehead}\textbf{\textcolor{brand}{#1}}}
+\newcolumntype{Y}{>{\raggedleft\arraybackslash}X}
+\newcolumntype{Z}{>{\centering\arraybackslash}X}
+\setlist[itemize]{topsep=3pt,itemsep=2pt,parsep=0pt,leftmargin=0pt,rightmargin=1.6em,align=right}
+\setlist[enumerate]{topsep=3pt,itemsep=2pt,parsep=0pt,leftmargin=0pt,rightmargin=1.8em,align=right}
+\captionsetup{
+  font=small,
+  labelfont={bf,color=brand},
+  skip=6pt,
+  justification=raggedleft,
+  singlelinecheck=false
+}
+
+\renewcommand{\chaptername}{فصل}
+% در bidi، \filright متن را به چپ می‌برد؛ \filleft تیتر را به راست صفحه می‌چسباند.
+\titleformat{\chapter}[hang]
+  {\normalfont\Large\bfseries\color{brand}\filleft}
+  {\chaptername~\thechapter}{0.7em}{}
+\titleformat{name=\chapter,numberless}[block]
+  {\normalfont\Large\bfseries\color{brand}\filleft}
+  {}{0pt}{}
+\titlespacing*{\chapter}{0pt}{4pt}{10pt}
+\titleformat{\section}[hang]
+  {\normalfont\normalsize\bfseries\color{brand}\filleft}
+  {\thesection}{0.55em}{}
+\titlespacing*{\section}{0pt}{11pt}{5pt}
+\titleformat{\subsection}[hang]
+  {\normalfont\normalsize\bfseries\color{ink}\filleft}
+  {\thesubsection}{0.5em}{}
+\titlespacing*{\subsection}{0pt}{8pt}{3pt}
+
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[R]{\small\textcolor{muted}{دانشگاه کاشان}}
+\fancyhead[L]{\small\textcolor{muted}{سامانه لجستیک}}
+\fancyfoot[C]{\thepage}
+\renewcommand{\headrulewidth}{0.35pt}
+\renewcommand{\footrulewidth}{0pt}
+\fancypagestyle{plain}{%
+  \fancyhf{}
+  \fancyhead[R]{\small\textcolor{muted}{دانشگاه کاشان}}
+  \fancyhead[L]{\small\textcolor{muted}{سامانه لجستیک}}
+  \fancyfoot[C]{\thepage}
+  \renewcommand{\headrulewidth}{0.35pt}
+}
+
+% فهرست فقط در سطح فصل تا در یک صفحه جا شود
+\setcounter{tocdepth}{0}
+\makeatletter
+\newcommand{\compactcontents}[2]{%
+  \clearpage
+  \thispagestyle{fancy}
+  \pdfbookmark[0]{#1}{#2}
+  \noindent{\Large\bfseries\color{brand}#1}\par
+  \vspace{3pt}
+  \noindent\textcolor{brand}{\rule{\linewidth}{0.9pt}}\par
+  \vspace{0.85em}
+  \begingroup
+    \setstretch{1.05}
+    \setlength{\parskip}{0pt}
+    \@starttoc{#2}%
+  \endgroup
+}
+\renewcommand*\l@chapter[2]{%
+  \ifnum \c@tocdepth >\m@ne
+    \addpenalty{-\@highpenalty}%
+    \par\vspace{0.42em}%
+    \noindent
+    \begingroup
+      \renewcommand{\numberline}[1]{%
+        \colorbox{brand}{\textcolor{white}{\small\bfseries\strut~~##1~~}}%
+        \hspace{0.65em}%
+      }%
+      \setlength{\fboxsep}{3.4pt}%
+      \colorbox{soft}{%
+        \bgroup\setRTL
+        \begin{minipage}{\dimexpr\linewidth-2\fboxsep}
+          \vspace{2.4pt}
+          {\bfseries\color{brand}#1}%
+          \nobreak\hfill
+          {\bfseries\color{brand}#2}%
+          \vspace{2.4pt}
+        \end{minipage}%
+        \egroup
+      }%
+    \endgroup
+    \par
+    \penalty\@highpenalty
+  \fi
+}
+\newcommand{\printlof}{\@starttoc{lof}}
+\newcommand{\printlot}{\@starttoc{lot}}
+\makeatother
+
+\newcommand{\en}[1]{\textenglish{\enidentfont\hyphenchar\font=-1\relax\textcolor{brand}{#1}}}
+\newcommand{\api}[1]{\textenglish{\ttfamily\scriptsize\hyphenchar\font=-1\relax\textcolor{brand}{\mbox{#1}}}}
+\newcommand{\site}[1]{%
+  \textenglish{%
+    \ttfamily\small
+    \hyphenchar\font=-1\relax
+    \spaceskip=0pt\relax
+    \xspaceskip=0pt\relax
+    \textcolor{brand}{\href{#1}{\mbox{#1}}}%
+  }%
+}
+\newcommand{\siteline}[1]{%
+  \par\vspace{0.28em}%
+  \noindent
+  {\fboxsep=5.5pt
+  \colorbox{soft}{%
+    \makebox[\dimexpr\linewidth-2\fboxsep][l]{%
+      \strut
+      \textenglish{%
+        \ttfamily\small
+        \hyphenchar\font=-1\relax
+        \textcolor{brand}{\href{#1}{\mbox{#1}}}%
+      }%
+    }%
+  }}%
+  \par\vspace{0.22em}\nopagebreak
+}
+\newcommand{\faarr}{\hspace{0.28em}\textcolor{brand}{$\leftarrow$}\hspace{0.28em}}
+% گرهٔ TikZ جعبهٔ افقی LTR است؛ minipage باید قبل از آغاز، RTL شود.
+\newcommand{\fanode}[2]{%
+  \bgroup\setRTL
+  \begin{minipage}{#1}%
+    \centering
+    #2%
+  \end{minipage}%
+  \egroup
+}
+\newcommand{\appname}{لجستیک}
+
+\begin{document}
+
+% ─────────────────────────────────────────────
+% جلد (یک صفحه)
+% ─────────────────────────────────────────────
+\thispagestyle{empty}
+\enlargethispage{6mm}
+\noindent\textcolor{brand}{\rule{\linewidth}{1.15pt}}\\[-1.6pt]
+\noindent\textcolor{brandlight}{\rule{\linewidth}{0.4pt}}
+
+\vspace{3mm}
+\begin{center}
+  {\large\bfseries\textcolor{brand}{بسمه تعالی}}\\[3.2mm]
+  \includegraphics[height=26mm]{kashan-logo.pdf}\\[2.4mm]
+  {\Large\bfseries دانشگاه کاشان}\\[1pt]
+  {\large دانشکده مهندسی برق و کامپیوتر}\\[0.5pt]
+  {\normalsize\textcolor{muted}{گروه مهندسی کامپیوتر}}
+\end{center}
+
+\vspace{5.5mm}
+\begin{center}
+\begin{tikzpicture}
+  \node[
+    draw=brand,
+    line width=0.65pt,
+    rounded corners=5pt,
+    fill=soft,
+    inner xsep=14pt,
+    inner ysep=10pt,
+  ] {%
+    \fanode{0.78\textwidth}{%
+      {\normalsize\textcolor{muted}{گزارش پروژه کارشناسی مهندسی کامپیوتر}}\\[0.4em]
+      {\textcolor{brandlight}{\rule{3.4cm}{0.45pt}}}\\[0.5em]
+      {\LARGE\bfseries\textcolor{brand}{سامانه هوشمند مدیریت}}\\[0.08em]
+      {\LARGE\bfseries\textcolor{brand}{حمل‌ونقل بار جاده‌ای}}\\[0.32em]
+      {\Large\bfseries\textcolor{brandlight}{\appname}}\\[0.28em]
+      {\small\textcolor{muted}{نسخهٔ موبایل، وب پیش‌رونده و سرویس‌دهنده}}
+    }%
+  };
+\end{tikzpicture}
+\end{center}
+
+\vspace{5.5mm}
+\begin{center}
+  {\small\textcolor{muted}{استاد راهنما}}\\[1pt]
+  {\large\textbf{دکتر سید مرتضی بابامیر}}
+\end{center}
+
+\vspace{4mm}
+{\setlength{\tabcolsep}{8pt}%
+\begin{tabularx}{\textwidth}{@{}>{\centering\arraybackslash}p{0.34\textwidth} Y Y@{}}
+\toprule
+\thcell{نقش} & \thcell{نام} & \thcell{شماره دانشجویی} \\
+\midrule
+فرانت‌اند & حانیه نباتی & \textenglish{\ttfamily 40121160028} \\
+بک‌اند و پایگاه داده & مهیار عامری & \textenglish{\ttfamily 40121160021} \\
+\bottomrule
+\end{tabularx}}
+
+\vspace{5mm}
+\begin{center}
+  {\normalsize کارشناسی مهندسی کامپیوتر}
+  \textcolor{brandlight}{\hspace{0.35em}{\large$\cdot$}\hspace{0.35em}}
+  {\normalsize شهریور ۱۴۰۵}
+\end{center}
+
+\vspace{0pt plus 1fill}
+\begin{center}
+\small\textcolor{muted}{شرح طراحی، پیاده‌سازی و استقرار سامانه}
+\end{center}
+\vspace{3mm}
+\noindent\textcolor{brandlight}{\rule{\linewidth}{0.4pt}}\\[-1.6pt]
+\noindent\textcolor{brand}{\rule{\linewidth}{1.15pt}}
+\clearpage
+
+% ─────────────────────────────────────────────
+\chapter*{چکیده}
+\addcontentsline{toc}{chapter}{چکیده}
+
+سامانهٔ \appname\ یک سکوی نرم‌افزاری برای مدیریت حمل‌ونقل بار جاده‌ای است که دو نقش اصلی اکوسیستم حمل را به یکدیگر متصل می‌کند: \textbf{راننده} و \textbf{متصدی حمل‌ونقل} (اپراتور). متصدی بار را با مشخصات کالا، نوع ماشین، وزن، قیمت، مبدأ و مقصد ثبت می‌کند؛ راننده بارهای متناسب با ماشین خود را می‌بیند، در صورت نزدیکی جغرافیایی پیشنهاد نزدیک دریافت می‌کند، بار را می‌پذیرد و تا مبدأ و سپس مقصد مسیریابی می‌شود. تکمیل مأموریت نیازمند تأیید هر دو طرف است تا وضعیت بار از تخصیص به تحویل قطعی تغییر کند.
+
+سمت کاربر با چارچوب فلاتر پیاده‌سازی شده و علاوه بر اندروید، به صورت وب پیش‌رونده نیز قابل نصب است. رابط کاربری دوزبانه (فارسی و انگلیسی)، راست‌به‌چپ، دارای حالت تاریک، ورود زیست‌سنجی و نشست امن مبتنی بر ژتون دسترسی است. نقشه و مسیریابی خیابانی با خدمات نشان یکپارچه شده است.
+
+سمت سرور با جنگو و لایهٔ رست فریم‌ورک نوشته شده، احراز هویت را با ژتون دسترسی انجام می‌دهد و داده‌ها را از طریق نگاشت شیء-رابطه‌ای جنگو روی پایگاه دادهٔ پیش‌فرض اس‌کیو‌لایت ذخیره می‌کند. ارتباط کلاینت و سرور بر اساس قرارداد وب‌سرویس روی میزبان استقرار لیارا انجام می‌شود.
+
+\vspace{1em}
+\noindent\textbf{واژگان کلیدی:} حمل‌ونقل جاده‌ای، لجستیک، فلاتر، جنگو، \textenglish{DRF}، \textenglish{SQLite}، \textenglish{JWT}، وب پیش‌رونده، مسیریابی نشان.
+
+\compactcontents{فهرست مطالب}{toc}
+
+\input{ch01-intro}
+\input{ch02-analysis}
+\input{ch03-architecture}
+\input{ch04-frontend}
+\input{ch05-backend}
+\input{ch06-database}
+\input{ch07-api}
+\input{ch08-deploy}
+\input{ch09-conclusion}
+
+\clearpage
+\chapter*{چکیده انگلیسی}
+\addcontentsline{toc}{chapter}{چکیده انگلیسی}
+\begin{english}
+\setLTR
+\begin{center}
+{\Large\bfseries Logistics: A Smart Road Freight Management System}\\[1em]
+Hanieh Nabati (Frontend) \quad Mahyar Ameri (Backend \& Database)\\
+Supervisor: Dr.\ Seyed Morteza Babamir\\
+University of Kashan, Faculty of Electrical and Computer Engineering
+\end{center}
+
+\vspace{1em}
+\noindent
+Logistics is a client--server platform that connects road-freight \emph{drivers} and \emph{transport operators}. Operators register cargo with product type, vehicle class, weight, price and origin/destination. Drivers browse matching open cargos, receive GPS-based nearby suggestions, accept a job, navigate street-level routes with Neshan, and complete the mission only after dual confirmation. The mobile/web client is built with Flutter (including a Progressive Web App). The backend is implemented in Django and Django REST Framework, persists data with the Django ORM on SQLite3, and authenticates clients with JWT. The system is deployed at \site{https://tran-develoop.liara.run}\mbox{.}
+
+\vspace{0.8em}
+\noindent\textbf{Keywords:} road freight, logistics, Flutter, Django, DRF, SQLite, JWT, PWA, Neshan routing.
+\end{english}
+
+\end{document}

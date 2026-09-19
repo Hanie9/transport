@@ -1,0 +1,96 @@
+\chapter[وب‌سرویس‌ها و امنیت]{قرارداد وب‌سرویس‌ها و امنیت}
+
+این فصل قرارداد عملی میان کلاینت فلاتر و سرور جنگو را مستند می‌کند. آدرس پایه در محیط استقرار آموزشی به صورت زیر است:
+\siteline{https://tran-develoop.liara.run}
+
+\section{حساب کاربری}
+
+\begin{table}[ht]
+\centering
+\caption{نقاط پایانی حساب}
+\label{tab:api-accounts}
+\begin{tabularx}{\textwidth}{@{}c >{\raggedleft\arraybackslash}p{0.50\textwidth} c Y@{}}
+\toprule
+\thcell{روش} & \thcell{مسیر} & \thcell{احراز} & \thcell{شرح} \\
+\midrule
+\api{POST} & \api{/api/accounts/login} & خیر & ورود؛ پاسخ کاربر و ژتون \\
+\api{POST} & \api{/api/accounts/register/} & خیر & ایجاد حساب \\
+\api{POST} & \api{/api/accounts/logout} & بله & خروج سمت سرور \\
+\api{GET} & \api{/api/accounts/profile/} & بله & خواندن پروفایل \\
+\api{PUT} & \api{/api/accounts/profile/} & بله & به‌روزرسانی نام، پلاک، ماشین \\
+\api{POST} & \api{/api/accounts/change-password/} & بله & تغییر رمز \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+بدنهٔ ورود حداقل شامل \en{phone\_number} و \en{password} است. پاسخ موفق کلیدهای \en{user} و \en{tokens.access} دارد. ثبت‌نام علاوه بر نام و رمز، \en{password\_confirm} و \en{user\_type} (\en{driver} یا \en{operator}) می‌خواهد. راننده می‌تواند \en{machine\_id} و \en{ostan\_id} بفرستد.
+
+\section{بار متصدی}
+
+\begin{table}[ht]
+\centering
+\caption{نقاط پایانی بار برای متصدی}
+\label{tab:api-operator}
+\begin{tabularx}{\textwidth}{@{}c >{\raggedleft\arraybackslash}p{0.52\textwidth} Y@{}}
+\toprule
+\thcell{روش} & \thcell{مسیر} & \thcell{شرح} \\
+\midrule
+\api{GET} & \api{/api/operator/bars/} & فهرست بارهای متصدی جاری \\
+\api{POST} & \api{/api/operator/bars/create/} & ایجاد بار \\
+\api{GET} & \api{/api/operator/bars/<id>/} & جزئیات \\
+\api{PATCH} & \api{/api/operator/bars/<id>/update/} & ویرایش \\
+\api{DELETE} & \api{/api/operator/bars/<id>/delete/} & حذف \\
+\api{POST} & \api{/api/operator/bars/<id>/complete/} & تأیید تکمیل متصدی \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+بدنهٔ ایجاد/ویرایش با فیلدهای \en{title}، \en{description}، \en{price}، \en{weight}، \en{product}، \en{machine}، \en{ostan\_mabda}، \en{ostan\_maghsad}، \en{address\_mabda} و \en{address\_maghsad} هم‌خوان است. مختصات اختیاری‌اند.
+
+\section{بار راننده}
+
+\begin{table}[ht]
+\centering
+\caption{نقاط پایانی بار برای راننده}
+\label{tab:api-driver}
+\begin{tabularx}{\textwidth}{@{}c >{\raggedleft\arraybackslash}p{0.42\textwidth} Y Y@{}}
+\toprule
+\thcell{روش} & \thcell{مسیر} & \thcell{پرس‌وجو} & \thcell{شرح} \\
+\midrule
+\api{GET} & \api{/api/driver/bars/} & استان، قیمت، صفحه & بارهای باز قابل پذیرش \\
+\api{GET} & \api{/api/driver/bars/assigned/} & صفحه & مأموریت‌های تخصیص‌یافته \\
+\api{POST} & \api{/api/driver/bars/<id>/accept/} & --- & پذیرش \\
+\api{POST} & \api{/api/driver/bars/<id>/complete/} & --- & تأیید تکمیل راننده \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+پذیرش و تکمیل بدنه ندارند. منطق روی هویت ژتون و وضعیت فعلی بار است.
+
+\section{دادهٔ مرجع}
+
+سه مسیر \en{GET} بدون پیچیدگی دامنه:
+
+\begin{itemize}
+  \item \en{/api/products/}
+  \item \en{/api/machines/}
+  \item \en{/api/ostans/}
+\end{itemize}
+
+هر مورد حداقل شناسه و نام دارد تا فرم‌های فلاتر فهرست کشویی بسازند.
+
+\section{امنیت ارتباط}
+
+همهٔ مسیرهای پس از ورود با \textenglish{HTTPS} و سرآیند \api{Authorization: Bearer} حفاظت می‌شوند. ژتون در \textenglish{Flutter Secure Storage} می‌ماند نه در \textenglish{SharedPreferences}. کلاینت وب همان الگو را با محدودیت‌های ذخیره‌سازی مرورگر رعایت می‌کند.
+
+نقش در کلاینت فقط برای هدایت رابط کاربری است؛ تصمیم نهایی مجوز در سرور گرفته می‌شود. اگر راننده مسیر ایجاد بار متصدی را صدا بزند، \textenglish{DRF} باید ۴۰۳ بدهد.
+
+رمز عبور هرگز در پاسخ \textenglish{JSON} برنمی‌گردد. پلاک و کد ملی فقط برای کاربر مالک پروفایل در \api{GET /api/accounts/profile/} دیده می‌شود.
+
+مهلت بی‌فعالیتی ۱۵ دقیقه‌ای در کلاینت لایهٔ دفاعی اضافه است و جایگزین انقضای ژتون سرور نمی‌شود.
+
+\section{صفحه‌بندی و سازگاری}
+
+پاسخ‌های فهرستی پوششی روی \en{results} دارند. کلاینت تا وقتی \en{next} موجود باشد یا \en{current\_page} از \en{total\_pages} کوچک‌تر باشد، صفحه را افزایش می‌دهد. این رفتار برای مأموریت‌های راننده حیاتی است تا صفحهٔ دوم حاوی بارهای \en{done} از قلم نیفتد.
+
+برای وزن، کلاینت هم فیلد عددی جدید و هم پسوند متنی قدیمی را می‌فهمد تا استقرار تدریجی سرور بدون شکستن اپلیکیشن ممکن باشد.

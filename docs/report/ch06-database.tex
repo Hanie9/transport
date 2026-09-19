@@ -1,0 +1,203 @@
+\chapter[پایگاه داده]{پایگاه داده و نگاشت شیء-رابطه‌ای}
+
+داده‌های سامانه در پایگاه \textenglish{SQLite3} پیش‌فرض جنگو ذخیره می‌شوند و تمام خواندن و نوشتن از مسیر \textenglish{ORM} جنگو انجام می‌گیرد؛ در لایهٔ کاربرد دستور \textenglish{SQL} خام برای عملیات اصلی بار و حساب نوشته نشده است.
+
+\section{چرا SQLite و ORM}
+
+برای پروژهٔ کارشناسی با بار همزمان محدود، \textenglish{SQLite} مزایای مشخصی دارد: بدون فرایند جدا، پشتیبان‌گیری با کپی یک فایل، و سازگاری کامل با مهاجرت‌های جنگو. \textenglish{ORM} جنگو این انتزاع را می‌دهد که مدل پایتون منبع حقیقت طرح باشد. دستور \en{makemigrations} تغییر فیلد را به فایل مهاجرت تبدیل می‌کند و \en{migrate} آن را روی \en{db.sqlite3} اعمال می‌کند. در نتیجه طرح پایگاه و کد پایتون از هم دور نمی‌افتند.
+
+اگر در آینده تعداد تراکنش‌های همزمان بالا برود، کافی است \en{DATABASES} به \textenglish{PostgreSQL} عوض شود. مدل‌ها، سریالایزرها و ویوها بدون بازنویسی منطق باقی می‌مانند.
+
+\section{مدل‌های دامنه}
+
+طرح منطقی مطابق شکل~\ref{fig:er} است.
+
+\begin{figure}[ht]
+\centering
+\begin{tikzpicture}[
+  font=\small,
+  ent/.style={
+    rectangle split,
+    rectangle split parts=2,
+    rectangle split part fill={tablehead,soft},
+    rectangle split draw splits=false,
+    draw=brand,
+    line width=0.85pt,
+    rounded corners=3pt,
+    inner xsep=5pt,
+    inner ysep=4.5pt,
+  },
+  line/.style={brand, line width=0.7pt},
+  card/.style={font=\tiny, inner sep=1.8pt, fill=white, text=brand},
+]
+% حساب کاربری
+\node[ent] (user) at (-3.2, 3.05) {%
+  \fanode{3.05cm}{\textbf{\textenglish{User}}\\کاربر}
+  \nodepart{two}
+  \fanode{3.05cm}{نام، موبایل، نقش\\رمز درهم‌شده}
+};
+\node[ent] (drv) at (3.2, 3.05) {%
+  \fanode{3.05cm}{\textbf{\textenglish{DriverInfo}}\\اطلاعات راننده}
+  \nodepart{two}
+  \fanode{3.05cm}{پلاک و مدل\\ماشین و استان}
+};
+% هستهٔ دامنه
+\node[ent] (bar) at (-3.2, 0) {%
+  \fanode{3.05cm}{\textbf{\textenglish{Bar}}\\بار}
+  \nodepart{two}
+  \fanode{3.05cm}{عنوان، قیمت، وزن\\وضعیت و نشانی}
+};
+\node[ent] (asg) at (3.2, 0) {%
+  \fanode{3.05cm}{\textbf{\textenglish{Assign}}\\تخصیص}
+  \nodepart{two}
+  \fanode{3.05cm}{تأیید راننده\\تأیید متصدی}
+};
+% داده‌های مرجع — زیر کل عرض نمودار
+\node[ent] (prd) at (-3.2, -3.05) {%
+  \fanode{2.55cm}{\textbf{\textenglish{Product}}\\کالا}
+  \nodepart{two}
+  \fanode{2.55cm}{نوع کالا}
+};
+\node[ent] (mch) at (0, -3.05) {%
+  \fanode{2.55cm}{\textbf{\textenglish{Machine}}\\ماشین}
+  \nodepart{two}
+  \fanode{2.55cm}{نوع بارگیر}
+};
+\node[ent] (ost) at (3.2, -3.05) {%
+  \fanode{2.55cm}{\textbf{\textenglish{Ostan}}\\استان}
+  \nodepart{two}
+  \fanode{2.55cm}{نام استان}
+};
+% روابط
+\draw[line] (user) -- node[card,above] {\textenglish{1 : 0..1}} (drv);
+\draw[line] (user) -- node[card,left] {\fanode{1.4cm}{متصدی\\یک به چند}} (bar);
+\draw[line] (drv) -- node[card,right] {\fanode{1.25cm}{راننده}} (asg);
+\draw[line] (bar) -- node[card,above] {\textenglish{1 : 0..1}} (asg);
+% اتصال مرجع‌ها به بار، بدون عبور از جعبه‌ها
+\coordinate (hub) at ($(bar.south)+(0,-0.42)$);
+\draw[line] (prd) -- (hub) -- (bar);
+\draw[line] (mch.north) -- (mch.north |- hub) -- (hub);
+\draw[line] (ost.north) -- (ost.north |- hub) --
+  node[card,very near start,above] {\fanode{1.55cm}{مبدأ و مقصد}} (hub);
+\node[card] at ($(prd.north)!0.5!(hub)+(0.02,0)$) {\textenglish{N : 1}};
+\end{tikzpicture}
+\caption{نمای موجودیت--رابطهٔ منطقی سامانه}
+\label{fig:er}
+\end{figure}
+
+\subsection{کاربر}
+کاربر با شماره موبایل یکتا شناسایی می‌شود. رمز عبور فقط به صورت درهم‌شدهٔ جنگو ذخیره می‌گردد. دو بولین \en{is\_driver} و \en{is\_operator} نقش را مشخص می‌کنند. نام، نام خانوادگی و کد ملی فیلدهای پروفایل‌اند.
+
+\subsection{اطلاعات راننده}
+پروفایل راننده به کاربر و به رکورد ماشین و استان وصل است. پلاک در قالب قابل تجزیه برای ویجت پلاک ایرانی ذخیره می‌شود. مدل خودرو متن آزاد است. ظرفیت تناژ در صورت پشتیبانی سرور در همین پروفایل قابل گسترش است.
+
+\subsection{بار}
+جدول بار هستهٔ دامنه است. فیلدهای اصلی در جدول~\ref{tab:bar-fields} آمده‌اند. متصدی با کلید خارجی به کاربر محدود می‌شود تا هر متصدی فقط بار خودش را ببیند.
+
+\begin{table}[!ht]
+\centering
+\caption{مهم‌ترین فیلدهای مدل بار}
+\label{tab:bar-fields}
+\setlength{\tabcolsep}{7pt}
+\setlength{\fboxsep}{3.2pt}
+\renewcommand{\arraystretch}{1.12}
+\newcommand{\innerw}{\dimexpr\linewidth-2\fboxsep\relax}
+\newcommand{\band}[2]{%
+  \par\noindent
+  \colorbox{#1}{#2}\par
+}
+\newcommand{\fh}[1]{%
+  \vspace{0.28em}%
+  \band{brand}{\fanode{\innerw}{\textcolor{white}{\small\bfseries #1}}}%
+}
+\newcommand{\crow}[4]{%
+  \nointerlineskip
+  \band{#1}{%
+    \bgroup\setRTL
+    \begin{tabularx}{\innerw}{@{}
+      >{\centering\arraybackslash}X
+      >{\centering\arraybackslash}X
+      >{\raggedleft\arraybackslash}X
+    @{}}
+    #2 & #3 & #4 \\
+    \end{tabularx}%
+    \egroup
+  }%
+}
+\fh{مشخصات بار}
+\crow{tablehead}{\textbf{\textcolor{brand}{فیلد مدل}}}{\textbf{\textcolor{brand}{نوع}}}{\textbf{\textcolor{brand}{توضیح}}}
+\crow{white}{\en{title}}{متن}{عنوان بار}
+\crow{soft}{\en{description}}{متن بلند}{شرح بار}
+\crow{white}{\en{price}}{عدد صحیح}{قیمت به ریال}
+\crow{soft}{\en{weight}}{اعشاری}{وزن به تن}
+\fh{کلیدهای خارجی}
+\crow{white}{\en{product}}{کلید خارجی}{نوع کالا}
+\crow{soft}{\en{machine}}{کلید خارجی}{نوع بارگیر}
+\fh{مکان}
+\crow{white}{\en{ostan\_mabda}}{کلید خارجی}{استان مبدأ}
+\crow{soft}{\en{ostan\_maghsad}}{کلید خارجی}{استان مقصد}
+\crow{white}{\en{address\_mabda}}{متن}{نشانی مبدأ}
+\crow{soft}{\en{address\_maghsad}}{متن}{نشانی مقصد}
+\crow{white}{\en{latitude\_*}}{اعشاری}{مختصات نقشه، اختیاری}
+\fh{وضعیت و زمان}
+\crow{white}{\en{status}}{انتخاب}{باز، تخصیص، تحویل یا لغو}
+\crow{soft}{\en{created\_at}}{زمان}{ایجاد خودکار}
+\end{table}
+
+\subsection{تخصیص}
+رابطهٔ یک‌به‌یک یا یک‌به‌یک ناقص با بار: هر بار حداکثر یک تخصیص فعال دارد. فیلدهای \en{confirm\_driver} و \en{confirm\_operator} پیشرفت تکمیل را نگه می‌دارند. نام و تلفن راننده می‌تواند از کاربر مرتبط خوانده شود یا در پاسخ سریالایزر تزریق شود.
+
+\subsection{جداول مرجع}
+کالا، ماشین و استان فهرست‌های نسبتاً ثابت‌اند. کلاینت آن‌ها را در فرم‌ها به صورت شناسه ارسال می‌کند تا از متن آزاد و ناسازگار جلوگیری شود.
+
+\section{قیدها و صحت داده}
+
+در سطح مدل، شماره موبایل یکتا است. وضعیت بار فقط از مجموعهٔ مجاز انتخاب می‌شود. پذیرش بار با \en{select\_for\_update} روی ردیف بار از تخصیص همزمان دو راننده جلوگیری می‌کند. حذف بار در حالت تخصیص‌یافته می‌تواند در لایهٔ ویو ممنوع شود تا مأموریت فعال از بین نرود.
+
+مهاجرت‌ها تاریخچهٔ طرح را نگه می‌دارند؛ افزودن فیلد \en{weight} بدون شکستن توضیحات قدیمی نمونه‌ای از تکامل تدریجی طرح است که کلاینت با خواندن هر دو منبع آن را تحمل می‌کند.
+
+\section{نمونهٔ عملیات ORM}
+
+به جای نوشتن \textenglish{SQL}، ویوها از زنجیرهٔ queryset استفاده می‌کنند. نمونهٔ مفهومی فهرست بار راننده:
+
+\medskip
+\begingroup
+\setlength{\fboxsep}{8pt}
+\setlength{\fboxrule}{0.4pt}
+\noindent\fcolorbox{brandlight}{soft}{%
+  \begin{minipage}{\dimexpr\linewidth-16pt-0.8pt}
+  \begin{english}
+  \ttfamily\scriptsize
+  \raggedright
+  \texttt{Bar.objects.filter(status="open")}\\
+  \texttt{.filter(ostan\_mabda=ostan\_id)}\\
+  \texttt{.filter(price\_\_gte=min\_price)}\\
+  \texttt{.select\_related("product", "machine")}\\
+  \texttt{.order\_by("-created\_at")}
+  \end{english}
+  \end{minipage}}
+\endgroup
+
+\medskip
+پذیرش در تراکنش:
+
+\medskip
+\begingroup
+\setlength{\fboxsep}{8pt}
+\setlength{\fboxrule}{0.4pt}
+\noindent\fcolorbox{brandlight}{soft}{%
+  \begin{minipage}{\dimexpr\linewidth-16pt-0.8pt}
+  \begin{english}
+  \ttfamily\scriptsize
+  \raggedright
+  \texttt{with transaction.atomic():}\\
+  \texttt{\hspace*{1.2em}bar = Bar.objects.select\_for\_update().get(pk=pk)}\\
+  \texttt{\hspace*{1.2em}Assign.objects.create(bar=bar, driver=request.user)}\\
+  \texttt{\hspace*{1.2em}bar.status = "assign"}\\
+  \texttt{\hspace*{1.2em}bar.save(update\_fields=["status"])}
+  \end{english}
+  \end{minipage}}
+\endgroup
+\medskip
+
+این سبک خوانایی، جلوگیری از تزریق \textenglish{SQL}، و هماهنگی با مهاجرت‌ها را هم‌زمان تأمین می‌کند.

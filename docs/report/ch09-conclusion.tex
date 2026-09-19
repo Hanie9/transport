@@ -1,0 +1,83 @@
+\chapter[نتیجه‌گیری]{نتیجه‌گیری و پیشنهادها}
+\enlargethispage{5\baselineskip}
+
+\section{جمع‌بندی}
+
+سامانهٔ \appname\ یک زنجیرهٔ کامل از ثبت بار تا تحویل را برای حمل جاده‌ای پیاده کرده است. در سمت کاربر، فلاتر تجربهٔ دوزبانه، امن و چندسکویی (اندروید و وب پیش‌رونده) فراهم می‌کند و نقشهٔ نشان مسیر واقعی را به راننده می‌دهد. در سمت سرور، جنگو و \textenglish{DRF} قرارداد \textenglish{REST} نقش‌محور را با ژتون \textenglish{JWT} عرضه می‌کنند و \textenglish{ORM} جنگو همهٔ تغییرات را روی \textenglish{SQLite3} پایدار می‌سازد.
+
+تقسیم کار روشن بوده است: \textbf{حانیه نباتی} کل لایهٔ ارائه و اتصال کلاینت، و \textbf{مهیار عامری} خدمت، مجوزها و پایگاه داده را بر عهده داشته‌اند. هدایت علمی پروژه با \textbf{دکتر سید مرتضی بابامیر} انجام شده است.
+
+دستاورد فنی مهم، یکسان بودن منبع حقیقت وضعیت بار در سرور و ترجمهٔ دقیق آن در کلاینت است؛ به ویژه تکمیل دو تأیید که جلوی بستن یک‌طرفهٔ مأموریت را می‌گیرد.
+
+\section{آموخته‌ها}
+
+\begin{itemize}
+  \item قرارداد \textenglish{API} باید پیش از جزئیات ویجت تثبیت شود؛ نگاشت متمرکز در کلاینت تغییر فیلد سرور را تحمل‌پذیر کرد.
+  \item نقش فقط در رابط کاربری کافی نیست؛ بدون مجوز \textenglish{DRF} هر مسیر قابل جعل است.
+  \item \textenglish{SQLite} برای شروع درست است اگر مهاجرت‌ها منظم باشند و مسیر ارتقا به موتور دیگر باز بماند.
+  \item وب پیش‌رونده بدون نسخه‌بندی کش، به‌روزرسانی را از کاربر دریغ می‌کند.
+\end{itemize}
+
+\section{پیشنهاد کارهای آینده}
+
+\begin{enumerate}
+  \item اتصال \textenglish{FCM} و نقطهٔ پایانی ثبت دستگاه در جنگو برای اعلام بار جدید و تغییر وضعیت.
+  \item ارائهٔ موقعیت لحظه‌ای راننده به متصدی (با رضایت و کنترل حریم خصوصی) و فهرست رانندگان نزدیک واقعی.
+  \item نقطهٔ تازه‌سازی ژتون و فهرست سیاه خروج.
+  \item جایگزینی \textenglish{SQLite} با \textenglish{PostgreSQL} در تولید و پشتیبان‌گیری دوره‌ای.
+  \item موتور قیمت‌گذاری سمت سرور بر اساس مسافت نشان و نوع ماشین.
+  \item پرداخت و تسویه، و تاریخچهٔ مالی مأموریت.
+  \item آزمون بار و نظارت تأخیر \textenglish{API} روی لیارا.
+\end{enumerate}
+
+\section{سخن پایانی}
+
+هدف آموزشی پروژه، تمرین مهندسی نرم‌افزار سرتاسری بود: مدل دامنه، واسط پایدار، کلاینت چندسکویی، و استقرار قابل نمایش. سامانه در وضعیت فعلی برای سناریوی آموزشی و بهره‌برداری محدود عملیاتی آماده است و مسیر رشد آن بدون شکستن قرارداد فعلی قابل تعریف است.
+
+\clearpage
+\setLTRbibitems
+\begin{sloppypar}
+\begin{thebibliography}{9}
+
+\bibitem{django}
+Django Software Foundation.
+\newblock \textit{Django documentation}.
+\newline\site{https://docs.djangoproject.com/}
+
+\bibitem{drf}
+Encode.
+\newblock \textit{Django REST framework}.
+\newline\site{https://www.django-rest-framework.org/}
+
+\bibitem{jwt}
+Open Worldwide Application Security Project.
+\newblock \textit{JSON Web Token}.
+\newline\site{https://jwt.io/}
+
+\bibitem{simplejwt}
+Jazzband.
+\newblock \textit{Simple JWT for Django REST framework}.
+\newline{\footnotesize\site{https://django-rest-framework-simplejwt.readthedocs.io/}}
+
+\bibitem{sqlite}
+Hipp, D.~R.
+\newblock \textit{SQLite documentation}.
+\newline\site{https://www.sqlite.org/docs.html}
+
+\bibitem{flutter}
+Google.
+\newblock \textit{Flutter documentation}.
+\newline\site{https://docs.flutter.dev/}
+
+\bibitem{neshan}
+Neshan Platform.
+\newblock \textit{Maps and routing documentation}.
+\newline\site{https://platform.neshan.org/}
+
+\bibitem{pwa}
+Mozilla Developer Network.
+\newblock \textit{Progressive web apps}.
+\newline{\scriptsize\textenglish{\ttfamily\hyphenchar\font=-1\relax\textcolor{brand}{\href{https://developer.mozilla.org/docs/Web/Progressive_web_apps}{\mbox{https://developer.mozilla.org/docs/Web/Progressive\_web\_apps}}}}}
+
+\end{thebibliography}
+\end{sloppypar}

@@ -1,0 +1,79 @@
+\chapter[معماری سامانه]{معماری کلی سامانه}
+
+\section{سبک معماری}
+
+سامانه در الگوی \textbf{کلاینت--سرور} با واسط \textenglish{REST} پیاده‌سازی شده است. کلاینت هیچ منطق پایداری بلندمدت کسب‌وکار را در خود نگه نمی‌دارد؛ منبع حقیقت، پایگاه دادهٔ جنگو است. کلاینت برای تجربهٔ کاربری، ژتون و تصویر فشردهٔ کاربر را به صورت امن ذخیره می‌کند و در صورت قطع شبکه می‌تواند پوستهٔ \textenglish{PWA} را از کش نمایش دهد، اما عملیات بار همیشه از سرور می‌آید.
+
+یک حالت توسعه با دادهٔ ساختگی (\en{USE\_MOCK\_API}) در کلاینت باقی مانده تا رابط کاربری بدون سرور قابل نمایش باشد. در نسخهٔ عملیاتی این پرچم خاموش است و آدرس پایه برابر میزبان لیارا است.
+
+\section{نمای منطقی لایه‌ها}
+
+شکل~\ref{fig:arch} جریان اصلی را نشان می‌دهد.
+
+\begin{figure}[ht]
+\centering
+\begin{tikzpicture}[
+  font=\small,
+  box/.style={draw=brand, very thick, rounded corners=3pt, inner sep=7pt, fill=soft},
+  arr/.style={-{Latex[length=2.6mm]}, very thick, brand}
+]
+\node[box] (ui) {\fanode{4.2cm}{رابط کاربری فلاتر\\صفحات راننده و متصدی}};
+\node[box, below=9mm of ui] (svc) {\fanode{4.2cm}{سرویس‌های کلاینت\\\textenglish{Auth / Cargo / ApiClient}}};
+\node[box, below=9mm of svc] (api) {\fanode{4.2cm}{\textenglish{Django REST Framework}\\مجوز نقش و \textenglish{JWT}}};
+\node[box, below=9mm of api] (orm) {\fanode{4.2cm}{\textenglish{Django ORM}}};
+\node[box, below=9mm of orm] (db) {\fanode{4.2cm}{\textenglish{SQLite3}}};
+\draw[arr] (ui) -- (svc);
+\draw[arr] (svc) -- node[midway,left,font=\scriptsize] {\textenglish{HTTPS JSON}} (api);
+\draw[arr] (api) -- (orm);
+\draw[arr] (orm) -- (db);
+\end{tikzpicture}
+\caption{لایه‌های منطقی سامانهٔ لجستیک}
+\label{fig:arch}
+\end{figure}
+
+\section{مؤلفه‌های سمت کاربر}
+
+کد کلاینت بر اساس ویژگی (\textenglish{feature-first}) سازمان یافته است:
+
+\begin{itemize}
+  \item \en{lib/features/auth}: ورود و ثبت‌نام
+  \item \en{lib/features/driver}: خانه، بارها، نزدیک، مأموریت، مسیر، خودرو
+  \item \en{lib/features/coordinator}: خانه، فهرست و جزئیات بار، ایجاد و ویرایش
+  \item \en{lib/features/shared}: پروفایل، تنظیمات، راهنما، پشتیبانی، درباره
+  \item \en{lib/services}: نمای یکپارچه روی \textenglish{HTTP} (احراز هویت، بار، دادهٔ مرجع، موقعیت، نقشه)
+  \item \en{lib/models}: مدل‌های دامنهٔ کلاینت مستقل از جزئیات جنگو
+  \item \en{lib/services/transport\_api\_mapper.dart}: ترجمهٔ قرارداد سرور به مدل کلاینت
+\end{itemize}
+
+مسیریابی صفحات با \en{go\_router} و مدیریت وضعیت سراسری با \en{provider} انجام می‌شود. \en{AuthService} از \en{ChangeNotifier} ارث می‌برد و روتر با \en{refreshListenable} به آن وصل است؛ بنابراین تغییر ورود/خروج بلافاصله مسیر را عوض می‌کند.
+
+\section{مؤلفه‌های سمت سرور}
+
+سمت سرور یک پروژهٔ جنگو است که منطقاً به چند بخش دامنه تقسیم می‌شود:
+
+\begin{itemize}
+  \item \textbf{حساب‌ها} (\en{accounts}): ثبت‌نام، ورود، پروفایل، تغییر رمز، صدور ژتون.
+  \item \textbf{بار متصدی} (\en{operator/bars}): \textenglish{CRUD} بار متعلق به کاربر اپراتور و تکمیل سمت متصدی.
+  \item \textbf{بار راننده} (\en{driver/bars}): فهرست بار باز، پذیرش، مأموریت‌های تخصیص‌یافته، تکمیل سمت راننده.
+  \item \textbf{مرجع} (\en{products}، \en{machines}، \en{ostans}): جداول کمکی برای انتخاب‌های فرم.
+\end{itemize}
+
+چارچوب \textenglish{DRF} مسئولیت سریالایز، اعتبارسنجی ورودی، صفحه‌بندی و کد وضعیت \textenglish{HTTP} را بر عهده دارد. مجوزها بر اساس نقش، دسترسی به ویوست‌های راننده یا متصدی را محدود می‌کنند.
+
+\section{ارتباط و پیکربندی}
+
+آدرس پایه در کلاینت از متغیر زمان ساخت \en{API\_BASE\_URL} خوانده می‌شود. مقدار پیش‌فرض این آدرس در استقرار آموزشی به صورت زیر است:
+\siteline{https://tran-develoop.liara.run}
+مسیرها در کلاس \en{ApiConfig} متمرکز شده‌اند تا یک منبع برای قرارداد وجود داشته باشد. همهٔ درخواست‌های نیازمند هویت، سرآیند \en{Bearer} می‌گیرند.
+
+نقشهٔ نشان از کلاینت و در صورت وجود، از مسیرهای واسط اختیاری سرور \api{/transport/neshan/} قابل فراخوانی است. مسیرهای نشان جزء قرارداد اصلی حمل‌ونقل نیستند و برای مخفی کردن کلید در سمت سرور پیش‌بینی شده‌اند.
+
+\section{تصمیم‌های کلیدی معماری}
+
+\begin{enumerate}
+  \item \textbf{یک کدبیس کلاینت:} فلاتر اجازه داد منطق کسب‌وکار کلاینت برای اندروید و وب تکرار نشود.
+  \item \textbf{REST به‌جای اتصال مستقیم به پایگاه:} کلاینت هرگز به \textenglish{SQLite} سرور وصل نمی‌شود؛ این جداسازی امنیت و استقرار مستقل را ممکن می‌کند.
+  \item \textbf{JWT بدون نشست سرور:} مقیاس‌پذیری و استقرار روی لیارا ساده‌تر است. نقطهٔ تازه‌سازی ژتون در قرارداد فعلی \textenglish{OpenAPI} وجود ندارد؛ بنابراین کلاینت در خطای ۴۰۱ کاربر را به ورود برمی‌گرداند.
+  \item \textbf{منبع حقیقت وضعیت در سرور:} کلاینت برچسب فارسی نشان می‌دهد اما کد انگلیسی را ذخیره و ارسال می‌کند.
+  \item \textbf{تأیید دوگانهٔ تکمیل:} از به‌روزرسانی آزادانهٔ فیلد وضعیت توسط کلاینت جلوگیری شده است.
+\end{enumerate}
