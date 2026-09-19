@@ -23,7 +23,7 @@
 \node[box, below=9mm of api] (orm) {\fanode{4.2cm}{\textenglish{Django ORM}}};
 \node[box, below=9mm of orm] (db) {\fanode{4.2cm}{\textenglish{SQLite3}}};
 \draw[arr] (ui) -- (svc);
-\draw[arr] (svc) -- node[midway,left,font=\scriptsize] {\textenglish{HTTPS JSON}} (api);
+\draw[arr] (svc) -- node[midway,left,font=\small] {\textenglish{HTTPS JSON}} (api);
 \draw[arr] (api) -- (orm);
 \draw[arr] (orm) -- (db);
 \end{tikzpicture}

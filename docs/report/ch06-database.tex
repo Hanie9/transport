@@ -125,7 +125,7 @@
   }%
 }
 \fh{مشخصات بار}
-\crow{tablehead}{\textbf{\textcolor{brand}{فیلد مدل}}}{\textbf{\textcolor{brand}{نوع}}}{\textbf{\textcolor{brand}{توضیح}}}
+\crow{tablehead}{\textbf{\textcolor{ink}{فیلد مدل}}}{\textbf{\textcolor{ink}{نوع}}}{\textbf{\textcolor{ink}{توضیح}}}
 \crow{white}{\en{title}}{متن}{عنوان بار}
 \crow{soft}{\en{description}}{متن بلند}{شرح بار}
 \crow{white}{\en{price}}{عدد صحیح}{قیمت به ریال}
@@ -167,7 +167,7 @@
 \noindent\fcolorbox{brandlight}{soft}{%
   \begin{minipage}{\dimexpr\linewidth-16pt-0.8pt}
   \begin{english}
-  \ttfamily\scriptsize
+  \ttfamily\small
   \raggedright
   \texttt{Bar.objects.filter(status="open")}\\
   \texttt{.filter(ostan\_mabda=ostan\_id)}\\
@@ -188,7 +188,7 @@
 \noindent\fcolorbox{brandlight}{soft}{%
   \begin{minipage}{\dimexpr\linewidth-16pt-0.8pt}
   \begin{english}
-  \ttfamily\scriptsize
+  \ttfamily\small
   \raggedright
   \texttt{with transaction.atomic():}\\
   \texttt{\hspace*{1.2em}bar = Bar.objects.select\_for\_update().get(pk=pk)}\\

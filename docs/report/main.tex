@@ -43,26 +43,26 @@
   ItalicFont=Inter Regular Italic,
   BoldItalicFont=Inter SemiBold Italic,
   Ligatures=TeX,
-  Scale=MatchLowercase
+  Scale=1.0
 ]
 \newfontfamily\enidentfont{Inter Medium}[
   Path=../../assets/fonts/InterFont/,
   Extension=.otf,
   UprightFont=Inter Medium,
   BoldFont=Inter SemiBold,
-  Scale=MatchLowercase
+  Scale=1.0
 ]
 \setmonofont{AdwaitaMono-Regular.ttf}[
   Path=/usr/share/fonts/adwaita-mono-fonts/,
   BoldFont=AdwaitaMono-Bold.ttf,
   ItalicFont=AdwaitaMono-Italic.ttf,
   BoldItalicFont=AdwaitaMono-BoldItalic.ttf,
-  Scale=MatchLowercase
+  Scale=1.0
 ]
 \newfontfamily\arabicfonttt{AdwaitaMono-Regular.ttf}[
   Path=/usr/share/fonts/adwaita-mono-fonts/,
   BoldFont=AdwaitaMono-Bold.ttf,
-  Scale=MatchLowercase
+  Scale=1.0
 ]
 
 \setlength{\headheight}{26pt}
@@ -78,9 +78,9 @@
 
 \hypersetup{
   colorlinks=true,
-  linkcolor=brand,
+  linkcolor=ink,
   urlcolor=brand,
-  citecolor=brand,
+  citecolor=ink,
   pdftitle={گزارش پروژه سامانه لجستیک},
   pdfauthor={حانیه نباتی و مهیار عامری},
   pdfsubject={سامانه هوشمند مدیریت حمل‌ونقل بار جاده‌ای}
@@ -107,14 +107,15 @@
 \setlength{\aboverulesep}{0pt}
 \setlength{\belowrulesep}{0pt}
 \setlength{\extrarowheight}{3.2pt}
-\newcommand{\thcell}[1]{\cellcolor{tablehead}\textbf{\textcolor{brand}{#1}}}
+\newcommand{\thcell}[1]{\cellcolor{tablehead}\textbf{\textcolor{ink}{#1}}}
 \newcolumntype{Y}{>{\raggedleft\arraybackslash}X}
 \newcolumntype{Z}{>{\centering\arraybackslash}X}
 \setlist[itemize]{topsep=3pt,itemsep=2pt,parsep=0pt,leftmargin=0pt,rightmargin=1.6em,align=right}
 \setlist[enumerate]{topsep=3pt,itemsep=2pt,parsep=0pt,leftmargin=0pt,rightmargin=1.8em,align=right}
 \captionsetup{
   font=small,
-  labelfont={bf,color=brand},
+  labelfont={bf,color=ink},
+  textfont={color=ink},
   skip=6pt,
   justification=raggedleft,
   singlelinecheck=false
@@ -185,9 +186,9 @@
         \bgroup\setRTL
         \begin{minipage}{\dimexpr\linewidth-2\fboxsep}
           \vspace{2.4pt}
-          {\bfseries\color{brand}#1}%
+          {\bfseries\color{ink}#1}%
           \nobreak\hfill
-          {\bfseries\color{brand}#2}%
+          {\bfseries\color{ink}#2}%
           \vspace{2.4pt}
         \end{minipage}%
         \egroup
@@ -201,15 +202,17 @@
 \newcommand{\printlot}{\@starttoc{lot}}
 \makeatother
 
-\newcommand{\en}[1]{\textenglish{\enidentfont\hyphenchar\font=-1\relax\textcolor{brand}{#1}}}
-\newcommand{\api}[1]{\textenglish{\ttfamily\scriptsize\hyphenchar\font=-1\relax\textcolor{brand}{\mbox{#1}}}}
+\newcommand{\en}[1]{%
+  \textenglish{\mbox{\enidentfont\hyphenchar\font=-1\relax\textcolor{brand}{#1}}}%
+}
+\newcommand{\api}[1]{\textenglish{\ttfamily\hyphenchar\font=-1\relax\textcolor{brand}{\mbox{#1}}}}
 \newcommand{\site}[1]{%
   \textenglish{%
-    \ttfamily\small
+    \ttfamily
     \hyphenchar\font=-1\relax
     \spaceskip=0pt\relax
     \xspaceskip=0pt\relax
-    \textcolor{brand}{\href{#1}{\mbox{#1}}}%
+    \textcolor{brand}{\href{#1}{\nolinkurl{#1}}}%
   }%
 }
 \newcommand{\siteline}[1]{%
@@ -220,9 +223,9 @@
     \makebox[\dimexpr\linewidth-2\fboxsep][l]{%
       \strut
       \textenglish{%
-        \ttfamily\small
+        \ttfamily
         \hyphenchar\font=-1\relax
-        \textcolor{brand}{\href{#1}{\mbox{#1}}}%
+        \textcolor{brand}{\href{#1}{\mbox{\nolinkurl{#1}}}}%
       }%
     }%
   }}%
