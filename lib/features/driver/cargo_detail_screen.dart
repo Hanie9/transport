@@ -331,6 +331,8 @@ class _CargoDetailScreenState extends State<CargoDetailScreen> {
                       icon: const Icon(Icons.task_alt),
                       label: Text(l10n.confirmCompletion),
                     ),
+                  if (cargo.status == 'تخصیص یافته' && !cargo.confirmDriver)
+                    const SizedBox(height: 18),
                   if (canAccept)
                     ElevatedButton(
                       onPressed: _accepting ? null : _acceptCargo,

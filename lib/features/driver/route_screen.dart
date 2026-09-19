@@ -131,7 +131,9 @@ class _RouteScreenState extends State<RouteScreen> {
       final destination = destPoint.location;
 
       // Do not prompt for GPS on entry — only when the user starts navigation.
-      final driverPos = await _location.getCurrentPosition(requestIfNeeded: false);
+      final driverPos = await _location.getCurrentPosition(
+        requestIfNeeded: false,
+      );
       if (!mounted) return;
 
       NeshanRoute? pickup;
@@ -206,7 +208,9 @@ class _RouteScreenState extends State<RouteScreen> {
           );
           if (!mounted || !ready) return;
 
-          final pos = await _location.getCurrentPosition(requestIfNeeded: false);
+          final pos = await _location.getCurrentPosition(
+            requestIfNeeded: false,
+          );
           if (!mounted || pos == null) return;
 
           setState(() => _driverPosition = pos);
@@ -224,9 +228,9 @@ class _RouteScreenState extends State<RouteScreen> {
         if (!mounted || _navigationActive) return;
         await _mapController.refitOverview();
         if (pickupDegraded && mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(approximateMessage)),
-          );
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text(approximateMessage)));
         }
       });
     } on NeshanApiException catch (e) {
@@ -246,7 +250,7 @@ class _RouteScreenState extends State<RouteScreen> {
 
   /// Prefer stored cargo coords; otherwise geocode with cargo-aware bias.
   Future<({NeshanLatLng location, NeshanGeocodingResult? result})>
-      _resolveCargoPoint({
+  _resolveCargoPoint({
     required String address,
     double? lat,
     double? lng,
@@ -274,8 +278,9 @@ class _RouteScreenState extends State<RouteScreen> {
       return (location: geo.location, result: geo);
     } catch (_) {
       final hints = extractGeocodeHints(address);
-      final centroid =
-          hints.city != null ? iranCityCentroids[hints.city] : null;
+      final centroid = hints.city != null
+          ? iranCityCentroids[hints.city]
+          : null;
       if (centroid != null) {
         return (
           location: centroid,
@@ -465,35 +470,33 @@ class _RouteScreenState extends State<RouteScreen> {
     if (!await _location.isGpsReady()) return;
 
     _positionSub?.cancel();
-    _positionSub = Geolocator.getPositionStream(
-      locationSettings: const LocationSettings(
-        accuracy: LocationAccuracy.high,
-        distanceFilter: 8,
-      ),
-    ).listen((pos) {
-      if (!mounted) return;
-      final next = LatLng(pos.latitude, pos.longitude);
-      final heading = pos.heading >= 0 ? pos.heading : _driverHeading;
-      final hadDriver = _driverPosition != null;
-      setState(() {
-        _driverPosition = next;
-        if (pos.heading >= 0) _driverHeading = pos.heading;
-      });
-
-      if (!hadDriver && _routeStep == 0 && _pickupRoute == null) {
-        unawaited(_loadPickupRoute(force: true, fromDriver: next));
-      }
-
-      if (_navigationActive) {
-        unawaited(
-          _mapController.tickNavigation(
-            position: next,
-            heading: heading,
+    _positionSub =
+        Geolocator.getPositionStream(
+          locationSettings: const LocationSettings(
+            accuracy: LocationAccuracy.high,
+            distanceFilter: 8,
           ),
-        );
-        _maybeRerouteOffRoute(next);
-      }
-    });
+        ).listen((pos) {
+          if (!mounted) return;
+          final next = LatLng(pos.latitude, pos.longitude);
+          final heading = pos.heading >= 0 ? pos.heading : _driverHeading;
+          final hadDriver = _driverPosition != null;
+          setState(() {
+            _driverPosition = next;
+            if (pos.heading >= 0) _driverHeading = pos.heading;
+          });
+
+          if (!hadDriver && _routeStep == 0 && _pickupRoute == null) {
+            unawaited(_loadPickupRoute(force: true, fromDriver: next));
+          }
+
+          if (_navigationActive) {
+            unawaited(
+              _mapController.tickNavigation(position: next, heading: heading),
+            );
+            _maybeRerouteOffRoute(next);
+          }
+        });
   }
 
   LatLng get _originLatLng =>
@@ -522,9 +525,7 @@ class _RouteScreenState extends State<RouteScreen> {
   RouteMapGeometry get _activeGeometry {
     // Overview: prefer driver→origin when available, else cargo trip.
     if (!_navigationActive) {
-      if (_routeStep == 0 &&
-          _pickupRoute != null &&
-          _driverPosition != null) {
+      if (_routeStep == 0 && _pickupRoute != null && _driverPosition != null) {
         return RouteMapGeometry.fromRoute(
           _pickupRoute!,
           origin: _driverPosition!,
@@ -699,8 +700,9 @@ class _RouteScreenState extends State<RouteScreen> {
 
     final cargo = _cargo!;
     final geometry = _activeGeometry;
-    final stepLabel =
-        _routeStep == 0 ? l10n.routeToOrigin : l10n.routeToDestination;
+    final stepLabel = _routeStep == 0
+        ? l10n.routeToOrigin
+        : l10n.routeToDestination;
     final targetLabel = _routeStep == 0 ? cargo.origin : cargo.destination;
     final leg = _activeRoute.primaryLeg;
     // Overview markers: cargo origin & destination (uzita mission overview).
@@ -768,7 +770,9 @@ class _RouteScreenState extends State<RouteScreen> {
                           decoration: BoxDecoration(
                             color: palette.cardBg.withValues(alpha: 0.96),
                             borderRadius: BorderRadius.circular(18),
-                            border: Border.all(color: palette.divider.withValues(alpha: 0.8)),
+                            border: Border.all(
+                              color: palette.divider.withValues(alpha: 0.8),
+                            ),
                             boxShadow: palette.cardShadow,
                           ),
                           child: Row(
@@ -825,8 +829,12 @@ class _RouteScreenState extends State<RouteScreen> {
           Container(
             decoration: BoxDecoration(
               color: palette.cardBg,
-              borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-              border: Border(top: BorderSide(color: palette.divider.withValues(alpha: 0.8))),
+              borderRadius: const BorderRadius.vertical(
+                top: Radius.circular(24),
+              ),
+              border: Border(
+                top: BorderSide(color: palette.divider.withValues(alpha: 0.8)),
+              ),
               boxShadow: [
                 BoxShadow(
                   color: Colors.black.withValues(alpha: isDark ? 0.28 : 0.08),
@@ -853,152 +861,157 @@ class _RouteScreenState extends State<RouteScreen> {
                         ),
                       ),
                     ),
-                  Row(
-                    children: [
-                      _StepIndicator(
-                        step: 1,
-                        label: l10n.origin,
-                        isActive: _routeStep == 0,
-                        isCompleted: _routeStep > 0,
-                      ),
-                      Expanded(
-                        child: Container(
-                          height: 2,
-                          color: _routeStep > 0
-                              ? AppTheme.success
-                              : palette.divider,
-                        ),
-                      ),
-                      _StepIndicator(
-                        step: 2,
-                        label: l10n.destination,
-                        isActive: _routeStep == 1,
-                        isCompleted: false,
-                      ),
-                    ],
-                  ),
-                  if (leg != null) ...[
-                    const SizedBox(height: 12),
-                    Wrap(
-                      spacing: 8,
-                      runSpacing: 8,
+                    Row(
                       children: [
-                        MetricChip(
-                          icon: Icons.straighten_rounded,
-                          label: leg.distanceText,
-                          color: AppTheme.primary,
+                        _StepIndicator(
+                          step: 1,
+                          label: l10n.origin,
+                          isActive: _routeStep == 0,
+                          isCompleted: _routeStep > 0,
                         ),
-                        MetricChip(
-                          icon: Icons.schedule_rounded,
-                          label: leg.durationText,
-                          color: AppTheme.accent,
+                        Expanded(
+                          child: Container(
+                            height: 2,
+                            color: _routeStep > 0
+                                ? AppTheme.success
+                                : palette.divider,
+                          ),
+                        ),
+                        _StepIndicator(
+                          step: 2,
+                          label: l10n.destination,
+                          isActive: _routeStep == 1,
+                          isCompleted: false,
                         ),
                       ],
                     ),
-                  ],
-                  const SizedBox(height: 14),
-                  if (!_navigationActive)
-                    ElevatedButton.icon(
-                      onPressed: () async {
-                        var pos = _driverPosition;
-                        if (pos == null) {
-                          final ready = await requestLocationAccessWithDialog(
-                            context,
-                            title: l10n.locationEnableTitle,
-                            message: l10n.locationEnableNavigationMessage,
-                          );
-                          if (!mounted) return;
-                          if (!ready) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: Text(l10n.locationRequiredForRoute),
-                              ),
-                            );
-                            return;
-                          }
-                          pos = await _location.getCurrentPosition(requestIfNeeded: false);
-                          if (!mounted) return;
+                    if (leg != null) ...[
+                      const SizedBox(height: 12),
+                      Wrap(
+                        spacing: 8,
+                        runSpacing: 8,
+                        children: [
+                          MetricChip(
+                            icon: Icons.straighten_rounded,
+                            label: leg.distanceText,
+                            color: AppTheme.primary,
+                          ),
+                          MetricChip(
+                            icon: Icons.schedule_rounded,
+                            label: leg.durationText,
+                            color: AppTheme.accent,
+                          ),
+                        ],
+                      ),
+                    ],
+                    const SizedBox(height: 14),
+                    if (!_navigationActive)
+                      ElevatedButton.icon(
+                        onPressed: () async {
+                          var pos = _driverPosition;
                           if (pos == null) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: Text(l10n.locationRequiredForRoute),
-                              ),
+                            final ready = await requestLocationAccessWithDialog(
+                              context,
+                              title: l10n.locationEnableTitle,
+                              message: l10n.locationEnableNavigationMessage,
                             );
-                            return;
+                            if (!mounted) return;
+                            if (!ready) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text(l10n.locationRequiredForRoute),
+                                ),
+                              );
+                              return;
+                            }
+                            pos = await _location.getCurrentPosition(
+                              requestIfNeeded: false,
+                            );
+                            if (!mounted) return;
+                            if (pos == null) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text(l10n.locationRequiredForRoute),
+                                ),
+                              );
+                              return;
+                            }
+                            setState(() => _driverPosition = pos);
+                            await _startLocationStream();
                           }
-                          setState(() => _driverPosition = pos);
-                          await _startLocationStream();
-                        }
-                        // Refresh a real road route before heading-up navigation.
-                        if (_routeStep == 0) {
-                          await _loadPickupRoute(force: true, fromDriver: pos);
-                        } else if (_destinationPoint != null) {
-                          await _loadDeliveryRouteFromDriver(pos);
-                        }
-                        if (!mounted) return;
-                        setState(() {
-                          _navigationActive = true;
-                          _mapCameraDetached = false;
-                        });
-                        await _mapController.resumeNavigation(
-                          position: pos,
-                          heading: _driverHeading,
-                        );
-                      },
-                      icon: const Icon(Icons.navigation_rounded),
-                      label: Text(
-                        l10n.startNavigationTo(
-                          _routeStep == 0 ? l10n.origin : l10n.destination,
+                          // Refresh a real road route before heading-up navigation.
+                          if (_routeStep == 0) {
+                            await _loadPickupRoute(
+                              force: true,
+                              fromDriver: pos,
+                            );
+                          } else if (_destinationPoint != null) {
+                            await _loadDeliveryRouteFromDriver(pos);
+                          }
+                          if (!mounted) return;
+                          setState(() {
+                            _navigationActive = true;
+                            _mapCameraDetached = false;
+                          });
+                          await _mapController.resumeNavigation(
+                            position: pos,
+                            heading: _driverHeading,
+                          );
+                        },
+                        icon: const Icon(Icons.navigation_rounded),
+                        label: Text(
+                          l10n.startNavigationTo(
+                            _routeStep == 0 ? l10n.origin : l10n.destination,
+                          ),
                         ),
                       ),
-                    ),
-                  if (_routeStep == 0) ...[
-                    if (!_navigationActive) const SizedBox(height: 8),
-                    OutlinedButton(
-                      onPressed: () async {
-                        if (!mounted) return;
-                        setState(() {
-                          _routeStep = 1;
-                          _navigationActive = false;
-                          _mapCameraDetached = false;
-                          _deliveryFromDriver = false;
-                          _offRouteHits = 0;
-                        });
-                        WidgetsBinding.instance.addPostFrameCallback((_) {
-                          if (!mounted) return;
-                          unawaited(_mapController.refitOverview());
-                        });
-                      },
-                      child: Text(l10n.arrivedAtOriginContinue),
-                    ),
-                  ] else ...[
-                    const SizedBox(height: 8),
-                    if (ApiConfig.shouldUseMock)
+                    if (_routeStep == 0) ...[
+                      if (!_navigationActive) const SizedBox(height: 8),
                       OutlinedButton(
                         onPressed: () async {
-                          await _cargoService.updateCargoStatus(
-                            cargo.id,
-                            'تحویل شده',
-                          );
                           if (!mounted) return;
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(content: Text(l10n.cargoDelivered)),
-                          );
-                          context.pop();
+                          setState(() {
+                            _routeStep = 1;
+                            _navigationActive = false;
+                            _mapCameraDetached = false;
+                            _deliveryFromDriver = false;
+                            _offRouteHits = 0;
+                          });
+                          WidgetsBinding.instance.addPostFrameCallback((_) {
+                            if (!mounted) return;
+                            unawaited(_mapController.refitOverview());
+                          });
                         },
-                        child: Text(l10n.markDelivered),
-                      )
-                    else
-                      InfoBanner(
-                        message: l10n.deliveryMarkedByCoordinator,
-                        icon: Icons.info_outline,
+                        child: Text(l10n.arrivedAtOriginContinue),
                       ),
+                    ] else ...[
+                      const SizedBox(height: 8),
+                      if (ApiConfig.shouldUseMock)
+                        OutlinedButton(
+                          onPressed: () async {
+                            await _cargoService.updateCargoStatus(
+                              cargo.id,
+                              'تحویل شده',
+                            );
+                            if (!mounted) return;
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(content: Text(l10n.cargoDelivered)),
+                            );
+                            context.pop();
+                          },
+                          child: Text(l10n.markDelivered),
+                        )
+                      else
+                        InfoBanner(
+                          message: l10n.deliveryMarkedByCoordinator,
+                          icon: Icons.info_outline,
+                        ),
+                    ],
                   ],
-                ],
+                ),
               ),
             ),
           ),
-        ),
         ],
       ),
     );
@@ -1023,19 +1036,17 @@ class _NavigationGuidanceCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final direction = persian ? TextDirection.rtl : TextDirection.ltr;
-    final palette = context.palette;
     return Container(
       decoration: BoxDecoration(
-        gradient: LinearGradient(
+        gradient: const LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [
-            palette.cardBg.withValues(alpha: 0.98),
-            AppTheme.primaryDark.withValues(alpha: 0.96),
-          ],
+          colors: [Color(0xFF073B38), AppTheme.primaryDark],
         ),
         borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: AppTheme.primaryLight.withValues(alpha: 0.35)),
+        border: Border.all(
+          color: AppTheme.primaryLight.withValues(alpha: 0.35),
+        ),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.22),
@@ -1076,7 +1087,7 @@ class _NavigationGuidanceCard extends StatelessWidget {
                   Text(
                     guidancePrimaryLabel(step),
                     style: const TextStyle(
-                      color: AppTheme.primaryLight,
+                      color: Color(0xFF5EEAD4),
                       fontSize: 17,
                       fontWeight: FontWeight.bold,
                       height: 1.3,
@@ -1091,8 +1102,9 @@ class _NavigationGuidanceCard extends StatelessWidget {
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(
-                        color: Colors.white.withValues(alpha: 0.78),
-                        fontSize: 12,
+                        color: Colors.white.withValues(alpha: 0.92),
+                        fontSize: 13,
+                        fontWeight: FontWeight.w500,
                       ),
                       textDirection: direction,
                     ),
@@ -1126,8 +1138,8 @@ class _StepIndicator extends StatelessWidget {
     final color = isCompleted
         ? AppTheme.success
         : isActive
-            ? AppTheme.primary
-            : palette.textSecondary.withValues(alpha: 0.45);
+        ? AppTheme.primary
+        : palette.textSecondary.withValues(alpha: 0.45);
 
     return Column(
       children: [
@@ -1140,7 +1152,10 @@ class _StepIndicator extends StatelessWidget {
             gradient: isActive || isCompleted
                 ? LinearGradient(
                     colors: isCompleted
-                        ? [AppTheme.success, AppTheme.success.withValues(alpha: 0.8)]
+                        ? [
+                            AppTheme.success,
+                            AppTheme.success.withValues(alpha: 0.8),
+                          ]
                         : [AppTheme.primary, AppTheme.primaryLight],
                   )
                 : null,

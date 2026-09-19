@@ -151,8 +151,6 @@ class _CoordinatorCargoDetailScreenState
 
     final cargo = _cargo!;
     const canDelete = true;
-    final canCancel =
-        cargo.status == 'در انتظار راننده' || cargo.status == 'تخصیص یافته';
     final canMarkDone = cargo.status == 'تخصیص یافته' && !cargo.confirmOperator;
     const canEdit = true;
 
@@ -305,14 +303,6 @@ class _CoordinatorCargoDetailScreenState
                         label: Text(l10n.confirmCompletion),
                       ),
                     if (canMarkDone) const SizedBox(height: 8),
-                    if (canCancel)
-                      OutlinedButton.icon(
-                        onPressed: _busy
-                            ? null
-                            : () => _updateStatus('لغو شده'),
-                        icon: const Icon(Icons.cancel_outlined),
-                        label: Text(l10n.cancelCargo),
-                      ),
                     if (canDelete) ...[
                       const SizedBox(height: 8),
                       OutlinedButton.icon(
