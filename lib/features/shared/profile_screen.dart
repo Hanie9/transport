@@ -222,11 +222,6 @@ class _VehicleSection extends StatelessWidget {
               label: l10n.trailerType,
               value: l10n.cargoType(vehicle!.cargoType),
             ),
-            if (vehicle!.capacityTons != null)
-              _InfoRow(
-                label: l10n.capacity,
-                value: l10n.tons(vehicle!.capacityTons!),
-              ),
             _InfoRow(
               label: l10n.province,
               value: vehicle!.ostanName ?? l10n.notRegistered,

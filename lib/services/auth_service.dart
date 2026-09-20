@@ -161,7 +161,6 @@ class AuthService extends ChangeNotifier {
                   plateNumber: '۱۲ ب ۳۴۵ ایران ۶۶',
                   cargoType: 'کفی',
                   vehicleModel: 'ولوو FH460',
-                  capacityTons: 24,
                 )
               : null,
         );
@@ -429,7 +428,6 @@ class AuthService extends ChangeNotifier {
             ? remote!.cargoType
             : (local?.cargoType ?? ''),
         vehicleModel: remote?.vehicleModel ?? local?.vehicleModel ?? '',
-        capacityTons: local?.capacityTons,
         machineId: remote?.machineId ?? local?.machineId,
         ostanId: remote != null ? remote.ostanId : local?.ostanId,
         ostanName: remote != null ? remote.ostanName : local?.ostanName,

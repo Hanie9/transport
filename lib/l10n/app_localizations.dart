@@ -184,8 +184,8 @@ class AppLocalizations {
   String get helpDriverProfileTitle =>
       _t('پروفایل و خودرو', 'Profile & vehicle');
   String get helpDriverProfileBody => _t(
-    'در تب پروفایل، نام و اطلاعات حساب خود را می‌بینید. اطلاعات خودرو شامل پلاک، مدل، نوع بارگیر و ظرفیت را ثبت یا ویرایش کنید تا بارهای مناسب‌تر پیشنهاد شوند. از همین بخش می‌توانید از حساب خارج شوید.',
-    'In Profile, view your name and account info. Add or edit vehicle details — plate, model, trailer type, and capacity — for better cargo matches. You can also sign out from here.',
+    'در تب پروفایل، نام و اطلاعات حساب خود را می‌بینید. اطلاعات خودرو شامل پلاک، مدل و نوع بارگیر را ثبت یا ویرایش کنید تا بارهای مناسب‌تر پیشنهاد شوند. از همین بخش می‌توانید از حساب خارج شوید.',
+    'In Profile, view your name and account info. Add or edit vehicle details — plate, model, and trailer type — for better cargo matches. You can also sign out from here.',
   );
   String get helpDriverMenuTitle => _t('منو و تنظیمات', 'Menu & settings');
   String get helpDriverMenuBody => _t(
@@ -523,7 +523,6 @@ class AppLocalizations {
   String get vehiclePlate => _t('پلاک خودرو', 'License plate');
   String get vehicleModel => _t('مدل خودرو', 'Vehicle model');
   String get trailerType => _t('نوع بارگیر', 'Trailer type');
-  String get capacity => _t('ظرفیت', 'Capacity');
   String tons(num value) => _t('$value تن', '$value tons');
   String get vehicleNotRegistered =>
       _t('اطلاعات خودرو ثبت نشده', 'Vehicle info not set');
@@ -806,7 +805,6 @@ class AppLocalizations {
   );
   String get modelRequired =>
       _t('مدل خودرو الزامی است', 'Vehicle model is required');
-  String get capacityTons => _t('ظرفیت (تن)', 'Capacity (tons)');
   String get saveVehicleInfo => _t('ذخیره اطلاعات خودرو', 'Save vehicle info');
   String get cancel => _t('انصراف', 'Cancel');
   String get confirm => _t('تأیید', 'Confirm');

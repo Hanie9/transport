@@ -35,7 +35,6 @@ class _VehicleInfoFormState extends State<VehicleInfoForm> {
   final _formKey = GlobalKey<FormState>();
   final _plateKey = GlobalKey<IranianPlateInputState>();
   final _modelController = TextEditingController();
-  final _capacityController = TextEditingController();
   final _referenceData = ReferenceDataService();
   String? _selectedCargoType;
   int? _selectedMachineId;
@@ -95,14 +94,12 @@ class _VehicleInfoFormState extends State<VehicleInfoForm> {
       _selectedCargoType = vehicle.cargoType;
       _selectedMachineId = vehicle.machineId;
       _selectedOstanId = vehicle.ostanId;
-      _capacityController.text = vehicle.capacityTons?.toString() ?? '';
     }
   }
 
   @override
   void dispose() {
     _modelController.dispose();
-    _capacityController.dispose();
     super.dispose();
   }
 
@@ -141,7 +138,6 @@ class _VehicleInfoFormState extends State<VehicleInfoForm> {
       plateNumber: _plateData.toStorageString(),
       cargoType: machineName,
       vehicleModel: _modelController.text.trim(),
-      capacityTons: double.tryParse(_capacityController.text.trim()),
       machineId: _selectedMachineId,
       ostanId: _selectedOstanId,
       ostanName: ostanName ?? widget.initial?.ostanName,
@@ -285,16 +281,6 @@ class _VehicleInfoFormState extends State<VehicleInfoForm> {
               ),
             ],
             onChanged: (value) => setState(() => _selectedOstanId = value),
-          ),
-          const SizedBox(height: 16),
-          TextFormField(
-            controller: _capacityController,
-            keyboardType: const TextInputType.numberWithOptions(decimal: true),
-            decoration: InputDecoration(
-              labelText: l10n.capacityTons,
-              prefixIcon: const Icon(Icons.scale_outlined),
-              hintText: '24',
-            ),
           ),
           const SizedBox(height: 24),
           ElevatedButton(
