@@ -54,7 +54,7 @@
     });
     window.addEventListener('load', function () {
       if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.register('pwa_service_worker.js?v=1.0.0-1-20260919-5', { scope: './' })
+        navigator.serviceWorker.register('pwa_service_worker.js?v=1.0.0-1-20260920-1', { scope: './' })
           .catch(function (error) {
             console.warn('[Logistics PWA] Service worker registration failed:', error);
           });
