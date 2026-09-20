@@ -207,6 +207,7 @@ class _EditCargoScreenState extends State<EditCargoScreen> {
                 const SizedBox(height: 16),
                 TextFormField(
                   controller: _titleController,
+                  maxLength: 100,
                   decoration: InputDecoration(
                     labelText: l10n.cargoTitle,
                     prefixIcon: const Icon(Icons.title),
@@ -217,6 +218,7 @@ class _EditCargoScreenState extends State<EditCargoScreen> {
                 const SizedBox(height: 16),
                 TextFormField(
                   controller: _descriptionController,
+                  maxLength: 450,
                   maxLines: 3,
                   decoration: InputDecoration(
                     labelText: l10n.description,
@@ -263,6 +265,7 @@ class _EditCargoScreenState extends State<EditCargoScreen> {
                 ],
                 TextFormField(
                   controller: _originController,
+                  maxLength: 200,
                   decoration: InputDecoration(
                     labelText: l10n.origin,
                     prefixIcon: const Icon(Icons.trip_origin),
@@ -274,6 +277,7 @@ class _EditCargoScreenState extends State<EditCargoScreen> {
                 const SizedBox(height: 16),
                 TextFormField(
                   controller: _destinationController,
+                  maxLength: 200,
                   decoration: InputDecoration(
                     labelText: l10n.destination,
                     prefixIcon: const Icon(Icons.location_on),

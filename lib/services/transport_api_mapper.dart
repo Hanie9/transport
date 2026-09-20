@@ -20,8 +20,9 @@ abstract final class TransportApiMapper {
 
   static String descriptionWithWeight(String description, double weightTons) {
     final base = description.replaceFirst(_weightSuffix, '').trimRight();
-    if (!weightTons.isFinite || weightTons <= 0) return base;
-    return '${base.isEmpty ? '' : '$base\n'}وزن: $weightTons تن';
+    final tons = apiWeight(weightTons);
+    if (tons == null) return base;
+    return '${base.isEmpty ? '' : '$base\n'}وزن: $tons تن';
   }
 
   static String appStatus(Map<String, dynamic> json) {
@@ -121,6 +122,26 @@ abstract final class TransportApiMapper {
     return '';
   }
 
+  /// OpenAPI `BarCreateUpdate.weight` is an integer (tons).
+  static int? apiWeight(double? weight) {
+    if (weight == null || !weight.isFinite || weight <= 0) return null;
+    final rounded = weight.round();
+    return rounded > 0 ? rounded : null;
+  }
+
+  /// OpenAPI decimal fields allow at most 3 integer digits and 6 decimals.
+  static String? apiDecimal(double? value) {
+    if (value == null || !value.isFinite) return null;
+    var text = value.toStringAsFixed(6);
+    if (text.contains('.')) {
+      text = text.replaceFirst(RegExp(r'0+$'), '');
+      if (text.endsWith('.')) {
+        text = text.substring(0, text.length - 1);
+      }
+    }
+    return text;
+  }
+
   /// Builds JSON body for `BarCreateUpdate` / `PatchedBarCreateUpdate`.
   static Map<String, dynamic> barPayload({
     String? title,
@@ -139,22 +160,26 @@ abstract final class TransportApiMapper {
     double? destinationLng,
     String? status,
   }) {
+    final weightTons = apiWeight(weight);
+    final latitudeMabda = apiDecimal(originLat);
+    final longitudeMabda = apiDecimal(originLng);
+    final latitudeMaghsad = apiDecimal(destinationLat);
+    final longitudeMaghsad = apiDecimal(destinationLng);
     return {
       if (title != null) 'title': title,
       if (description != null) 'description': description,
       if (price != null) 'price': price,
-      if (weight != null) 'weight': weight,
+      if (weightTons != null) 'weight': weightTons,
       if (productId != null) 'product': productId,
       if (machineId != null) 'machine': machineId,
       if (ostanMabdaId != null) 'ostan_mabda': ostanMabdaId,
       if (ostanMaghsadId != null) 'ostan_maghsad': ostanMaghsadId,
       if (addressMabda != null) 'address_mabda': addressMabda,
       if (addressMaghsad != null) 'address_maghsad': addressMaghsad,
-      if (originLat != null) 'latitude_mabda': originLat.toString(),
-      if (originLng != null) 'longitude_mabda': originLng.toString(),
-      if (destinationLat != null) 'latitude_maghsad': destinationLat.toString(),
-      if (destinationLng != null)
-        'longitude_maghsad': destinationLng.toString(),
+      if (latitudeMabda != null) 'latitude_mabda': latitudeMabda,
+      if (longitudeMabda != null) 'longitude_mabda': longitudeMabda,
+      if (latitudeMaghsad != null) 'latitude_maghsad': latitudeMaghsad,
+      if (longitudeMaghsad != null) 'longitude_maghsad': longitudeMaghsad,
       if (status != null) 'status': apiStatusForApp(status) ?? status,
     };
   }

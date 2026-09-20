@@ -47,10 +47,10 @@ void main() {
       );
 
       expect(bodies, hasLength(2));
-      expect(bodies.first['weight'], 12.5);
+      expect(bodies.first['weight'], 13);
       expect(bodies.last.containsKey('weight'), isFalse);
-      expect(bodies.last['description'], contains('وزن: 12.5 تن'));
-      expect(cargo.weightTons, 12.5);
+      expect(bodies.last['description'], contains('وزن: 13 تن'));
+      expect(cargo.weightTons, 13);
     },
   );
 }

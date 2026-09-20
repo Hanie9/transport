@@ -549,34 +549,40 @@ class CargoService extends ChangeNotifier {
   }) async {
     _clearError();
     if (!ApiConfig.shouldUseMock) {
-      final body = TransportApiMapper.barPayload(
-        title: title,
-        description: TransportApiMapper.descriptionWithWeight(
-          description ?? goodsType,
-          weightTons,
-        ),
-        price: estimatedPrice,
-        weight: weightTons,
-        productId: productId,
-        machineId: machineId,
-        ostanMabdaId: ostanMabdaId,
-        ostanMaghsadId: ostanMaghsadId,
-        addressMabda: origin,
-        addressMaghsad: destination,
-        originLat: originLat,
-        originLng: originLng,
-        destinationLat: destinationLat,
-        destinationLng: destinationLng,
-      );
-      final data = await _sendWithWeightCompatibility(
-        body,
-        (payload) => _api.post(ApiConfig.operatorBarCreatePath, body: payload),
-      );
-      final cargo = TransportApiMapper.cargoFromBar(
-        ApiResponse.extractObject(data),
-      );
-      notifyListeners();
-      return cargo;
+      try {
+        final body = TransportApiMapper.barPayload(
+          title: title,
+          description: TransportApiMapper.descriptionWithWeight(
+            description ?? goodsType,
+            weightTons,
+          ),
+          price: estimatedPrice,
+          weight: weightTons,
+          productId: productId,
+          machineId: machineId,
+          ostanMabdaId: ostanMabdaId,
+          ostanMaghsadId: ostanMaghsadId,
+          addressMabda: origin,
+          addressMaghsad: destination,
+          originLat: originLat,
+          originLng: originLng,
+          destinationLat: destinationLat,
+          destinationLng: destinationLng,
+        );
+        final data = await _sendWithWeightCompatibility(
+          body,
+          (payload) =>
+              _api.post(ApiConfig.operatorBarCreatePath, body: payload),
+        );
+        final cargo = TransportApiMapper.cargoFromBar(
+          ApiResponse.extractObject(data),
+        );
+        notifyListeners();
+        return cargo;
+      } catch (e) {
+        _setError(e);
+        rethrow;
+      }
     }
 
     await Future<void>.delayed(const Duration(milliseconds: 800));

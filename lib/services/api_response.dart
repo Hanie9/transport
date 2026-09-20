@@ -36,12 +36,8 @@ abstract final class ApiResponse {
     return const [];
   }
 
-  static ({
-    int count,
-    int currentPage,
-    int totalPages,
-    bool hasNext,
-  }) extractPagination(dynamic data) {
+  static ({int count, int currentPage, int totalPages, bool hasNext})
+  extractPagination(dynamic data) {
     if (data is! Map) {
       return (count: 0, currentPage: 1, totalPages: 1, hasNext: false);
     }
@@ -108,28 +104,34 @@ abstract final class ApiResponse {
 
     if (data is Map) {
       final map = Map<String, dynamic>.from(data);
-      for (final key in ['detail', 'message', 'error', 'non_field_errors']) {
+      const summaryKeys = ['detail', 'message', 'error', 'non_field_errors'];
+      final parts = <String>[];
+
+      for (final key in summaryKeys) {
         final value = map[key];
-        final msg = _stringifyFieldError(value);
+        final msg = _stringifyFieldError(value, isEnglish: english);
         if (msg != null && !looksLikeHtml(msg)) {
-          return _clampMessage(
-            ApiMessages.localizeBackendDetail(msg, isEnglish: english),
-          );
+          parts.add(ApiMessages.localizeBackendDetail(msg, isEnglish: english));
         }
       }
+
       for (final entry in map.entries) {
-        final msg = _stringifyFieldError(entry.value);
-        if (msg != null && !looksLikeHtml(msg)) {
-          final field = ApiMessages.localizeFieldName(
-            entry.key,
-            isEnglish: english,
-          );
-          final localized = ApiMessages.localizeBackendDetail(
-            msg,
-            isEnglish: english,
-          );
-          return _clampMessage('$field: $localized');
-        }
+        if (summaryKeys.contains(entry.key)) continue;
+        final msg = _stringifyFieldError(entry.value, isEnglish: english);
+        if (msg == null || looksLikeHtml(msg)) continue;
+        final field = ApiMessages.localizeFieldName(
+          entry.key,
+          isEnglish: english,
+        );
+        final localized = ApiMessages.localizeBackendDetail(
+          msg,
+          isEnglish: english,
+        );
+        parts.add('$field: $localized');
+      }
+
+      if (parts.isNotEmpty) {
+        return _clampMessage(parts.join(english ? '; ' : '؛ '));
       }
     }
 
@@ -166,11 +168,15 @@ abstract final class ApiResponse {
     return '${singleLine.substring(0, maxLength - 1)}…';
   }
 
-  static String? _stringifyFieldError(dynamic value) {
+  static String? _stringifyFieldError(
+    dynamic value, {
+    required bool isEnglish,
+  }) {
     if (value == null) return null;
     if (value is String && value.trim().isNotEmpty) return value.trim();
     if (value is List && value.isNotEmpty) {
-      return value.map((e) => e.toString()).join('، ');
+      final join = isEnglish ? ', ' : '، ';
+      return value.map((e) => e.toString()).join(join);
     }
     return value.toString();
   }

@@ -21,11 +21,11 @@ void main() {
       );
       final payload = TransportApiMapper.barPayload(description: description);
       final cargo = TransportApiMapper.cargoFromBar({'id': 1, ...payload});
-      expect(cargo.weightTons, 12.5);
-      expect(cargo.description, 'بار آهن\nوزن: 12.5 تن');
+      expect(cargo.weightTons, 13);
+      expect(cargo.description, 'بار آهن\nوزن: 13 تن');
       expect(
         TransportApiMapper.descriptionWithWeight(description, 10),
-        'بار آهن\nوزن: 10.0 تن',
+        'بار آهن\nوزن: 10 تن',
       );
       expect(
         TransportApiMapper.cargoFromBar({
@@ -35,9 +35,9 @@ void main() {
       );
     });
 
-    test('weight field is ready for the future API contract', () {
+    test('weight field matches OpenAPI integer tons', () {
       final payload = TransportApiMapper.barPayload(weight: 12.5);
-      expect(payload, {'weight': 12.5});
+      expect(payload, {'weight': 13});
       expect(
         TransportApiMapper.cargoFromBar({
           'weight': '18.75',
@@ -49,6 +49,15 @@ void main() {
         TransportApiMapper.cargoFromBar({'weight_tons': 14}).weightTons,
         14,
       );
+    });
+
+    test('coordinates are sent with at most six decimal places', () {
+      final payload = TransportApiMapper.barPayload(
+        originLat: 35.689212345,
+        originLng: 51.389,
+      );
+      expect(payload['latitude_mabda'], '35.689212');
+      expect(payload['longitude_mabda'], '51.389');
     });
 
     test('cargo registration sends addresses without manual coordinates', () {

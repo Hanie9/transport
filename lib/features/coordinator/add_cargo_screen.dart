@@ -143,9 +143,7 @@ class _AddCargoScreenState extends State<AddCargoScreen> {
       if (!mounted) return;
       setState(() => _submitting = false);
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(_cargoService.lastError ?? l10n.fillRouteFields),
-        ),
+        SnackBar(content: Text(_cargoService.lastError ?? l10n.genericError)),
       );
     }
   }
@@ -173,6 +171,7 @@ class _AddCargoScreenState extends State<AddCargoScreen> {
               children: [
                 TextFormField(
                   controller: _titleController,
+                  maxLength: 100,
                   decoration: InputDecoration(
                     labelText: l10n.cargoTitle,
                     prefixIcon: const Icon(Icons.title),
@@ -231,6 +230,7 @@ class _AddCargoScreenState extends State<AddCargoScreen> {
                 ],
                 TextFormField(
                   controller: _originController,
+                  maxLength: 200,
                   decoration: InputDecoration(
                     labelText: l10n.origin,
                     prefixIcon: const Icon(Icons.trip_origin),
@@ -243,6 +243,7 @@ class _AddCargoScreenState extends State<AddCargoScreen> {
                 const SizedBox(height: 16),
                 TextFormField(
                   controller: _destinationController,
+                  maxLength: 200,
                   decoration: InputDecoration(
                     labelText: l10n.destination,
                     prefixIcon: const Icon(Icons.location_on),
