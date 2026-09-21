@@ -231,7 +231,9 @@ class _DriverHomeScreenState extends State<DriverHomeScreen>
     var items = pageResult.items;
 
     if (gpsOn) {
-      final pos = await _location.getCurrentPosition(requestIfNeeded: false);
+      var pos = _location.lastKnown;
+      pos ??= await _location.getCurrentPosition(requestIfNeeded: false);
+      pos ??= await _location.getCurrentPosition(requestIfNeeded: true);
       if (pos != null) {
         items = _cargoService.withDistanceFromDriver(items, pos);
       }

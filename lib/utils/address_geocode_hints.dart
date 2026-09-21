@@ -101,6 +101,39 @@ AddressGeocodeHints extractGeocodeHints(String address) {
   return const AddressGeocodeHints();
 }
 
+/// Best-effort origin point from a cargo address when the API has no lat/lng.
+LatLng? originLatLngFromAddress(String address) {
+  final text = address.trim();
+  if (text.isEmpty) return null;
+
+  final hints = extractGeocodeHints(text);
+  if (hints.city != null) {
+    final centroid = iranCityCentroids[hints.city];
+    if (centroid != null) {
+      return LatLng(centroid.latitude, centroid.longitude);
+    }
+  }
+
+  final normalized = normalizeGeocodeAddress(text);
+  final cities = iranCityCentroids.entries.toList()
+    ..sort((a, b) => b.key.length.compareTo(a.key.length));
+  for (final entry in cities) {
+    if (normalized.contains(entry.key)) {
+      return LatLng(entry.value.latitude, entry.value.longitude);
+    }
+  }
+
+  for (final entry in _iranCities.entries) {
+    if (entry.value.length < 3) continue;
+    if (!normalized.contains(entry.value)) continue;
+    final centroid = iranCityCentroids[entry.key];
+    if (centroid == null) continue;
+    return LatLng(centroid.latitude, centroid.longitude);
+  }
+
+  return null;
+}
+
 String normalizeGeocodeAddress(String address) {
   return address
       .replaceAll('\u200c', ' ')
@@ -118,7 +151,8 @@ String _normalizeAddress(String address) => normalizeGeocodeAddress(address);
   String? province,
   NeshanLatLng? searchCenter,
   NeshanGeocodingExtent? searchExtent,
-}) buildGeocodeParams({
+})
+buildGeocodeParams({
   required String address,
   required AddressGeocodeHints hints,
   NeshanGeocodingResult? originResult,
@@ -130,8 +164,7 @@ String _normalizeAddress(String address) => normalizeGeocodeAddress(address);
   if (city != null) {
     final centroid = iranCityCentroids[city];
     if (centroid != null) {
-      final center = driverLocation != null &&
-              _isNearCity(driverLocation, city)
+      final center = driverLocation != null && _isNearCity(driverLocation, city)
           ? driverLocation
           : centroid;
       final radiusKm = center == driverLocation ? 35.0 : 55.0;
@@ -142,7 +175,12 @@ String _normalizeAddress(String address) => normalizeGeocodeAddress(address);
         searchExtent: geocodeExtentAround(center, radiusKm: radiusKm),
       );
     }
-    return (city: city, province: province, searchCenter: null, searchExtent: null);
+    return (
+      city: city,
+      province: province,
+      searchCenter: null,
+      searchExtent: null,
+    );
   }
 
   // No city in address — only bias near origin when origin is in the same city.
@@ -178,7 +216,8 @@ String _normalizeAddress(String address) => normalizeGeocodeAddress(address);
   String? province,
   NeshanLatLng? searchCenter,
   NeshanGeocodingExtent? searchExtent,
-}) buildCargoGeocodeParams({
+})
+buildCargoGeocodeParams({
   required String address,
   required AddressGeocodeHints hints,
   NeshanGeocodingResult? siblingResult,
@@ -207,7 +246,12 @@ String _normalizeAddress(String address) => normalizeGeocodeAddress(address);
         searchExtent: geocodeExtentAround(centroid, radiusKm: radiusKm),
       );
     }
-    return (city: city, province: province, searchCenter: null, searchExtent: null);
+    return (
+      city: city,
+      province: province,
+      searchCenter: null,
+      searchExtent: null,
+    );
   }
 
   final originCity = siblingResult?.city?.trim();
@@ -251,10 +295,7 @@ bool hasSpecificLocationTerms(String address) {
 
 /// Geocoding Plus «full match» snapped to the city centre while the address
 /// names a specific place elsewhere in the metro area.
-bool isCityCentreGeocodingSnap(
-  NeshanGeocodingResult result,
-  String address,
-) {
+bool isCityCentreGeocodingSnap(NeshanGeocodingResult result, String address) {
   if (!hasSpecificLocationTerms(address)) return false;
   if (!isNearCityCentroid(result, address)) return false;
 
@@ -263,7 +304,8 @@ bool isCityCentreGeocodingSnap(
   final terms = _significantTerms(query.isNotEmpty ? query : address);
   if (_resultOverlapsAddressTerms(result, terms)) return false;
 
-  if (!geocodedCityMatchesAddress(result: result, address: address)) return true;
+  if (!geocodedCityMatchesAddress(result: result, address: address))
+    return true;
   if (isPoiAddress(address)) return true;
   // Same-city street at centre with no metadata overlap — likely wrong snap.
   const streetMarkers = ['خیابان', 'کوچه', 'بلوار', 'بزرگراه'];
@@ -287,10 +329,7 @@ String geocodeApiAddressText(String address) {
 
 /// Address text sent to geocoding/search APIs — city prefix removed so POI
 /// names such as «دانشگاه کاشان» are resolved instead of the city centre.
-String extractGeocodeQuery(
-  String address, {
-  AddressGeocodeHints? hints,
-}) {
+String extractGeocodeQuery(String address, {AddressGeocodeHints? hints}) {
   final resolvedHints = hints ?? extractGeocodeHints(address);
   var normalized = _normalizeAddress(address);
 
@@ -327,7 +366,10 @@ List<String> buildGeocodeSearchTerms(
     add('${resolvedHints.city}، $query');
   }
 
-  for (final extra in buildGeocodePlusExtraTerms(address, hints: resolvedHints)) {
+  for (final extra in buildGeocodePlusExtraTerms(
+    address,
+    hints: resolvedHints,
+  )) {
     add(extra);
   }
 
@@ -365,12 +407,7 @@ List<String> buildGeocodePlusExtraTerms(
     }
   }
 
-  const prefixes = [
-    'ایستگاه مترو ',
-    'ایستگاه اتوبوس ',
-    'ایستگاه ',
-    'مترو ',
-  ];
+  const prefixes = ['ایستگاه مترو ', 'ایستگاه اتوبوس ', 'ایستگاه ', 'مترو '];
   var stripped = query;
   for (final prefix in prefixes) {
     if (stripped.startsWith(prefix)) {
@@ -456,9 +493,12 @@ int geocodingMatchScore(NeshanGeocodingResult result, String address) {
   for (final term in terms) {
     if (searchable.contains(term)) {
       score += 10;
-    } else if (searchable.split(' ').any(
-      (word) => word.length >= 3 && (word.contains(term) || term.contains(word)),
-    )) {
+    } else if (searchable
+        .split(' ')
+        .any(
+          (word) =>
+              word.length >= 3 && (word.contains(term) || term.contains(word)),
+        )) {
       score += 5;
     }
   }
@@ -529,14 +569,15 @@ bool _isNearCity(NeshanLatLng point, String city) {
   final centroid = iranCityCentroids[city];
   if (centroid == null) return false;
   return distanceMeters(
-    LatLng(point.latitude, point.longitude),
-    LatLng(centroid.latitude, centroid.longitude),
-  ) <= 120000;
+        LatLng(point.latitude, point.longitude),
+        LatLng(centroid.latitude, centroid.longitude),
+      ) <=
+      120000;
 }
 
 /// Coordinates where Neshan Geocoding Plus often snaps unrelated queries.
 const List<({NeshanLatLng location, double radiusMeters})>
-    kNeshanFalsePositiveLocations = [
+kNeshanFalsePositiveLocations = [
   // Neshan often snaps unrelated Tehran queries to the defense universities.
   (
     location: NeshanLatLng(latitude: 35.7443, longitude: 51.1952),
@@ -585,10 +626,7 @@ bool isKnownNeshanFalsePositiveLocation(
 }
 
 /// Known Neshan Search false positives when the query is unrelated.
-bool isSpuriousDefaultSearchPoi(
-  NeshanGeocodingResult result,
-  String address,
-) {
+bool isSpuriousDefaultSearchPoi(NeshanGeocodingResult result, String address) {
   if (isKnownNeshanFalsePositiveLocation(result, address)) return true;
 
   final label = _normalizeAddress(
@@ -607,8 +645,9 @@ bool isSpuriousDefaultSearchPoi(
     'دانشگاه دفاع',
     'علوم دفاعی',
   ];
-  final isSpuriousPlace =
-      spuriousPatterns.any((pattern) => label.contains(pattern));
+  final isSpuriousPlace = spuriousPatterns.any(
+    (pattern) => label.contains(pattern),
+  );
   if (!isSpuriousPlace) return false;
 
   if (addressMentionsDefenseUniversityPoi(address)) return false;
@@ -672,7 +711,9 @@ NeshanGeocodingCandidate pickBestGeocodingCandidate(
   if (pool.length == 1) return pool.first;
 
   final hints = extractGeocodeHints(address);
-  final expectedCity = hints.city != null ? _normalizeCityName(hints.city!) : null;
+  final expectedCity = hints.city != null
+      ? _normalizeCityName(hints.city!)
+      : null;
 
   NeshanGeocodingCandidate? best;
   var bestScore = -1000;
@@ -681,12 +722,13 @@ NeshanGeocodingCandidate pickBestGeocodingCandidate(
     final candidate = pool[i];
     // Neshan returns up to 5 items ordered by relevance — prefer earlier ranks.
     final apiRankBonus = (pool.length - i) * 2;
-    final score = _candidateMatchScore(
-      candidate,
-      address: address,
-      expectedCity: expectedCity,
-      searchCenter: searchCenter,
-    ) +
+    final score =
+        _candidateMatchScore(
+          candidate,
+          address: address,
+          expectedCity: expectedCity,
+          searchCenter: searchCenter,
+        ) +
         apiRankBonus;
     if (score > bestScore) {
       bestScore = score;
@@ -842,10 +884,9 @@ int _candidateCityScore(
 }
 
 String _normalizeCityName(String city) {
-  return _normalizeAddress(city)
-      .replaceAll('شهر ', '')
-      .replaceAll('شهرستان ', '')
-      .trim();
+  return _normalizeAddress(
+    city,
+  ).replaceAll('شهر ', '').replaceAll('شهرستان ', '').trim();
 }
 
 bool geocodedCityMatchesAddress({
@@ -896,16 +937,11 @@ bool isPlausibleIranLatLng(LatLng location) {
 }
 
 bool isPlausibleIranCoordinate(NeshanLatLng location) {
-  return isPlausibleIranLatLng(
-    LatLng(location.latitude, location.longitude),
-  );
+  return isPlausibleIranLatLng(LatLng(location.latitude, location.longitude));
 }
 
 /// True when [result] title/address text overlaps the user-entered [address].
-bool resultMatchesAddressTerms(
-  NeshanGeocodingResult result,
-  String address,
-) {
+bool resultMatchesAddressTerms(NeshanGeocodingResult result, String address) {
   if (isSpuriousDefaultSearchPoi(result, address)) return false;
 
   final hints = extractGeocodeHints(address);
@@ -954,9 +990,12 @@ bool _resultOverlapsAddressTerms(
 
   for (final term in terms) {
     if (searchable.contains(term)) return true;
-    if (searchable.split(' ').any(
-      (word) => word.length >= 3 && (word.contains(term) || term.contains(word)),
-    )) {
+    if (searchable
+        .split(' ')
+        .any(
+          (word) =>
+              word.length >= 3 && (word.contains(term) || term.contains(word)),
+        )) {
       return true;
     }
   }
@@ -977,19 +1016,14 @@ bool isNearCityCentroid(NeshanGeocodingResult result, String address) {
 }
 
 /// True when [result] is a confident match for [address].
-bool isConfidentGeocodingMatch(
-  NeshanGeocodingResult result,
-  String address,
-) =>
+bool isConfidentGeocodingMatch(NeshanGeocodingResult result, String address) =>
     geocodingMatchScore(result, address) >= kMinGeocodingMatchScore;
 
 /// Only reject coordinates that must never be used (known false POI snaps).
-bool isHardRejectGeocodingResult(
-  NeshanGeocodingResult result,
-  String address,
-) {
+bool isHardRejectGeocodingResult(NeshanGeocodingResult result, String address) {
   if (!isPlausibleIranCoordinate(result.location)) return true;
-  if (!geocodedCityMatchesAddress(result: result, address: address)) return true;
+  if (!geocodedCityMatchesAddress(result: result, address: address))
+    return true;
   return isSpuriousDefaultSearchPoi(result, address) ||
       isKnownNeshanFalsePositiveLocation(result, address);
 }
@@ -1000,7 +1034,8 @@ bool isClearlyWrongGeocodingResult(
   String address,
 ) {
   if (!isPlausibleIranCoordinate(result.location)) return true;
-  if (!geocodedCityMatchesAddress(result: result, address: address)) return true;
+  if (!geocodedCityMatchesAddress(result: result, address: address))
+    return true;
 
   if (isSpuriousDefaultSearchPoi(result, address)) return true;
 

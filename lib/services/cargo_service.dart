@@ -7,6 +7,7 @@ import '../models/cargo.dart';
 import '../models/driver_bar_query.dart';
 import '../models/driver_profile.dart';
 import '../models/paginated_result.dart';
+import '../utils/address_geocode_hints.dart';
 import 'api_client.dart';
 import 'api_response.dart';
 import 'location_service.dart';
@@ -86,17 +87,22 @@ class CargoService extends ChangeNotifier {
     LatLng driverPosition, {
     required double radiusKm,
   }) {
-    if (!cargo.hasOriginCoords) {
+    final origin = _originPoint(cargo);
+    if (origin == null) {
       return cargo.copyWith(isNearby: false);
     }
-    final km = _location.distanceKm(
-      driverPosition,
-      LatLng(cargo.originLat!, cargo.originLng!),
-    );
+    final km = _location.distanceKm(driverPosition, origin);
     return cargo.copyWith(
       isNearby: km <= radiusKm,
       nearbyDistanceKm: double.parse(km.toStringAsFixed(1)),
     );
+  }
+
+  LatLng? _originPoint(Cargo cargo) {
+    if (cargo.hasOriginCoords) {
+      return LatLng(cargo.originLat!, cargo.originLng!);
+    }
+    return originLatLngFromAddress(cargo.origin);
   }
 
   static final List<Cargo> _cargos = [
@@ -360,6 +366,7 @@ class CargoService extends ChangeNotifier {
     _clearError();
     final pos =
         driverPosition ??
+        _location.lastKnown ??
         await _location.getCurrentPosition(requestIfNeeded: false);
     if (pos == null) return const [];
 

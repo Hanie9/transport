@@ -102,8 +102,30 @@ abstract final class TransportApiMapper {
       confirmDriver: assignMap?['confirm_driver'] == true,
       confirmOperator: assignMap?['confirm_operator'] == true,
       createdAt: DateTime.tryParse('${json['created_at'] ?? ''}'),
-      originLat: d(json['latitude_mabda']),
-      originLng: d(json['longitude_mabda']),
+      originLat: d(
+        json['latitude_mabda'] ??
+            json['lat_mabda'] ??
+            json['origin_lat'] ??
+            json['originLat'] ??
+            (json['mabda'] is Map
+                ? (json['mabda']['latitude'] ??
+                      json['mabda']['lat'] ??
+                      json['mabda']['latitude_mabda'])
+                : null),
+      ),
+      originLng: d(
+        json['longitude_mabda'] ??
+            json['lng_mabda'] ??
+            json['lon_mabda'] ??
+            json['origin_lng'] ??
+            json['originLng'] ??
+            (json['mabda'] is Map
+                ? (json['mabda']['longitude'] ??
+                      json['mabda']['lng'] ??
+                      json['mabda']['lon'] ??
+                      json['mabda']['longitude_mabda'])
+                : null),
+      ),
       destinationLat: d(json['latitude_maghsad']),
       destinationLng: d(json['longitude_maghsad']),
       description: json['description']?.toString(),

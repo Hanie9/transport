@@ -9,7 +9,7 @@ const double kMinTrafficStepMeters = 25;
 /// Matched steps must follow roughly the same geometry.
 const double kMaxStepDistanceDrift = 0.55;
 
-const double kMaxStepLocationMismatchMeters = 350;
+const double kMaxStepLocationMismatchMeters = 120;
 
 /// Classifies step traffic by comparing live vs typical (or no-traffic) durations.
 RouteTrafficLevel trafficLevelForStep(
@@ -91,14 +91,12 @@ RouteTrafficLevel _trafficLevelFromComparison({
     if (delay < 20 && ratio < 1.25) return RouteTrafficLevel.clear;
   }
 
-  // سنگین — needs real absolute delay, not ratio alone.
-  if ((delay >= 55 && ratio >= 1.35) || delay >= 90) {
+  // سنگین — only a real jam, not a traffic light or urban slowdown.
+  if ((delay >= 75 && ratio >= 1.45) || delay >= 120) {
     return RouteTrafficLevel.heavy;
   }
   // نیمه‌سنگین
-  if ((delay >= 22 && ratio >= 1.20) ||
-      delay >= 40 ||
-      (ratio >= 1.35 && delay >= 18)) {
+  if ((delay >= 35 && ratio >= 1.28) || delay >= 60) {
     return RouteTrafficLevel.moderate;
   }
   // روان
@@ -123,45 +121,14 @@ double? _baselineDurationForStep(
           (matched.distanceMeters - live.distanceMeters).abs() /
           live.distanceMeters;
       if (drift > kMaxStepDistanceDrift) {
-        return _proportionalBaselineDuration(live, liveLeg, baselineLeg);
+        // Wrong geometry pair — do not invent congestion from a distance share.
+        return null;
       }
     }
     return matched.durationSeconds;
   }
 
-  return _proportionalBaselineDuration(live, liveLeg, baselineLeg);
-}
-
-/// Allocates baseline time by distance share when step pairing fails.
-double? _proportionalBaselineDuration(
-  NeshanRouteStep live,
-  NeshanRouteLeg liveLeg,
-  NeshanRouteLeg baselineLeg,
-) {
-  if (liveLeg.durationSeconds <= 0 || baselineLeg.durationSeconds <= 0) {
-    return null;
-  }
-
-  // Prefer distance share only — time share of the live step circularly
-  // hides congestion and can also invent it when pairing fails.
-  if (liveLeg.distanceMeters > 0 &&
-      baselineLeg.distanceMeters > 0 &&
-      live.distanceMeters > 0) {
-    final distanceShare = live.distanceMeters / liveLeg.distanceMeters;
-    return baselineLeg.durationSeconds * distanceShare;
-  }
-
   return null;
-}
-
-double _distanceBeforeStep(NeshanRouteLeg leg, int stepIndex) {
-  var offset = 0.0;
-  for (var i = 0; i < stepIndex && i < leg.steps.length; i++) {
-    final step = leg.steps[i];
-    if (step.isArrival) continue;
-    offset += step.distanceMeters;
-  }
-  return offset;
 }
 
 /// Picks the baseline step that corresponds to [live].
@@ -173,16 +140,14 @@ NeshanRouteStep? _matchingBaselineStep(
 }) {
   final sameStepCount = liveLeg.steps.length == baselineLeg.steps.length;
 
-  // Same step count → trust index pairing (live vs no-traffic usually align).
-  // Nearest-location fallback can latch onto the wrong baseline step and paint
-  // false red when free-flow duration is far too low.
+  // Pair by index only when that step is actually the same place.
+  // A same-count fallback without coordinates is kept; a far index match
+  // is ignored so urban free-flow is not painted red.
   if (stepIndex != null &&
       stepIndex >= 0 &&
       stepIndex < baselineLeg.steps.length) {
     final atIndex = baselineLeg.steps[stepIndex];
     if (!atIndex.isArrival && atIndex.durationSeconds > 0) {
-      if (sameStepCount) return atIndex;
-
       final liveLoc = live.startLocation;
       final baseLoc = atIndex.startLocation;
       if (liveLoc != null && baseLoc != null) {
@@ -191,6 +156,8 @@ NeshanRouteStep? _matchingBaselineStep(
           LatLng(baseLoc.latitude, baseLoc.longitude),
         );
         if (dist <= kMaxStepLocationMismatchMeters) return atIndex;
+      } else if (sameStepCount) {
+        return atIndex;
       }
     }
   }
@@ -216,32 +183,7 @@ NeshanRouteStep? _matchingBaselineStep(
     if (best != null) return best;
   }
 
-  if (stepIndex != null && stepIndex >= 0) {
-    return _baselineStepAtDistance(
-      baselineLeg,
-      _distanceBeforeStep(liveLeg, stepIndex) + live.distanceMeters / 2,
-    );
-  }
-
   return null;
-}
-
-NeshanRouteStep? _baselineStepAtDistance(
-  NeshanRouteLeg baselineLeg,
-  double distanceAlong,
-) {
-  if (baselineLeg.steps.isEmpty) return null;
-
-  var cursor = 0.0;
-  NeshanRouteStep? last;
-  for (final step in baselineLeg.steps) {
-    if (step.isArrival) continue;
-    last = step;
-    final span = step.distanceMeters > 0 ? step.distanceMeters : 0.0;
-    if (distanceAlong <= cursor + span) return step;
-    cursor += span;
-  }
-  return last;
 }
 
 RouteTrafficLevel mergeTrafficLevels(

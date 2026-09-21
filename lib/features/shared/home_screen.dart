@@ -12,6 +12,7 @@ import '../../l10n/app_localizations.dart';
 import '../../models/cargo.dart';
 import '../../services/auth_service.dart';
 import '../../services/cargo_service.dart';
+import '../../services/location_service.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key, required this.role});
@@ -68,11 +69,17 @@ class _HomeScreenState extends State<HomeScreen> {
       );
       final active = missions.where((c) => c.status == 'تخصیص یافته').length;
       if (!mounted) return;
+      final pos =
+          LocationService().lastKnown ??
+          await LocationService().getCurrentPosition(requestIfNeeded: false);
       setState(() {
         _stat1 = nearby.length;
         _stat2 = available.length;
         _stat3 = active;
-        final suggested = _uniqueCargos([...nearby, ...available]);
+        var suggested = _uniqueCargos([...nearby, ...available]);
+        if (pos != null) {
+          suggested = _cargoService.withDistanceFromDriver(suggested, pos);
+        }
         _hasMoreSuggested = suggested.length > _suggestedLimit;
         _recent = suggested.take(_suggestedLimit).toList();
         _loading = false;
@@ -385,7 +392,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         delay: Duration(milliseconds: 80 * index),
                         child: _HomeCargoTile(
                           cargo: cargo,
-                          showNearby: _isDriver && cargo.isNearby,
+                          showNearby: _isDriver,
                           onTap: () => context.push(
                             _isDriver
                                 ? '/driver/cargo/${cargo.id}'
@@ -807,6 +814,18 @@ class _HomeCargoTile extends StatelessWidget {
                   ),
                 ),
               ),
+              if (showNearby && cargo.isNearby)
+                Padding(
+                  padding: const EdgeInsetsDirectional.only(end: 6),
+                  child: Text(
+                    l10n.nearby,
+                    style: const TextStyle(
+                      color: AppTheme.accent,
+                      fontWeight: FontWeight.w800,
+                      fontSize: 12,
+                    ),
+                  ),
+                ),
               if (showNearby && cargo.nearbyDistanceKm != null)
                 Container(
                   padding: const EdgeInsets.symmetric(
