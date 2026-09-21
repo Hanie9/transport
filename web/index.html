@@ -15,6 +15,7 @@
   <link rel="apple-touch-icon" sizes="180x180" href="icons/apple-touch-icon-180.png">
   <link rel="icon" type="image/png" sizes="192x192" href="icons/Icon-192.png">
   <link rel="manifest" href="manifest.json">
+  <link rel="canonical" href="https://kashan-project.liara.run/">
   <title>لجستیک | مدیریت حمل‌ونقل بار</title>
   <link rel="preconnect" href="https://static.neshan.org" crossorigin>
   <link rel="stylesheet" href="https://static.neshan.org/sdk/mapboxgl/v1.13.2/neshan-sdk/v1.1.5/index.css">
@@ -54,7 +55,7 @@
     });
     window.addEventListener('load', function () {
       if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.register('pwa_service_worker.js?v=1.0.0-1-20260921-5', { scope: './' })
+        navigator.serviceWorker.register('pwa_service_worker.js?v=1.0.0-1-20260921-6', { scope: './' })
           .catch(function (error) {
             console.warn('[Logistics PWA] Service worker registration failed:', error);
           });

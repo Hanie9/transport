@@ -45,7 +45,7 @@ class NeshanServicesPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
 
     companion object {
         /** Whitelisted Referer for the scoped service.* key (matches uzita proxy). */
-        private const val NESHAN_API_REFERER = "https://device-control.liara.run/"
+        private const val NESHAN_API_REFERER = "https://kashan-project.liara.run/"
     }
 
     override fun onAttachedToEngine(binding: FlutterPlugin.FlutterPluginBinding) {

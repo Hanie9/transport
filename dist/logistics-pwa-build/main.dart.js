@@ -113119,7 +113119,7 @@ Ki(a){var s,r=t.N
 r=A.x(r,r)
 r.m(0,"Api-Key",a)
 r.m(0,"Content-Type","application/json")
-s=B.c.W("https://device-control.liara.run/")
+s=B.c.W("https://kashan-project.liara.run/")
 if(s.length!==0)r.m(0,"Referer",s)
 return r},
 lv(a,b,c,d,e){return this.a6l(a,b,c,d,e)},
