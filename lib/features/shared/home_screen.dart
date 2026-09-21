@@ -72,14 +72,15 @@ class _HomeScreenState extends State<HomeScreen> {
       final pos =
           LocationService().lastKnown ??
           await LocationService().getCurrentPosition(requestIfNeeded: false);
+      var suggested = _uniqueCargos([...nearby, ...available]);
+      if (pos != null) {
+        suggested = await _cargoService.withDistanceFromDriver(suggested, pos);
+      }
+      if (!mounted) return;
       setState(() {
         _stat1 = nearby.length;
         _stat2 = available.length;
         _stat3 = active;
-        var suggested = _uniqueCargos([...nearby, ...available]);
-        if (pos != null) {
-          suggested = _cargoService.withDistanceFromDriver(suggested, pos);
-        }
         _hasMoreSuggested = suggested.length > _suggestedLimit;
         _recent = suggested.take(_suggestedLimit).toList();
         _loading = false;

@@ -5,9 +5,12 @@ import 'package:legestic/services/neshan_backend_client.dart';
 import 'package:legestic/services/neshan_models.dart';
 import 'package:legestic/services/neshan_service.dart';
 import 'package:legestic/services/token_storage.dart';
+import 'package:latlong2/latlong.dart';
 import 'package:legestic/utils/address_geocode_hints.dart';
 import 'package:legestic/utils/neshan_config.dart';
 import 'package:legestic/utils/neshan_error_codes.dart';
+import 'package:legestic/utils/polyline_decoder.dart';
+import 'package:legestic/utils/route_progress.dart';
 
 /// Geocoding + routing with live traffic — Neshan only.
 ///
@@ -383,6 +386,46 @@ class DriverRoutingService {
       avoidOddEvenZone: avoidOddEvenZone,
       bearing: bearing,
     );
+  }
+
+  /// Driving (street-network) distance in kilometres via Neshan routing.
+  Future<double?> drivingDistanceKm({
+    required NeshanLatLng origin,
+    required NeshanLatLng destination,
+  }) async {
+    final straightMeters = distanceMeters(
+      LatLng(origin.latitude, origin.longitude),
+      LatLng(destination.latitude, destination.longitude),
+    );
+    if (straightMeters < 25) return straightMeters / 1000.0;
+
+    try {
+      final km = _routeDistanceKm(
+        await getRoute(origin: origin, destination: destination),
+      );
+      if (km != null) return km;
+    } catch (_) {}
+
+    try {
+      final baseline = await _tryFetchTrafficBaselineRoute(
+        origin: origin,
+        destination: destination,
+      );
+      if (baseline != null) return _routeDistanceKm(baseline);
+    } catch (_) {}
+
+    return null;
+  }
+
+  double? _routeDistanceKm(NeshanRoute route) {
+    var meters = route.totalDistanceMeters;
+    if (meters <= 0 &&
+        route.overviewPolyline != null &&
+        route.overviewPolyline!.trim().isNotEmpty) {
+      meters = polylineLengthMeters(decodePolyline(route.overviewPolyline!));
+    }
+    if (meters <= 0) return null;
+    return meters / 1000.0;
   }
 
   /// Adds a typical/no-traffic baseline for per-segment traffic colouring.

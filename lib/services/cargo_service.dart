@@ -10,7 +10,9 @@ import '../models/paginated_result.dart';
 import '../utils/address_geocode_hints.dart';
 import 'api_client.dart';
 import 'api_response.dart';
+import 'driver_routing_service.dart';
 import 'location_service.dart';
+import 'neshan_models.dart';
 import 'notification_service.dart';
 import 'reference_data_service.dart';
 import 'settings_service.dart';
@@ -18,22 +20,39 @@ import 'transport_api_mapper.dart';
 
 /// Cargo / driver facade — configured Transport REST API (or mock).
 class CargoService extends ChangeNotifier {
-  CargoService._({ApiClient? apiClient, LocationService? locationService})
-    : _api = apiClient ?? ApiClient(),
-      _location = locationService ?? LocationService();
+  CargoService._({
+    ApiClient? apiClient,
+    LocationService? locationService,
+    DriverRoutingService? routing,
+  }) : _api = apiClient ?? ApiClient(),
+       _location = locationService ?? LocationService(),
+       _routing = routing ?? const DriverRoutingService(),
+       _drivingDistanceOverride = null;
 
   /// Test-only constructor with injected API client.
   CargoService.withClient(
     ApiClient apiClient, {
     LocationService? locationService,
+    DriverRoutingService? routing,
+    Future<double?> Function(LatLng from, LatLng to)? drivingDistanceKm,
   }) : _api = apiClient,
-       _location = locationService ?? LocationService();
+       _location = locationService ?? LocationService(),
+       _routing = routing ?? const DriverRoutingService(),
+       _drivingDistanceOverride = drivingDistanceKm;
 
   static final CargoService _instance = CargoService._();
   factory CargoService() => _instance;
 
   final ApiClient _api;
   final LocationService _location;
+  final DriverRoutingService _routing;
+  final Future<double?> Function(LatLng from, LatLng to)?
+  _drivingDistanceOverride;
+
+  final Map<String, LatLng> _geocodedOrigins = {};
+  final Map<String, Future<LatLng?>> _originInFlight = {};
+  final Map<String, double> _roadKmCache = {};
+  final Map<String, Future<double?>> _roadInFlight = {};
 
   String? _lastError;
   String? get lastError => _lastError;
@@ -67,42 +86,112 @@ class CargoService extends ChangeNotifier {
     );
   }
 
-  static const double nearbyRadiusKm = 25;
+  static const double nearbyRadiusKm = 40;
+  static const int _streetDistanceConcurrency = 4;
 
-  /// Distance from the driver to each cargo origin, plus a nearby flag
-  /// when that distance is within [nearbyRadiusKm].
-  List<Cargo> withDistanceFromDriver(
+  /// Street-network distance from the driver to each cargo origin, plus a
+  /// nearby flag when that driving distance is within [radiusKm].
+  Future<List<Cargo>> withDistanceFromDriver(
     List<Cargo> cargos,
     LatLng driverPosition, {
     double radiusKm = nearbyRadiusKm,
   }) {
-    return [
-      for (final cargo in cargos)
-        _withDistanceFromDriver(cargo, driverPosition, radiusKm: radiusKm),
-    ];
-  }
-
-  Cargo _withDistanceFromDriver(
-    Cargo cargo,
-    LatLng driverPosition, {
-    required double radiusKm,
-  }) {
-    final origin = _originPoint(cargo);
-    if (origin == null) {
-      return cargo.copyWith(isNearby: false);
-    }
-    final km = _location.distanceKm(driverPosition, origin);
-    return cargo.copyWith(
-      isNearby: km <= radiusKm,
-      nearbyDistanceKm: double.parse(km.toStringAsFixed(1)),
+    return _mapLimited(
+      cargos,
+      (cargo) => _withDistanceFromDriver(
+        cargo,
+        driverPosition,
+        radiusKm: radiusKm,
+      ),
+      limit: _streetDistanceConcurrency,
     );
   }
 
-  LatLng? _originPoint(Cargo cargo) {
-    if (cargo.hasOriginCoords) {
-      return LatLng(cargo.originLat!, cargo.originLng!);
+  Future<Cargo> _withDistanceFromDriver(
+    Cargo cargo,
+    LatLng driverPosition, {
+    required double radiusKm,
+  }) async {
+    final origin = await _originPoint(cargo);
+    if (origin == null) {
+      return cargo.copyWith(isNearby: false);
     }
-    return originLatLngFromAddress(cargo.origin);
+    final km =
+        await _streetDistanceKm(driverPosition, origin) ??
+        _location.distanceKm(driverPosition, origin);
+    return cargo.copyWith(
+      isNearby: km <= radiusKm,
+      nearbyDistanceKm: _roundKm(km),
+    );
+  }
+
+  Future<LatLng?> _originPoint(Cargo cargo) {
+    if (cargo.hasOriginCoords) {
+      return Future.value(LatLng(cargo.originLat!, cargo.originLng!));
+    }
+    final key = cargo.origin.trim();
+    if (key.isEmpty) return Future.value(null);
+    final cached = _geocodedOrigins[key];
+    if (cached != null) return Future.value(cached);
+
+    return _originInFlight.putIfAbsent(key, () async {
+      try {
+        final geo = await _routing.resolveCargoAddress(cargo.origin);
+        final point = LatLng(geo.location.latitude, geo.location.longitude);
+        _geocodedOrigins[key] = point;
+        return point;
+      } catch (_) {
+        final fallback = originLatLngFromAddress(cargo.origin);
+        if (fallback != null) _geocodedOrigins[key] = fallback;
+        return fallback;
+      } finally {
+        _originInFlight.remove(key);
+      }
+    });
+  }
+
+  Future<double?> _streetDistanceKm(LatLng from, LatLng to) {
+    final override = _drivingDistanceOverride;
+    if (override != null) return override(from, to);
+
+    final key = _roadCacheKey(from, to);
+    final cached = _roadKmCache[key];
+    if (cached != null) return Future.value(cached);
+
+    return _roadInFlight.putIfAbsent(key, () async {
+      try {
+        final km = await _routing.drivingDistanceKm(
+          origin: NeshanLatLng(
+            latitude: from.latitude,
+            longitude: from.longitude,
+          ),
+          destination: NeshanLatLng(
+            latitude: to.latitude,
+            longitude: to.longitude,
+          ),
+        );
+        if (km != null && km >= 0) {
+          _roadKmCache[key] = km;
+          return km;
+        }
+        return null;
+      } catch (_) {
+        return null;
+      } finally {
+        _roadInFlight.remove(key);
+      }
+    });
+  }
+
+  static String _roadCacheKey(LatLng from, LatLng to) {
+    String r(double v, int digits) => v.toStringAsFixed(digits);
+    return '${r(from.latitude, 3)},${r(from.longitude, 3)}->'
+        '${r(to.latitude, 4)},${r(to.longitude, 4)}';
+  }
+
+  static double _roundKm(double km) {
+    if (km < 0.05) return 0.1;
+    return double.parse(km.toStringAsFixed(1));
   }
 
   static final List<Cargo> _cargos = [
@@ -373,11 +462,11 @@ class CargoService extends ChangeNotifier {
     if (!ApiConfig.shouldUseMock) {
       try {
         final open = await getCargosForDriver(cargoType ?? '');
-        final results = withDistanceFromDriver(
+        final results = (await withDistanceFromDriver(
           open,
           pos,
           radiusKm: radiusKm,
-        ).where((cargo) => cargo.isNearby).toList()..sort(_byNearbyDistance);
+        )).where((cargo) => cargo.isNearby).toList()..sort(_byNearbyDistance);
         return results;
       } catch (e) {
         _setError(e);
@@ -393,11 +482,11 @@ class CargoService extends ChangeNotifier {
       return true;
     }).toList();
 
-    return withDistanceFromDriver(
+    return (await withDistanceFromDriver(
       open,
       pos,
       radiusKm: radiusKm,
-    ).where((cargo) => cargo.isNearby).toList()..sort(_byNearbyDistance);
+    )).where((cargo) => cargo.isNearby).toList()..sort(_byNearbyDistance);
   }
 
   static int _byNearbyDistance(Cargo a, Cargo b) {
@@ -932,4 +1021,29 @@ class CargoService extends ChangeNotifier {
   }) async {
     if (ApiConfig.shouldUseMock) return;
   }
+}
+
+Future<List<T>> _mapLimited<T, E>(
+  List<E> items,
+  Future<T> Function(E item) mapper, {
+  int limit = 4,
+}) async {
+  if (items.isEmpty) return <T>[];
+  final results = List<T?>.filled(items.length, null);
+  var next = 0;
+  Future<void> worker() async {
+    while (true) {
+      final index = next;
+      if (index >= items.length) return;
+      next++;
+      results[index] = await mapper(items[index]);
+    }
+  }
+
+  final workers = List.generate(
+    limit < items.length ? limit : items.length,
+    (_) => worker(),
+  );
+  await Future.wait(workers);
+  return results.cast<T>();
 }

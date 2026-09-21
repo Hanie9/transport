@@ -235,7 +235,7 @@ class _DriverHomeScreenState extends State<DriverHomeScreen>
       pos ??= await _location.getCurrentPosition(requestIfNeeded: false);
       pos ??= await _location.getCurrentPosition(requestIfNeeded: true);
       if (pos != null) {
-        items = _cargoService.withDistanceFromDriver(items, pos);
+        items = await _cargoService.withDistanceFromDriver(items, pos);
       }
     }
 

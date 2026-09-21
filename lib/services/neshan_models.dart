@@ -138,6 +138,21 @@ class NeshanRoute {
 
   NeshanRouteLeg? get primaryLeg => legs.isEmpty ? null : legs.first;
 
+  /// Street-network length of the route (sum of legs, else steps).
+  double get totalDistanceMeters {
+    var total = 0.0;
+    for (final leg in legs) {
+      if (leg.distanceMeters > 0) {
+        total += leg.distanceMeters;
+        continue;
+      }
+      for (final step in leg.steps) {
+        total += step.distanceMeters;
+      }
+    }
+    return total;
+  }
+
   NeshanRoute withBaseline(NeshanRoute? baseline) {
     if (baseline == null) return this;
     return NeshanRoute(
