@@ -1,6 +1,7 @@
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../theme/app_theme.dart';
 
@@ -99,7 +100,17 @@ class _ModernDropdownFieldState<T> extends State<ModernDropdownField<T>> {
       _removeOverlay();
       return;
     }
-    _showOverlay(fieldState);
+    final keyboardOpen = MediaQuery.viewInsetsOf(context).bottom > 0;
+    FocusManager.instance.primaryFocus?.unfocus();
+    SystemChannels.textInput.invokeMethod('TextInput.hide');
+    if (!keyboardOpen) {
+      _showOverlay(fieldState);
+      return;
+    }
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || _isOpen) return;
+      _showOverlay(fieldState);
+    });
   }
 
   void _showOverlay(FormFieldState<T> fieldState) {

@@ -208,6 +208,8 @@ class _EditCargoScreenState extends State<EditCargoScreen> {
                 TextFormField(
                   controller: _titleController,
                   maxLength: 100,
+                  onTapOutside: (_) =>
+                      FocusManager.instance.primaryFocus?.unfocus(),
                   decoration: InputDecoration(
                     labelText: l10n.cargoTitle,
                     prefixIcon: const Icon(Icons.title),
@@ -220,6 +222,8 @@ class _EditCargoScreenState extends State<EditCargoScreen> {
                   controller: _descriptionController,
                   maxLength: 450,
                   maxLines: 3,
+                  onTapOutside: (_) =>
+                      FocusManager.instance.primaryFocus?.unfocus(),
                   decoration: InputDecoration(
                     labelText: l10n.description,
                     prefixIcon: const Icon(Icons.notes_outlined),

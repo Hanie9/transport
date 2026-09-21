@@ -171,8 +171,10 @@ class AppRouter {
             ),
             GoRoute(
               path: '/coordinator/cargos',
-              pageBuilder: (context, state) =>
-                  _noTransition(state, const CoordinatorHomeScreen()),
+              pageBuilder: (context, state) => NoTransitionPage<void>(
+                key: ValueKey('coordinator-cargos-${state.extra ?? ''}'),
+                child: const CoordinatorHomeScreen(),
+              ),
             ),
             GoRoute(
               path: '/coordinator/drivers',

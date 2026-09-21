@@ -219,8 +219,6 @@ class _DriverHomeScreenState extends State<DriverHomeScreen>
       setState(() => _loading = true);
     }
 
-    final user = context.read<AuthService>().currentUser;
-    final cargoType = user?.vehicleInfo?.cargoType ?? 'کفی';
     final page = loadMore ? _currentPage + 1 : 1;
 
     final pageResult = await _cargoService.getDriverBarsPage(
@@ -230,15 +228,12 @@ class _DriverHomeScreenState extends State<DriverHomeScreen>
 
     // Respect the user's nearby-GPS preference, not only device GPS state.
     final gpsOn = await _location.isNearbyGpsActive();
-    var nearbyCargos = <Cargo>[];
+    var items = pageResult.items;
 
-    if (gpsOn && !loadMore) {
+    if (gpsOn) {
       final pos = await _location.getCurrentPosition(requestIfNeeded: false);
       if (pos != null) {
-        nearbyCargos = await _cargoService.getNearbyCargos(
-          cargoType: cargoType,
-          driverPosition: pos,
-        );
+        items = _cargoService.withDistanceFromDriver(items, pos);
       }
     }
 
@@ -246,14 +241,19 @@ class _DriverHomeScreenState extends State<DriverHomeScreen>
 
     setState(() {
       if (loadMore) {
-        _allCargos = [..._allCargos, ...pageResult.items];
+        _allCargos = [..._allCargos, ...items];
         _loadingMore = false;
       } else {
-        _allCargos = pageResult.items;
-        _nearbyCargos = nearbyCargos;
-        _gpsEnabled = gpsOn;
+        _allCargos = items;
         _loading = false;
       }
+      _gpsEnabled = gpsOn;
+      _nearbyCargos = gpsOn
+          ? (_allCargos.where((cargo) => cargo.isNearby).toList()..sort(
+              (a, b) =>
+                  (a.nearbyDistanceKm ?? 0).compareTo(b.nearbyDistanceKm ?? 0),
+            ))
+          : [];
       _currentPage = pageResult.currentPage;
       _hasMore = pageResult.hasNext;
     });
@@ -413,9 +413,23 @@ class _DriverHomeScreenState extends State<DriverHomeScreen>
   }
 
   List<Cargo> get _otherCargos {
-    if (_nearbyCargos.isEmpty) return _allCargos;
-    final nearbyIds = _nearbyCargos.map((c) => c.id).toSet();
-    return _allCargos.where((c) => !nearbyIds.contains(c.id)).toList();
+    final others = _nearbyCargos.isEmpty
+        ? List<Cargo>.from(_allCargos)
+        : _allCargos
+              .where((c) => !_nearbyCargos.any((nearby) => nearby.id == c.id))
+              .toList();
+    if (!_gpsEnabled) return others;
+    others.sort(_byDistance);
+    return others;
+  }
+
+  static int _byDistance(Cargo a, Cargo b) {
+    final da = a.nearbyDistanceKm;
+    final db = b.nearbyDistanceKm;
+    if (da == null && db == null) return 0;
+    if (da == null) return 1;
+    if (db == null) return -1;
+    return da.compareTo(db);
   }
 
   @override
@@ -499,7 +513,7 @@ class _DriverHomeScreenState extends State<DriverHomeScreen>
                     final cargo = _nearbyCargos[index];
                     return Padding(
                       padding: const EdgeInsets.only(bottom: 12),
-                      child: _NearbyCargoTile(
+                      child: _CargoListTile(
                         cargo: cargo,
                         onTap: () => context.push('/driver/cargo/${cargo.id}'),
                       ),
@@ -662,90 +676,6 @@ class _GpsBanner extends StatelessWidget {
   }
 }
 
-class _NearbyCargoTile extends StatelessWidget {
-  const _NearbyCargoTile({required this.cargo, required this.onTap});
-
-  final Cargo cargo;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final l10n = context.l10n;
-    final palette = context.palette;
-    return AppCard(
-      onTap: onTap,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 10,
-                  vertical: 5,
-                ),
-                decoration: BoxDecoration(
-                  color: AppTheme.accent.withValues(alpha: 0.12),
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const Icon(Icons.near_me, size: 14, color: AppTheme.accent),
-                    const SizedBox(width: 4),
-                    Text(
-                      l10n.kmDistance(cargo.nearbyDistanceKm ?? 0),
-                      style: const TextStyle(
-                        color: AppTheme.accent,
-                        fontSize: 12,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const Spacer(),
-              StatusChip(status: cargo.status, date: cargo.createdAt),
-            ],
-          ),
-          const SizedBox(height: 12),
-          Text(
-            cargo.title,
-            style: TextStyle(
-              fontWeight: FontWeight.w800,
-              fontSize: 15,
-              color: palette.textPrimary,
-            ),
-          ),
-          const SizedBox(height: 8),
-          _RouteLine(
-            icon: Icons.trip_origin,
-            color: AppTheme.success,
-            text: cargo.origin,
-          ),
-          const SizedBox(height: 4),
-          _RouteLine(
-            icon: Icons.location_on,
-            color: AppTheme.error,
-            text: cargo.destination,
-          ),
-          Padding(
-            padding: const EdgeInsets.symmetric(vertical: 12),
-            child: Divider(height: 1, color: palette.divider),
-          ),
-          Row(
-            children: [
-              _TagChip(label: cargo.cargoType, color: AppTheme.primary),
-              const Spacer(),
-              PriceLabel(price: cargo.estimatedPrice, fontSize: 14),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-}
-
 class _CargoListTile extends StatelessWidget {
   const _CargoListTile({required this.cargo, required this.onTap});
 
@@ -756,6 +686,11 @@ class _CargoListTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = context.l10n;
     final palette = context.palette;
+    final showNearby = cargo.isNearby;
+    final distanceKm = cargo.nearbyDistanceKm;
+    final showDistance = distanceKm != null;
+    final showGpsMeta = showNearby || showDistance;
+
     return AppCard(
       onTap: onTap,
       child: Column(
@@ -763,20 +698,46 @@ class _CargoListTile extends StatelessWidget {
         children: [
           Row(
             children: [
-              Expanded(
-                child: Text(
-                  cargo.title,
-                  style: TextStyle(
-                    fontWeight: FontWeight.w800,
-                    fontSize: 15,
-                    color: palette.textPrimary,
-                    letterSpacing: -0.2,
+              if (showGpsMeta)
+                Expanded(
+                  child: Wrap(
+                    spacing: 8,
+                    runSpacing: 6,
+                    crossAxisAlignment: WrapCrossAlignment.center,
+                    children: [
+                      if (showNearby)
+                        _TagChip(label: l10n.nearby, color: AppTheme.accent),
+                      if (distanceKm != null) _DistanceChip(km: distanceKm),
+                    ],
+                  ),
+                )
+              else
+                Expanded(
+                  child: Text(
+                    cargo.title,
+                    style: TextStyle(
+                      fontWeight: FontWeight.w800,
+                      fontSize: 15,
+                      color: palette.textPrimary,
+                      letterSpacing: -0.2,
+                    ),
                   ),
                 ),
-              ),
               StatusChip(status: cargo.status, date: cargo.createdAt),
             ],
           ),
+          if (showGpsMeta) ...[
+            const SizedBox(height: 12),
+            Text(
+              cargo.title,
+              style: TextStyle(
+                fontWeight: FontWeight.w800,
+                fontSize: 15,
+                color: palette.textPrimary,
+                letterSpacing: -0.2,
+              ),
+            ),
+          ],
           const SizedBox(height: 14),
           _RouteLine(
             icon: Icons.trip_origin,
@@ -804,6 +765,39 @@ class _CargoListTile extends StatelessWidget {
               const Spacer(),
               PriceLabel(price: cargo.estimatedPrice, fontSize: 14),
             ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _DistanceChip extends StatelessWidget {
+  const _DistanceChip({required this.km});
+
+  final num km;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.l10n;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+      decoration: BoxDecoration(
+        color: AppTheme.accent.withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const Icon(Icons.near_me, size: 14, color: AppTheme.accent),
+          const SizedBox(width: 4),
+          Text(
+            l10n.kmDistance(km),
+            style: const TextStyle(
+              color: AppTheme.accent,
+              fontSize: 12,
+              fontWeight: FontWeight.w700,
+            ),
           ),
         ],
       ),

@@ -26,10 +26,13 @@ class _HomeScreenState extends State<HomeScreen> {
   final _cargoService = CargoService();
   bool _loading = true;
 
+  static const _suggestedLimit = 3;
+
   int _stat1 = 0;
   int _stat2 = 0;
   int _stat3 = 0;
   List<Cargo> _recent = [];
+  bool _hasMoreSuggested = false;
 
   bool get _isDriver => widget.role == 'driver';
 
@@ -69,7 +72,9 @@ class _HomeScreenState extends State<HomeScreen> {
         _stat1 = nearby.length;
         _stat2 = available.length;
         _stat3 = active;
-        _recent = [...nearby, ...available].take(3).toList();
+        final suggested = _uniqueCargos([...nearby, ...available]);
+        _hasMoreSuggested = suggested.length > _suggestedLimit;
+        _recent = suggested.take(_suggestedLimit).toList();
         _loading = false;
       });
     } else {
@@ -88,7 +93,8 @@ class _HomeScreenState extends State<HomeScreen> {
         _stat3 = assigned;
         _pendingHint = pending;
         _inTransitHint = assigned;
-        _recent = allCargos.take(3).toList();
+        _hasMoreSuggested = allCargos.length > _suggestedLimit;
+        _recent = allCargos.take(_suggestedLimit).toList();
         _loading = false;
       });
     }
@@ -96,6 +102,20 @@ class _HomeScreenState extends State<HomeScreen> {
 
   int _pendingHint = 0;
   int _inTransitHint = 0;
+
+  List<Cargo> _uniqueCargos(Iterable<Cargo> cargos) {
+    final seen = <String>{};
+    final result = <Cargo>[];
+    for (final cargo in cargos) {
+      if (cargo.id.isEmpty || !seen.add(cargo.id)) continue;
+      result.add(cargo);
+    }
+    return result;
+  }
+
+  void _openAllCargos() {
+    context.go(_isDriver ? '/driver/cargos' : '/coordinator/cargos');
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -289,10 +309,8 @@ class _HomeScreenState extends State<HomeScreen> {
                   title: _isDriver
                       ? l10n.homeSuggestedCargos
                       : l10n.homeRecentCargos,
-                  actionLabel: l10n.homeViewAll,
-                  action: () => context.go(
-                    _isDriver ? '/driver/cargos' : '/coordinator/cargos',
-                  ),
+                  actionLabel: _hasMoreSuggested ? l10n.homeViewAll : null,
+                  action: _hasMoreSuggested ? _openAllCargos : null,
                 ),
               ),
             ),
@@ -348,6 +366,18 @@ class _HomeScreenState extends State<HomeScreen> {
                 padding: const EdgeInsets.fromLTRB(16, 0, 16, 100),
                 sliver: SliverList(
                   delegate: SliverChildBuilderDelegate((context, index) {
+                    if (index >= _recent.length) {
+                      return Padding(
+                        padding: const EdgeInsets.only(top: 4),
+                        child: FadeSlideIn(
+                          delay: Duration(milliseconds: 80 * index),
+                          child: OutlinedButton(
+                            onPressed: _openAllCargos,
+                            child: Text(l10n.homeViewAll),
+                          ),
+                        ),
+                      );
+                    }
                     final cargo = _recent[index];
                     return Padding(
                       padding: const EdgeInsets.only(bottom: 12),
@@ -364,7 +394,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         ),
                       ),
                     );
-                  }, childCount: _recent.length),
+                  }, childCount: _recent.length + (_hasMoreSuggested ? 1 : 0)),
                 ),
               ),
           ],

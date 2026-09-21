@@ -111,7 +111,6 @@ class _CargoDetailScreenState extends State<CargoDetailScreen> {
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(SnackBar(content: Text(context.l10n.cargoAccepted)));
-      context.push('/driver/route/${_cargo!.id}');
     } else {
       final msg = _cargoService.lastError;
       if (msg != null && msg.isNotEmpty) {

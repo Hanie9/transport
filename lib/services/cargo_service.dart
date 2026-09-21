@@ -68,6 +68,37 @@ class CargoService extends ChangeNotifier {
 
   static const double nearbyRadiusKm = 25;
 
+  /// Distance from the driver to each cargo origin, plus a nearby flag
+  /// when that distance is within [nearbyRadiusKm].
+  List<Cargo> withDistanceFromDriver(
+    List<Cargo> cargos,
+    LatLng driverPosition, {
+    double radiusKm = nearbyRadiusKm,
+  }) {
+    return [
+      for (final cargo in cargos)
+        _withDistanceFromDriver(cargo, driverPosition, radiusKm: radiusKm),
+    ];
+  }
+
+  Cargo _withDistanceFromDriver(
+    Cargo cargo,
+    LatLng driverPosition, {
+    required double radiusKm,
+  }) {
+    if (!cargo.hasOriginCoords) {
+      return cargo.copyWith(isNearby: false);
+    }
+    final km = _location.distanceKm(
+      driverPosition,
+      LatLng(cargo.originLat!, cargo.originLng!),
+    );
+    return cargo.copyWith(
+      isNearby: km <= radiusKm,
+      nearbyDistanceKm: double.parse(km.toStringAsFixed(1)),
+    );
+  }
+
   static final List<Cargo> _cargos = [
     Cargo(
       id: 'cargo-1',
@@ -335,33 +366,11 @@ class CargoService extends ChangeNotifier {
     if (!ApiConfig.shouldUseMock) {
       try {
         final open = await getCargosForDriver(cargoType ?? '');
-        final pos =
-            driverPosition ??
-            await _location.getCurrentPosition(requestIfNeeded: false);
-        if (pos == null) {
-          return open.map((c) => c.copyWith(isNearby: true)).toList();
-        }
-
-        final results = <Cargo>[];
-        for (final cargo in open) {
-          if (!cargo.hasOriginCoords) continue;
-          final km = _location.distanceKm(
-            pos,
-            LatLng(cargo.originLat!, cargo.originLng!),
-          );
-          if (km <= radiusKm) {
-            results.add(
-              cargo.copyWith(
-                isNearby: true,
-                nearbyDistanceKm: double.parse(km.toStringAsFixed(1)),
-              ),
-            );
-          }
-        }
-        results.sort(
-          (a, b) =>
-              (a.nearbyDistanceKm ?? 0).compareTo(b.nearbyDistanceKm ?? 0),
-        );
+        final results = withDistanceFromDriver(
+          open,
+          pos,
+          radiusKm: radiusKm,
+        ).where((cargo) => cargo.isNearby).toList()..sort(_byNearbyDistance);
         return results;
       } catch (e) {
         _setError(e);
@@ -371,29 +380,21 @@ class CargoService extends ChangeNotifier {
 
     await Future<void>.delayed(const Duration(milliseconds: 350));
 
-    final results = <Cargo>[];
-    for (final cargo in _cargos) {
-      if (cargo.status != 'در انتظار راننده') continue;
-      if (cargoType != null && cargo.cargoType != cargoType) continue;
-      if (!cargo.hasOriginCoords) continue;
+    final open = _cargos.where((cargo) {
+      if (cargo.status != 'در انتظار راننده') return false;
+      if (cargoType != null && cargo.cargoType != cargoType) return false;
+      return true;
+    }).toList();
 
-      final km = _location.distanceKm(
-        pos,
-        LatLng(cargo.originLat!, cargo.originLng!),
-      );
-      if (km <= radiusKm) {
-        results.add(
-          cargo.copyWith(
-            isNearby: true,
-            nearbyDistanceKm: double.parse(km.toStringAsFixed(1)),
-          ),
-        );
-      }
-    }
-    results.sort(
-      (a, b) => (a.nearbyDistanceKm ?? 0).compareTo(b.nearbyDistanceKm ?? 0),
-    );
-    return results;
+    return withDistanceFromDriver(
+      open,
+      pos,
+      radiusKm: radiusKm,
+    ).where((cargo) => cargo.isNearby).toList()..sort(_byNearbyDistance);
+  }
+
+  static int _byNearbyDistance(Cargo a, Cargo b) {
+    return (a.nearbyDistanceKm ?? 0).compareTo(b.nearbyDistanceKm ?? 0);
   }
 
   /// Coordinator cargos — backend filters by authenticated user (`mine=true`).

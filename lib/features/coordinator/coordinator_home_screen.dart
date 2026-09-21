@@ -109,8 +109,17 @@ class _CoordinatorHomeScreenState extends State<CoordinatorHomeScreen> {
   @override
   void initState() {
     super.initState();
+    _cargoService.addListener(_onCargosChanged);
     _loadCargos(showLoader: true);
   }
+
+  @override
+  void dispose() {
+    _cargoService.removeListener(_onCargosChanged);
+    super.dispose();
+  }
+
+  void _onCargosChanged() => _loadCargos();
 
   Future<void> _loadCargos({bool showLoader = false}) async {
     if (showLoader) setState(() => _loading = true);

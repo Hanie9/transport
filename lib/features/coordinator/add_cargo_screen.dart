@@ -133,12 +133,13 @@ class _AddCargoScreenState extends State<AddCargoScreen> {
       );
 
       if (!mounted) return;
-      setState(() => _submitting = false);
-
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(l10n.cargoRegistered)));
-      context.pop();
+      final messenger = ScaffoldMessenger.of(context);
+      final registered = l10n.cargoRegistered;
+      context.go(
+        '/coordinator/cargos',
+        extra: DateTime.now().millisecondsSinceEpoch,
+      );
+      messenger.showSnackBar(SnackBar(content: Text(registered)));
     } catch (_) {
       if (!mounted) return;
       setState(() => _submitting = false);
@@ -172,6 +173,8 @@ class _AddCargoScreenState extends State<AddCargoScreen> {
                 TextFormField(
                   controller: _titleController,
                   maxLength: 100,
+                  onTapOutside: (_) =>
+                      FocusManager.instance.primaryFocus?.unfocus(),
                   decoration: InputDecoration(
                     labelText: l10n.cargoTitle,
                     prefixIcon: const Icon(Icons.title),
@@ -185,6 +188,8 @@ class _AddCargoScreenState extends State<AddCargoScreen> {
                   controller: _descriptionController,
                   maxLength: 450,
                   maxLines: 3,
+                  onTapOutside: (_) =>
+                      FocusManager.instance.primaryFocus?.unfocus(),
                   decoration: InputDecoration(
                     labelText: l10n.description,
                     prefixIcon: const Icon(Icons.notes_outlined),
