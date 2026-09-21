@@ -5,9 +5,8 @@
   'use strict';
 
   const ROUTE_NESHAN = '#250ECD';
-  const TRAFFIC_ORANGE_SMOOTH = '#FF9800';
-  const TRAFFIC_RED_HEAVY = '#B71C1C';
-  const TRAFFIC_RED_MODERATE = '#F44336';
+  const TRAFFIC_ORANGE_MODERATE = '#F8830B';
+  const TRAFFIC_RED_HEAVY = '#FF0C00';
   const ROUTE_CASING = '#FFFFFF';
   const TRAVELED_GREY = '#9CA3AF';
   const ORIGIN_GREEN = '#16A34A';
@@ -37,11 +36,30 @@
   function trafficColor(level, congested) {
     switch (level) {
       case 'heavy': return TRAFFIC_RED_HEAVY;
-      case 'moderate': return TRAFFIC_RED_MODERATE;
-      case 'smooth': return TRAFFIC_ORANGE_SMOOTH;
-      case 'clear': return ROUTE_NESHAN;
+      case 'moderate': return TRAFFIC_ORANGE_MODERATE;
+      case 'smooth':
+      case 'clear':
+        return ROUTE_NESHAN;
       default: return congested ? TRAFFIC_RED_HEAVY : ROUTE_NESHAN;
     }
+  }
+
+  // Hide Neshan basemap traffic tiles — same as Android. Those layers paint
+  // many streets red independently of the live route comparison.
+  function hideBasemapTraffic(map) {
+    if (!map) return;
+    try {
+      if (typeof map.setTraffic === 'function') map.setTraffic(false);
+    } catch (_) {}
+    try {
+      const style = map.getStyle && map.getStyle();
+      const layers = (style && style.layers) || [];
+      layers.forEach(function (layer) {
+        if (!layer || !layer.id) return;
+        if (String(layer.id).toLowerCase().indexOf('traffic') === -1) return;
+        try { map.setLayoutProperty(layer.id, 'visibility', 'none'); } catch (_) {}
+      });
+    } catch (_) {}
   }
 
   function getSdk() {
@@ -199,7 +217,7 @@
         maxZoom: 21,
         trackResize: true,
         poi: false,
-        traffic: true,
+        traffic: false,
       });
 
       const state = {
@@ -223,7 +241,11 @@
       maps[viewId] = state;
 
       map.on('load', function () {
+        hideBasemapTraffic(map);
         setupGestureHandlers(state);
+      });
+      map.on('styledata', function () {
+        hideBasemapTraffic(map);
       });
 
       return true;
@@ -525,6 +547,7 @@
         }
       } catch (_) {}
       state.mapDark = !!isDark;
+      hideBasemapTraffic(state.map);
     },
   };
 })();
