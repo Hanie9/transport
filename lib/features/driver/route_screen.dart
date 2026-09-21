@@ -19,7 +19,6 @@ import '../../services/driver_routing_service.dart';
 import '../../services/location_service.dart';
 import '../../services/neshan_models.dart';
 import '../../services/neshan_service.dart';
-import '../../utils/address_geocode_hints.dart';
 import '../../utils/neshan_config.dart';
 import '../../utils/neshan_degraded_route.dart';
 import '../../utils/neshan_errors.dart';
@@ -255,44 +254,13 @@ class _RouteScreenState extends State<RouteScreen> {
     double? lat,
     double? lng,
     NeshanGeocodingResult? sibling,
-  }) async {
-    final hasStored = lat != null && lng != null;
-    if (hasStored) {
-      final stored = NeshanLatLng(latitude: lat, longitude: lng);
-      final hints = extractGeocodeHints(address);
-      return (
-        location: stored,
-        result: NeshanGeocodingResult(
-          location: stored,
-          city: hints.city,
-          province: hints.province,
-        ),
-      );
-    }
-
-    try {
-      final geo = await _routing.resolveCargoAddress(
-        address,
-        siblingResult: sibling,
-      );
-      return (location: geo.location, result: geo);
-    } catch (_) {
-      final hints = extractGeocodeHints(address);
-      final centroid = hints.city != null
-          ? iranCityCentroids[hints.city]
-          : null;
-      if (centroid != null) {
-        return (
-          location: centroid,
-          result: NeshanGeocodingResult(
-            location: centroid,
-            city: hints.city,
-            province: hints.province,
-          ),
-        );
-      }
-      rethrow;
-    }
+  }) {
+    return _routing.resolveCargoMapPoint(
+      address: address,
+      lat: lat,
+      lng: lng,
+      siblingResult: sibling,
+    );
   }
 
   Future<void> _loadPickupRoute({

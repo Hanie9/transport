@@ -233,6 +233,68 @@ class DriverRoutingService {
     );
   }
 
+  /// Map/navigation point for a cargo address. Geocodes the text unless a
+  /// stored pin is already a precise (non-downtown) location in the right city.
+  Future<({NeshanLatLng location, NeshanGeocodingResult? result})>
+  resolveCargoMapPoint({
+    required String address,
+    double? lat,
+    double? lng,
+    NeshanGeocodingResult? siblingResult,
+  }) async {
+    final stored = (lat != null && lng != null)
+        ? NeshanLatLng(latitude: lat, longitude: lng)
+        : null;
+    final storedUsable =
+        stored != null && storedPointFitsAddress(stored, address);
+
+    if (storedUsable && !isLikelyCityCentroidPoint(stored, address)) {
+      final hints = extractGeocodeHints(address);
+      return (
+        location: stored,
+        result: NeshanGeocodingResult(
+          location: stored,
+          city: hints.city,
+          province: hints.province,
+        ),
+      );
+    }
+
+    try {
+      final geo = await resolveCargoAddress(
+        address,
+        siblingResult: siblingResult,
+      );
+      return (location: geo.location, result: geo);
+    } catch (_) {
+      if (storedUsable) {
+        final hints = extractGeocodeHints(address);
+        return (
+          location: stored,
+          result: NeshanGeocodingResult(
+            location: stored,
+            city: hints.city,
+            province: hints.province,
+          ),
+        );
+      }
+      final hints = extractGeocodeHints(address);
+      final centroid =
+          hints.city != null ? iranCityCentroids[hints.city] : null;
+      if (centroid != null) {
+        return (
+          location: centroid,
+          result: NeshanGeocodingResult(
+            location: centroid,
+            city: hints.city,
+            province: hints.province,
+          ),
+        );
+      }
+      rethrow;
+    }
+  }
+
   Future<NeshanGeocodingResult?> _tryPlaceSearch(
     String term, {
     required String address,

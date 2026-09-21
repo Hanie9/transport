@@ -186,9 +186,8 @@ class NeshanService {
       );
     }
 
-    final lat = _asDouble(location['y'] ?? location['latitude']);
-    final lng = _asDouble(location['x'] ?? location['longitude']);
-    if (lat == null || lng == null) {
+    final parsed = parseNeshanMapLocation(location);
+    if (parsed == null) {
       throw const NeshanApiException(
         'Invalid search coordinates',
         neshanStatus: NeshanErrorCodes.invalidGeocodingCoordinates,
@@ -197,7 +196,7 @@ class NeshanService {
 
     final region = item['region']?.toString();
     return NeshanGeocodingCandidate(
-      location: NeshanLatLng(latitude: lat, longitude: lng),
+      location: parsed,
       province: _provinceFromSearchRegion(region),
       city: _cityFromSearchRegion(region),
       neighbourhood: item['neighbourhood']?.toString(),
@@ -352,10 +351,12 @@ class NeshanService {
       );
     }
 
-    final candidates = items
-        .whereType<Map<String, dynamic>>()
-        .map(_parseGeocodingItem)
-        .toList(growable: false);
+    final candidates = <NeshanGeocodingCandidate>[];
+    for (final item in items.whereType<Map<String, dynamic>>()) {
+      try {
+        candidates.add(_parseGeocodingItem(item));
+      } catch (_) {}
+    }
 
     if (candidates.isEmpty) {
       throw const NeshanApiException(
@@ -393,9 +394,8 @@ class NeshanService {
       );
     }
 
-    final lat = _asDouble(location['latitude']);
-    final lng = _asDouble(location['longitude']);
-    if (lat == null || lng == null) {
+    final parsed = parseNeshanMapLocation(location);
+    if (parsed == null) {
       throw const NeshanApiException(
         'Invalid geocoding coordinates',
         neshanStatus: NeshanErrorCodes.invalidGeocodingCoordinates,
@@ -403,7 +403,7 @@ class NeshanService {
     }
 
     return NeshanGeocodingCandidate(
-      location: NeshanLatLng(latitude: lat, longitude: lng),
+      location: parsed,
       province: item['province']?.toString(),
       city: item['city']?.toString(),
       neighbourhood: item['neighbourhood']?.toString(),
@@ -553,4 +553,29 @@ class NeshanService {
     if (value is String) return double.tryParse(value);
     return null;
   }
+}
+
+/// Reads Neshan `location` objects from Geocoding Plus (`latitude`/`longitude`)
+/// or Search/v6 (`x` = lng, `y` = lat). Swaps axes if they were reversed.
+NeshanLatLng? parseNeshanMapLocation(Map<String, dynamic> location) {
+  final lat = _mapCoord(
+    location['y'] ?? location['latitude'] ?? location['lat'],
+  );
+  final lng = _mapCoord(
+    location['x'] ?? location['longitude'] ?? location['lng'] ?? location['lon'],
+  );
+  if (lat == null || lng == null) return null;
+
+  final point = NeshanLatLng(latitude: lat, longitude: lng);
+  if (isPlausibleIranCoordinate(point)) return point;
+
+  final swapped = NeshanLatLng(latitude: lng, longitude: lat);
+  if (isPlausibleIranCoordinate(swapped)) return swapped;
+  return point;
+}
+
+double? _mapCoord(dynamic value) {
+  if (value is num) return value.toDouble();
+  if (value is String) return double.tryParse(value);
+  return null;
 }

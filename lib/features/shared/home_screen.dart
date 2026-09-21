@@ -374,18 +374,6 @@ class _HomeScreenState extends State<HomeScreen> {
                 padding: const EdgeInsets.fromLTRB(16, 0, 16, 100),
                 sliver: SliverList(
                   delegate: SliverChildBuilderDelegate((context, index) {
-                    if (index >= _recent.length) {
-                      return Padding(
-                        padding: const EdgeInsets.only(top: 4),
-                        child: FadeSlideIn(
-                          delay: Duration(milliseconds: 80 * index),
-                          child: OutlinedButton(
-                            onPressed: _openAllCargos,
-                            child: Text(l10n.homeViewAll),
-                          ),
-                        ),
-                      );
-                    }
                     final cargo = _recent[index];
                     return Padding(
                       padding: const EdgeInsets.only(bottom: 12),
@@ -402,7 +390,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         ),
                       ),
                     );
-                  }, childCount: _recent.length + (_hasMoreSuggested ? 1 : 0)),
+                  }, childCount: _recent.length),
                 ),
               ),
           ],
@@ -797,6 +785,9 @@ class _HomeCargoTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final palette = context.palette;
     final l10n = context.l10n;
+    final showNearbyTag = showNearby && cargo.isNearby;
+    final distanceKm = showNearby ? cargo.nearbyDistanceKm : null;
+    final showGpsMeta = showNearbyTag || distanceKm != null;
 
     return AppCard(
       onTap: onTap,
@@ -804,51 +795,50 @@ class _HomeCargoTile extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Expanded(
-                child: Text(
-                  cargo.title,
-                  style: TextStyle(
-                    fontWeight: FontWeight.w800,
-                    fontSize: 15,
-                    color: palette.textPrimary,
+              if (showGpsMeta)
+                Expanded(
+                  child: Wrap(
+                    spacing: 8,
+                    runSpacing: 6,
+                    crossAxisAlignment: WrapCrossAlignment.center,
+                    children: [
+                      if (showNearbyTag)
+                        _HomeTagChip(
+                          label: l10n.nearby,
+                          color: AppTheme.accent,
+                        ),
+                      if (distanceKm != null)
+                        _HomeDistanceChip(km: distanceKm),
+                    ],
                   ),
-                ),
-              ),
-              if (showNearby && cargo.isNearby)
-                Padding(
-                  padding: const EdgeInsetsDirectional.only(end: 6),
+                )
+              else
+                Expanded(
                   child: Text(
-                    l10n.nearby,
-                    style: const TextStyle(
-                      color: AppTheme.accent,
+                    cargo.title,
+                    style: TextStyle(
                       fontWeight: FontWeight.w800,
-                      fontSize: 12,
-                    ),
-                  ),
-                ),
-              if (showNearby && cargo.nearbyDistanceKm != null)
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 8,
-                    vertical: 4,
-                  ),
-                  decoration: BoxDecoration(
-                    color: AppTheme.accent.withValues(alpha: 0.12),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Text(
-                    l10n.kmDistance(cargo.nearbyDistanceKm!),
-                    style: const TextStyle(
-                      color: AppTheme.accent,
-                      fontWeight: FontWeight.w700,
-                      fontSize: 12,
+                      fontSize: 15,
+                      color: palette.textPrimary,
                     ),
                   ),
                 ),
               StatusChip(status: cargo.status, date: cargo.createdAt),
             ],
           ),
+          if (showGpsMeta) ...[
+            const SizedBox(height: 12),
+            Text(
+              cargo.title,
+              style: TextStyle(
+                fontWeight: FontWeight.w800,
+                fontSize: 15,
+                color: palette.textPrimary,
+              ),
+            ),
+          ],
           const SizedBox(height: 10),
           Row(
             children: [
@@ -878,6 +868,65 @@ class _HomeCargoTile extends StatelessWidget {
                 ),
               ),
             ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _HomeTagChip extends StatelessWidget {
+  const _HomeTagChip({required this.label, required this.color});
+
+  final String label;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.10),
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: Text(
+        label,
+        style: TextStyle(
+          color: color,
+          fontSize: 12,
+          fontWeight: FontWeight.w700,
+        ),
+      ),
+    );
+  }
+}
+
+class _HomeDistanceChip extends StatelessWidget {
+  const _HomeDistanceChip({required this.km});
+
+  final num km;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.l10n;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+      decoration: BoxDecoration(
+        color: AppTheme.accent.withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const Icon(Icons.near_me, size: 14, color: AppTheme.accent),
+          const SizedBox(width: 4),
+          Text(
+            l10n.kmDistance(km),
+            style: const TextStyle(
+              color: AppTheme.accent,
+              fontSize: 12,
+              fontWeight: FontWeight.w700,
+            ),
           ),
         ],
       ),

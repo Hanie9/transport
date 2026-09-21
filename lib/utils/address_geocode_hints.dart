@@ -226,26 +226,9 @@ buildCargoGeocodeParams({
   final province = hints.province;
 
   if (city != null) {
-    final centroid = iranCityCentroids[city];
-    if (centroid != null) {
-      // Geocoding Plus snaps POIs (metro stations, squares, …) to the city
-      // centre when `location`/`extent` bias is sent — only pass city/province.
-      if (isPoiAddress(address)) {
-        return (
-          city: city,
-          province: province,
-          searchCenter: null,
-          searchExtent: null,
-        );
-      }
-      final radiusKm = hasSpecificLocationTerms(address) ? 42.0 : 65.0;
-      return (
-        city: city,
-        province: province,
-        searchCenter: centroid,
-        searchExtent: geocodeExtentAround(centroid, radiusKm: radiusKm),
-      );
-    }
+    // Do not send location/extent bias. Plus snaps streets and POIs toward
+    // the city centroid when those fields are present, so the map shows the
+    // wrong place and driving distances are measured to downtown.
     return (
       city: city,
       province: province,
@@ -258,13 +241,12 @@ buildCargoGeocodeParams({
   if (siblingResult != null &&
       originCity != null &&
       originCity.isNotEmpty &&
-      !isPoiAddress(address) &&
       _normalizeAddress(address).contains(originCity)) {
     return (
       city: originCity,
       province: siblingResult.province,
-      searchCenter: siblingResult.location,
-      searchExtent: geocodeExtentAround(siblingResult.location, radiusKm: 45),
+      searchCenter: null,
+      searchExtent: null,
     );
   }
 
@@ -288,6 +270,9 @@ bool hasSpecificLocationTerms(String address) {
     'نرسیده',
     'بعد از',
     'پل ',
+    'شهرک',
+    'میدان',
+    'فاز',
   ];
   final normalized = _normalizeAddress(address);
   return markers.any(normalized.contains);
@@ -307,9 +292,8 @@ bool isCityCentreGeocodingSnap(NeshanGeocodingResult result, String address) {
   if (!geocodedCityMatchesAddress(result: result, address: address))
     return true;
   if (isPoiAddress(address)) return true;
-  // Same-city street at centre with no metadata overlap — likely wrong snap.
-  const streetMarkers = ['خیابان', 'کوچه', 'بلوار', 'بزرگراه'];
-  return streetMarkers.any(_normalizeAddress(address).contains);
+  // Specific street/district at the city-centre pin — pick another candidate.
+  return true;
 }
 
 /// First five digits of a ten-digit Iranian postal code (گشت کدپستی).
@@ -1024,8 +1008,30 @@ bool isHardRejectGeocodingResult(NeshanGeocodingResult result, String address) {
   if (!isPlausibleIranCoordinate(result.location)) return true;
   if (!geocodedCityMatchesAddress(result: result, address: address))
     return true;
+  if (isCityCentreGeocodingSnap(result, address)) return true;
   return isSpuriousDefaultSearchPoi(result, address) ||
       isKnownNeshanFalsePositiveLocation(result, address);
+}
+
+/// True when [point] is the downtown pin for the city named in [address].
+bool isLikelyCityCentroidPoint(NeshanLatLng point, String address) {
+  final hints = extractGeocodeHints(address);
+  if (hints.city == null) return false;
+  final centroid = iranCityCentroids[hints.city];
+  if (centroid == null) return false;
+  return distanceMeters(
+        LatLng(point.latitude, point.longitude),
+        LatLng(centroid.latitude, centroid.longitude),
+      ) <=
+      2800;
+}
+
+/// Stored cargo coords that still lie inside the named city's metro area.
+bool storedPointFitsAddress(NeshanLatLng point, String address) {
+  if (!isPlausibleIranCoordinate(point)) return false;
+  final hints = extractGeocodeHints(address);
+  if (hints.city == null) return true;
+  return _isNearCity(point, hints.city!);
 }
 
 /// Soft quality check — used in tests; navigation accepts nearest valid match.

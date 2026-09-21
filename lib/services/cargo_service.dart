@@ -126,26 +126,32 @@ class CargoService extends ChangeNotifier {
   }
 
   Future<LatLng?> _originPoint(Cargo cargo) {
-    if (cargo.hasOriginCoords) {
-      return Future.value(LatLng(cargo.originLat!, cargo.originLng!));
-    }
     final key = cargo.origin.trim();
-    if (key.isEmpty) return Future.value(null);
-    final cached = _geocodedOrigins[key];
+    if (key.isEmpty && !cargo.hasOriginCoords) return Future.value(null);
+    final cacheKey =
+        '$key|${cargo.originLat ?? ''}|${cargo.originLng ?? ''}';
+    final cached = _geocodedOrigins[cacheKey];
     if (cached != null) return Future.value(cached);
 
-    return _originInFlight.putIfAbsent(key, () async {
+    return _originInFlight.putIfAbsent(cacheKey, () async {
       try {
-        final geo = await _routing.resolveCargoAddress(cargo.origin);
-        final point = LatLng(geo.location.latitude, geo.location.longitude);
-        _geocodedOrigins[key] = point;
+        final resolved = await _routing.resolveCargoMapPoint(
+          address: cargo.origin,
+          lat: cargo.originLat,
+          lng: cargo.originLng,
+        );
+        final point = LatLng(
+          resolved.location.latitude,
+          resolved.location.longitude,
+        );
+        _geocodedOrigins[cacheKey] = point;
         return point;
       } catch (_) {
         final fallback = originLatLngFromAddress(cargo.origin);
-        if (fallback != null) _geocodedOrigins[key] = fallback;
+        if (fallback != null) _geocodedOrigins[cacheKey] = fallback;
         return fallback;
       } finally {
-        _originInFlight.remove(key);
+        _originInFlight.remove(cacheKey);
       }
     });
   }
