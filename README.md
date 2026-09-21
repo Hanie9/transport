@@ -85,12 +85,12 @@ lib/
 
 ## داده‌های نمونه و آمادگی API
 
-برنامه به‌صورت پیش‌فرض به API روی `https://tran-develoop.liara.run` متصل است. برای اجرای کاملاً محلی می‌توانید `USE_MOCK_API=true` را فعال کنید.
+برنامه به‌صورت پیش‌فرض به API روی `https://kashan-project.liara.run` متصل است. برای اجرای کاملاً محلی می‌توانید `USE_MOCK_API=true` را فعال کنید.
 
 ```bash
 flutter run \
   --dart-define=USE_MOCK_API=false \
-  --dart-define=API_BASE_URL=https://tran-develoop.liara.run
+  --dart-define=API_BASE_URL=https://kashan-project.liara.run
 ```
 
 برای تست mock می‌توانید با هر شماره موبایل و رمز حداقل ۶ کاراکتر وارد شوید. نشست کاربر بعد از ورود ذخیره می‌شود و در اسپلش بازیابی می‌گردد.

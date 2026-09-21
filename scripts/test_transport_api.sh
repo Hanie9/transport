@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
-# Live API smoke test against tran-develoop.liara.run (OpenAPI)
+# Live API smoke test against kashan-project.liara.run (OpenAPI)
 # Usage: ./scripts/test_transport_api.sh
 
 set -euo pipefail
 
-BASE="${API_BASE_URL:-https://tran-develoop.liara.run}"
+BASE="${API_BASE_URL:-https://kashan-project.liara.run}"
 API="$BASE/api"
 COORD_PHONE="09355191018"
 DRIVER1="09121234567"
@@ -76,7 +76,7 @@ trap 'rm -rf "$TMP"' EXIT
 info "Health check $API/docs/"
 code=$(http_code "$API/docs/" "$TMP/health.json" || true)
 if [[ "$code" == "503" ]] || grep -q 'Application Error' "$TMP/health.json" 2>/dev/null; then
-  fail "سرور tran-develoop.liara.run خاموش است (503)."
+  fail "سرور kashan-project.liara.run خاموش است (503)."
 fi
 pass "Server reachable (HTTP $code)"
 

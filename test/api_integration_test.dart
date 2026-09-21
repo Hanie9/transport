@@ -8,7 +8,7 @@ import 'package:http/http.dart' as http;
 
 const _baseUrl = String.fromEnvironment(
   'API_BASE_URL',
-  defaultValue: 'https://tran-develoop.liara.run',
+  defaultValue: 'https://kashan-project.liara.run',
 );
 
 void main() {

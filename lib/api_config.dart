@@ -3,7 +3,7 @@
 /// Defaults to the production Liara host. Override at build time:
 /// ```bash
 /// flutter run \
-///   --dart-define=API_BASE_URL=https://tran-develoop.liara.run \
+///   --dart-define=API_BASE_URL=https://kashan-project.liara.run \
 ///   --dart-define=USE_MOCK_API=false
 /// ```
 class ApiConfig {
@@ -11,7 +11,7 @@ class ApiConfig {
 
   static const String apiBaseUrl = String.fromEnvironment(
     'API_BASE_URL',
-    defaultValue: 'https://tran-develoop.liara.run',
+    defaultValue: 'https://kashan-project.liara.run',
   );
 
   static const bool useMockApi = bool.fromEnvironment(

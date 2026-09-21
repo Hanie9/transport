@@ -106487,7 +106487,7 @@ ai(){var s=$.av(),r=A.vX()
 return new A.MQ(new A.be(null,t.am),new A.cY(B.aw,s),new A.cY(B.aw,s),new A.cY(B.aw,s),new A.cY(B.aw,s),new A.cY(B.aw,s),new A.cY(B.aw,s),new A.u6(r),B.d8,B.d8,B.bv)}}
 A.MQ.prototype={
 aB(){this.aZ()
-var s=B.c.W("https://tran-develoop.liara.run")
+var s=B.c.W("https://kashan-project.liara.run")
 if(s.length!==0)this.xe()},
 xe(){var s=0,r=A.q(t.H),q,p=2,o=[],n=this,m,l,k,j
 var $async$xe=A.r(function(a,b){if(a===1){o.push(b)
@@ -106589,7 +106589,7 @@ h=A.ev(a1.e,A.dV(a2,a2,a2,a2,a2,a2,a2,a2,!0,a2,a2,a2,a2,a2,a2,a2,a2,a2,a2,a2,a2,
 g=A.ev(a1.f,A.dV(a2,a2,a2,a2,a2,a2,a2,a2,!0,a2,a2,a2,a2,a2,a2,a2,a2,a2,a2,a2,a2,a2,a2,a2,a2,a2,a2,a2,a2,a2,a2,a2,a2,a2,a2,a2,a2,a2,a2,a2,q.gn(0)==="fa"?"\u0646\u0627\u0645 \u062e\u0627\u0646\u0648\u0627\u062f\u06af\u06cc":"Last name",!0,!0,!1,a2,B.U5,a2,a2,a2,a2,a2,a2,a2,a2,a2,a2,a2,a2),k,a2,a2,1,!1,a2,a2,B.Lr,a2,new A.aPn(a3))
 f=t.p
 g=A.b([h,B.bc,g,B.bc,A.ev(a1.r,A.dV(a2,a2,a2,a2,a2,a2,a2,a2,!0,a2,a2,a2,a2,a2,a2,a2,a2,a2,a2,a2,a2,a2,a2,a2,a2,a2,a2,a2,a2,a2,a2,"09123456789",a2,a2,a2,a2,a2,a2,a2,a2,q.gn(0)==="fa"?"\u0634\u0645\u0627\u0631\u0647 \u0645\u0648\u0628\u0627\u06cc\u0644":"Phone number",!0,!0,!1,a2,B.uQ,a2,a2,a2,a2,a2,a2,a2,a2,a2,a2,a2,a2),k,B.qe,a2,1,!1,a2,a2,B.aE,B.k,new A.aPr(a3))],f)
-h=B.c.W("https://tran-develoop.liara.run").length===0
+h=B.c.W("https://kashan-project.liara.run").length===0
 if(h)B.b.P(g,A.b([B.bc,A.ev(a1.w,A.dV(a2,a2,a2,a2,a2,a2,a2,a2,!0,a2,a2,a2,a2,a2,a2,a2,a2,a2,a2,a2,a2,a2,a2,a2,a2,a2,a2,a2,a2,a2,a2,a2,a2,a2,a2,a2,a2,a2,a2,a2,q.gn(0)==="fa"?"\u0627\u06cc\u0645\u06cc\u0644 (\u0627\u062e\u062a\u06cc\u0627\u0631\u06cc)":"Email (optional)",!0,!0,!1,a2,B.U2,a2,a2,a2,a2,a2,a2,a2,a2,a2,a2,a2,a2),k,B.LA,a2,1,!1,a2,a2,B.aE,B.k,a2)],f))
 if(!h&&a1.CW===B.bv){h=q.gn(0)==="fa"?"\u0646\u0648\u0639 \u0645\u0627\u0634\u06cc\u0646 \u062e\u0648\u062f \u0631\u0627 \u0627\u0646\u062a\u062e\u0627\u0628 \u06a9\u0646\u06cc\u062f. \u0627\u0646\u062a\u062e\u0627\u0628 \u0627\u0633\u062a\u0627\u0646 \u0627\u062e\u062a\u06cc\u0627\u0631\u06cc \u0627\u0633\u062a.":"Select your machine type. Choosing a province is optional."
 h=A.b([B.bc,A.L(h,a2,a2,a2,A.au(a2,a2,s.d,a2,a2,a2,a2,a2,a2,a2,a2,12,a2,a2,a2,a2,a2,!0,a2,a2,a2,a2,a2,a2,a2,a2),a2,a2),B.dE],f)
@@ -106847,7 +106847,7 @@ aB(){this.aZ()
 this.C3()},
 C3(){var s=0,r=A.q(t.H),q,p=2,o=[],n=this,m,l,k,j
 var $async$C3=A.r(function(a,b){if(a===1){o.push(b)
-s=p}for(;;)switch(s){case 0:k=B.c.W("https://tran-develoop.liara.run")
+s=p}for(;;)switch(s){case 0:k=B.c.W("https://kashan-project.liara.run")
 if(k.length===0){if(n.c!=null)n.O(new A.aC8(n))
 s=1
 break}p=4
@@ -106896,7 +106896,7 @@ a3=A.aC(a3,B.u,t.J)
 a3.toString
 m=a3
 if(!n.d.gU().kQ()){s=1
-break}a3=B.c.W("https://tran-develoop.liara.run")
+break}a3=B.c.W("https://kashan-project.liara.run")
 if(a3.length!==0)if(n.ay==null||n.ch==null||n.CW==null||n.cx==null){a3=n.c.a8(t.Q).f
 a3.e0(A.dt(null,null,null,null,null,B.B,null,A.L(m.a.gn(0)==="fa"?"\u0646\u0648\u0639 \u0628\u0627\u0631\u06af\u06cc\u0631 \u0648 \u06a9\u0627\u0644\u0627 \u0631\u0627 \u0627\u0646\u062a\u062e\u0627\u0628 \u06a9\u0646\u06cc\u062f":"Select trailer and goods type",null,null,null,null,null,null),null,B.aC,null,null,null,null,null,null,null,null,null,null))
 s=1
@@ -106949,7 +106949,7 @@ break
 case 6:case 1:return A.o(q,r)
 case 2:return A.n(o.at(-1),r)}})
 return A.p($async$B7,r)},
-C(a){var s,r,q,p,o,n,m,l,k,j=this,i=null,h="https://tran-develoop.liara.run",g="\u062b\u0628\u062a \u0628\u0627\u0631 \u062c\u062f\u06cc\u062f",f="Add new cargo",e=A.aC(a,B.u,t.J)
+C(a){var s,r,q,p,o,n,m,l,k,j=this,i=null,h="https://kashan-project.liara.run",g="\u062b\u0628\u062a \u0628\u0627\u0631 \u062c\u062f\u06cc\u062f",f="Add new cargo",e=A.aC(a,B.u,t.J)
 e.toString
 if(j.cy){s=B.c.W(h)
 s=s.length!==0}else s=!1
@@ -107489,7 +107489,7 @@ case 3:j=b
 if(n.c==null){s=1
 break}if(j==null){n.O(new A.aHn(n))
 s=1
-break}l=B.c.W("https://tran-develoop.liara.run")
+break}l=B.c.W("https://kashan-project.liara.run")
 s=l.length!==0?4:5
 break
 case 4:p=7
@@ -107554,7 +107554,7 @@ a4.toString
 a4=A.aC(a4,B.u,t.J)
 a4.toString
 if(p.ay==null||!p.d.gU().kQ()){s=1
-break}o=B.c.W("https://tran-develoop.liara.run")
+break}o=B.c.W("https://kashan-project.liara.run")
 if(o.length!==0)if(p.ch==null||p.CW==null||p.cx==null||p.cy==null){o=p.c.a8(t.Q).f
 o.e0(A.dt(null,null,null,null,null,B.B,null,A.L(a4.a.gn(0)==="fa"?"\u0646\u0648\u0639 \u0628\u0627\u0631\u06af\u06cc\u0631 \u0648 \u06a9\u0627\u0644\u0627 \u0631\u0627 \u0627\u0646\u062a\u062e\u0627\u0628 \u06a9\u0646\u06cc\u062f":"Select trailer and goods type",null,null,null,null,null,null),null,B.aC,null,null,null,null,null,null,null,null,null,null))
 s=1
@@ -107619,7 +107619,7 @@ q=A.nl(!o,A.b([n,A.X5(!0,s.gn(0)==="fa"?"\u0648\u06cc\u0631\u0627\u06cc\u0634 \u
 p=A.ev(j.r,A.dV(i,i,i,i,i,i,i,i,!0,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,s.gn(0)==="fa"?"\u0639\u0646\u0648\u0627\u0646 \u0628\u0627\u0631":"Cargo title",!0,!0,!1,i,B.uK,i,i,i,i,i,i,i,i,i,i,i,i),i,i,100,1,!1,i,new A.aHz(),B.aE,i,new A.aHA(f))
 o=t.p
 p=A.b([q,B.W,p,B.W,A.ev(j.w,A.dV(i,i,i,i,i,i,i,i,!0,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,s.gn(0)==="fa"?"\u062a\u0648\u0636\u06cc\u062d\u0627\u062a":"Description",!0,!0,!1,i,B.uM,i,i,i,i,i,i,i,i,i,i,i,i),i,i,450,3,!1,i,new A.aHD(),B.aE,i,new A.aHE(f)),B.W],o)
-q=B.c.W("https://tran-develoop.liara.run")
+q=B.c.W("https://kashan-project.liara.run")
 if(q.length!==0){q=s.gn(0)==="fa"?"\u0646\u0648\u0639 \u06a9\u0627\u0644\u0627":"Goods type"
 n=j.ch
 n=j.Cw(B.dY,j.as,q,new A.aHF(j),n)
@@ -107845,7 +107845,7 @@ l=l.a.gn(0)==="fa"?"\u062e\u0637\u0627\u06cc\u06cc \u0631\u062e \u062f\u0627\u06
 o.e0(A.dt(null,null,null,null,null,B.B,null,A.L(l,null,null,null,null,null,null),null,B.aC,null,null,null,null,null,null,null,null,null,null))
 case 1:return A.o(q,r)}})
 return A.p($async$tq,r)},
-C(a5){var s,r,q,p,o,n,m,l,k,j,i,h,g,f,e,d,c,b,a=this,a0=null,a1="\u062c\u0632\u0626\u06cc\u0627\u062a \u0628\u0627\u0631",a2="Cargo details",a3="https://tran-develoop.liara.run",a4=A.aC(a5,B.u,t.J)
+C(a5){var s,r,q,p,o,n,m,l,k,j,i,h,g,f,e,d,c,b,a=this,a0=null,a1="\u062c\u0632\u0626\u06cc\u0627\u062a \u0628\u0627\u0631",a2="Cargo details",a3="https://kashan-project.liara.run",a4=A.aC(a5,B.u,t.J)
 a4.toString
 if(a.f){a4=a4.a
 s=a4.gn(0)==="fa"?a1:a2
@@ -109086,7 +109086,7 @@ a3.push(A.aVi(B.U9,A.L(p.gn(0)==="fa"?a:d,a9,a9,a9,a9,a9,a9),new A.aOv(a8,b4,b3)
 if(!a8.z)b3.push(B.bZ)
 b3.push(A.XG(A.L(p.gn(0)==="fa"?"\u0631\u0633\u06cc\u062f\u0645 \u0628\u0647 \u0645\u0628\u062f\u0627 \u2014 \u0627\u062f\u0627\u0645\u0647 \u0628\u0647 \u0645\u0642\u0635\u062f":"Arrived at origin \u2014 continue to destination",a9,a9,a9,a9,a9,a9),new A.aOw(a8)))
 B.b.P(a3,b3)}else{d=A.b([B.bZ],f)
-a=B.c.W("https://tran-develoop.liara.run")
+a=B.c.W("https://kashan-project.liara.run")
 if(a.length===0)d.push(A.XG(A.L(p.gn(0)==="fa"?"\u0628\u0627\u0631 \u0631\u0627 \u062a\u062d\u0648\u06cc\u0644 \u062f\u0627\u062f\u0645":"Mark as delivered",a9,a9,a9,a9,a9,a9),new A.aOx(a8,q,b4,b3)))
 else d.push(new A.pc(p.gn(0)==="fa"?"\u067e\u0633 \u0627\u0632 \u062a\u062d\u0648\u06cc\u0644\u060c \u0645\u062a\u0635\u062f\u06cc \u0648\u0636\u0639\u06cc\u062a \u0628\u0627\u0631 \u0631\u0627 \u0628\u0647\u200c\u0631\u0648\u0632\u0631\u0633\u0627\u0646\u06cc \u0645\u06cc\u200c\u06a9\u0646\u062f":"After delivery, the coordinator will update the cargo status",B.oi,B.A,a9))
 B.b.P(a3,d)}return A.dP(new A.dZ(o,h,g,a9),s.a,A.aV(A.b([e,A.aT(a9,A.lU(!0,new A.aS(B.ny,A.aV(a3,B.aB,B.j,B.n),a9),!1,B.au,!1),B.m,a9,a9,new A.aE(s.b,a9,new A.el(new A.b2(c,1,B.C,-1),B.w,B.w,B.w),B.ML,b,a9,B.t),a9,a9,a9,a9,a9,a9,a9)],f),B.p,B.j,B.n),a9,a9,a9,a9)}}
@@ -109391,7 +109391,7 @@ s=this.a.c
 if(a.c!=s)this.WG(s)},
 Dd(){var s=0,r=A.q(t.H),q,p=2,o=[],n=this,m,l,k,j,i,h
 var $async$Dd=A.r(function(a,b){if(a===1){o.push(b)
-s=p}for(;;)switch(s){case 0:i=B.c.W("https://tran-develoop.liara.run")
+s=p}for(;;)switch(s){case 0:i=B.c.W("https://kashan-project.liara.run")
 if(i.length===0){i=A.b([],t.Hd)
 for(l=0;l<31;l=k){k=l+1
 i.push(new A.eK(k,B.Zk[l]))}n.Q=i
@@ -109437,7 +109437,7 @@ h.toString
 o=p.e.gU()
 n=o==null?null:o.kQ()
 if(!p.d.gU().kQ()||n!=null){s=1
-break}o=B.c.W("https://tran-develoop.liara.run").length===0
+break}o=B.c.W("https://kashan-project.liara.run").length===0
 if(o){if(p.w==null){o=p.c.a8(t.Q).f
 o.e0(A.dt(null,null,null,null,null,B.B,null,A.L(h.a.gn(0)==="fa"?"\u0646\u0648\u0639 \u0628\u0627\u0631\u06af\u06cc\u0631 \u0631\u0627 \u0627\u0646\u062a\u062e\u0627\u0628 \u06a9\u0646\u06cc\u062f":"Select a trailer type",null,null,null,null,null,null),null,B.aC,null,null,null,null,null,null,null,null,null,null))
 s=1
@@ -109467,7 +109467,7 @@ s=$.ko().a.gn(0)
 r=t.p
 q=A.b([],r)
 m.a.toString
-p=B.c.W("https://tran-develoop.liara.run").length===0
+p=B.c.W("https://kashan-project.liara.run").length===0
 if(!p){o=B.aV.a7(0.08)
 n=A.ax(12)
 B.b.P(q,A.b([A.aT(l,A.L(s==="en"?"Visible cargos are filtered by the machine linked to your account on the server. Contact support if they do not match.":"\u0628\u0627\u0631\u0647\u0627\u06cc \u0642\u0627\u0628\u0644 \u0645\u0634\u0627\u0647\u062f\u0647 \u062a\u0648\u0633\u0637 \u0633\u0631\u0648\u0631 \u0628\u0631 \u0627\u0633\u0627\u0633 \u0645\u0627\u0634\u06cc\u0646 \u062d\u0633\u0627\u0628 \u0634\u0645\u0627 \u0641\u06cc\u0644\u062a\u0631 \u0645\u06cc\u200c\u0634\u0648\u0646\u062f. \u062f\u0631 \u0635\u0648\u0631\u062a \u0639\u062f\u0645 \u062a\u0637\u0627\u0628\u0642\u060c \u0628\u0627 \u067e\u0634\u062a\u06cc\u0628\u0627\u0646\u06cc \u062a\u0645\u0627\u0633 \u0628\u06af\u06cc\u0631\u06cc\u062f.",l,l,l,B.agk,l,l),B.m,l,l,new A.aE(o,l,l,n,l,l,B.t),l,l,l,B.eE,l,l,l),B.W],r))}s=m.a.c
@@ -110787,7 +110787,7 @@ A.r2.prototype={
 k(a){return"ApiException("+A.m(this.b)+"): "+this.a},
 $ibM:1}
 A.aeM.prototype={
-a_O(a,b){var s=A.bv("/+$",!0,!1),r=A.dv("https://tran-develoop.liara.run",s,"")
+a_O(a,b){var s=A.bv("/+$",!0,!1),r=A.dv("https://kashan-project.liara.run",s,"")
 return A.dl(r+(B.c.bJ(a,"/")?a:"/"+a),0,null).pt(0,b)},
 D9(a){return this.a_O(a,null)},
 tI(a){return this.amj(a)},
@@ -110958,7 +110958,7 @@ return}if(t.bE.b(a)){r.r=$.ko().a.gn(0)==="en"?"Invalid response from server.":"
 return}r.r=A.Pv($.ko().a.gn(0)==="en",s,null)},
 ox(){var s=0,r=A.q(t.y),q,p=2,o=[],n=this,m,l,k,j,i,h
 var $async$ox=A.r(function(a,b){if(a===1){o.push(b)
-s=p}for(;;)switch(s){case 0:i=B.c.W("https://tran-develoop.liara.run")
+s=p}for(;;)switch(s){case 0:i=B.c.W("https://kashan-project.liara.run")
 if(i.length===0){q=!0
 s=1
 break}n.r=null
@@ -111015,7 +111015,7 @@ s=11
 return A.h(g.Gn(0,"cached_user_json"),$async$lr)
 case 11:l=b
 if(l!=null&&l.length!==0)m.c=A.a0l(t.P.a(B.am.Ej(0,l,null)))
-f=B.c.W("https://tran-develoop.liara.run")
+f=B.c.W("https://kashan-project.liara.run")
 s=f.length!==0?12:13
 break
 case 12:s=14
@@ -111074,7 +111074,7 @@ m.r=null
 m.f=!1
 m.a4()
 p=4
-e=B.c.W("https://tran-develoop.liara.run").length===0
+e=B.c.W("https://kashan-project.liara.run").length===0
 s=e?7:9
 break
 case 7:s=10
@@ -111166,7 +111166,7 @@ m.r=null
 m.f=!1
 m.a4()
 p=4
-i=B.c.W("https://tran-develoop.liara.run")
+i=B.c.W("https://kashan-project.liara.run")
 s=i.length===0?7:9
 break
 case 7:s=10
@@ -111238,7 +111238,7 @@ var $async$rS=A.r(function(b,c){if(b===1){o.push(c)
 s=p}for(;;)switch(s){case 0:if(n.c==null){q=!1
 s=1
 break}n.r=null
-j=B.c.W("https://tran-develoop.liara.run")
+j=B.c.W("https://kashan-project.liara.run")
 s=j.length===0?3:5
 break
 case 3:s=6
@@ -111297,7 +111297,7 @@ ya(a,b,c){return this.awz(a,b,c)},
 awz(a,b,c){var s=0,r=A.q(t.y),q,p=2,o=[],n=this,m,l,k,j
 var $async$ya=A.r(function(d,e){if(d===1){o.push(e)
 s=p}for(;;)switch(s){case 0:n.r=null
-l=B.c.W("https://tran-develoop.liara.run")
+l=B.c.W("https://kashan-project.liara.run")
 s=l.length===0?3:4
 break
 case 3:s=5
@@ -111340,7 +111340,7 @@ s=p}for(;;)switch(s){case 0:n.r=null
 d=n.c
 if(d==null){q=!1
 s=1
-break}c=B.c.W("https://tran-develoop.liara.run")
+break}c=B.c.W("https://kashan-project.liara.run")
 s=c.length===0?3:4
 break
 case 3:l=d.axV(a1,a3)
@@ -111428,7 +111428,7 @@ return a.ay6(p,q,j)},
 WS(a){return this.WT(a,null)},
 rt(){var s=0,r=A.q(t.H),q=1,p=[],o=this,n,m,l,k
 var $async$rt=A.r(function(a,b){if(a===1){p.push(b)
-s=q}for(;;)switch(s){case 0:l=B.c.W("https://tran-develoop.liara.run")
+s=q}for(;;)switch(s){case 0:l=B.c.W("https://kashan-project.liara.run")
 s=l.length!==0?2:3
 break
 case 2:q=5
@@ -111550,7 +111550,7 @@ var $async$pF=A.r(function(a,b){if(a===1){o.push(b)
 s=p}for(;;)switch(s){case 0:g=null
 n.x=null
 p=4
-j=B.c.W("https://tran-develoop.liara.run")
+j=B.c.W("https://kashan-project.liara.run")
 s=j.length!==0?7:8
 break
 case 7:s=9
@@ -111588,7 +111588,7 @@ pK(a,b){return this.a6D(a,b)},
 a6C(a){return this.pK(1,a)},
 a6D(a,a0){var s=0,r=A.q(t.QZ),q,p=2,o=[],n=this,m,l,k,j,i,h,g,f,e,d,c,b
 var $async$pK=A.r(function(a1,a2){if(a1===1){o.push(a2)
-s=p}for(;;)switch(s){case 0:c=B.c.W("https://tran-develoop.liara.run")
+s=p}for(;;)switch(s){case 0:c=B.c.W("https://kashan-project.liara.run")
 s=c.length!==0?3:4
 break
 case 3:p=6
@@ -111651,7 +111651,7 @@ return this.a6v(a)},
 a6v(a){var s=0,r=A.q(t.zW),q,p=2,o=[],n=this,m,l,k,j,i,h,g
 var $async$pH=A.r(function(b,c){if(b===1){o.push(c)
 s=p}for(;;)switch(s){case 0:j=null
-i=B.c.W("https://tran-develoop.liara.run")
+i=B.c.W("https://kashan-project.liara.run")
 s=i.length!==0?3:4
 break
 case 3:p=6
@@ -111705,7 +111705,7 @@ case 5:a1=h
 case 4:m=a1
 if(m==null){q=B.dv
 s=1
-break}i=B.c.W("https://tran-develoop.liara.run")
+break}i=B.c.W("https://kashan-project.liara.run")
 s=i.length!==0?7:8
 break
 case 7:p=10
@@ -111755,7 +111755,7 @@ case 2:return A.n(o.at(-1),r)}})
 return A.p($async$nU,r)},
 pJ(){var s=0,r=A.q(t.zW),q,p=2,o=[],n=this,m,l,k,j,i,h,g
 var $async$pJ=A.r(function(a,b){if(a===1){o.push(b)
-s=p}for(;;)switch(s){case 0:h=B.c.W("https://tran-develoop.liara.run")
+s=p}for(;;)switch(s){case 0:h=B.c.W("https://kashan-project.liara.run")
 s=h.length!==0?3:4
 break
 case 3:p=6
@@ -111815,7 +111815,7 @@ a6u(a){var s=0,r=A.q(t.pp),q,p=2,o=[],n=this,m,l,k,j,i,h,g,f,e
 var $async$kS=A.r(function(b,c){if(b===1){o.push(c)
 s=p}for(;;)A:switch(s){case 0:n.x=null
 p=4
-h=B.c.W("https://tran-develoop.liara.run")
+h=B.c.W("https://kashan-project.liara.run")
 s=h.length!==0?7:8
 break
 case 7:p=10
@@ -111882,7 +111882,7 @@ f=null
 e=null
 d=null
 n.x=null
-i=B.c.W("https://tran-develoop.liara.run")
+i=B.c.W("https://kashan-project.liara.run")
 s=i.length!==0?3:4
 break
 case 3:p=6
@@ -111927,7 +111927,7 @@ a6E(){return this.pL(null,null)},
 a6F(a,b){var s=0,r=A.q(t.zW),q,p=2,o=[],n=this,m,l,k,j,i,h,g,f,e,d,c
 var $async$pL=A.r(function(a0,a1){if(a0===1){o.push(a1)
 s=p}for(;;)switch(s){case 0:n.x=null
-h=B.c.W("https://tran-develoop.liara.run")
+h=B.c.W("https://kashan-project.liara.run")
 s=h.length!==0?3:4
 break
 case 3:p=6
@@ -111980,7 +111980,7 @@ av7(a1,a2,a3,a4){var s=0,r=A.q(t.y),q,p=2,o=[],n=this,m,l,k,j,i,h,g,f,e,d,c,b,a,
 var $async$qw=A.r(function(a5,a6){if(a5===1){o.push(a6)
 s=p}for(;;)switch(s){case 0:n.x=null
 p=4
-f=B.c.W("https://tran-develoop.liara.run")
+f=B.c.W("https://kashan-project.liara.run")
 s=f.length!==0?7:8
 break
 case 7:s=9
@@ -112054,7 +112054,7 @@ ayE(a){var s=0,r=A.q(t.y),q,p=2,o=[],n=this,m,l,k,j
 var $async$uJ=A.r(function(b,c){if(b===1){o.push(c)
 s=p}for(;;)switch(s){case 0:n.x=null
 p=4
-l=B.c.W("https://tran-develoop.liara.run")
+l=B.c.W("https://kashan-project.liara.run")
 s=l.length!==0?7:8
 break
 case 7:s=9
@@ -112096,7 +112096,7 @@ aGa(a5,a6,a7,a8,a9,b0,b1,b2,b3,b4,b5,b6,b7,b8,b9,c0,c1,c2){var s=0,r=A.q(t.y),q,
 var $async$rQ=A.r(function(c3,c4){if(c3===1){o.push(c4)
 s=p}for(;;)switch(s){case 0:n.x=null
 p=4
-i=B.c.W("https://tran-develoop.liara.run")
+i=B.c.W("https://kashan-project.liara.run")
 s=i.length!==0?7:8
 break
 case 7:m=A.aWU(a5,a6,a8,a9,b0,b2,b3,b4,b6,b7,b8,b9,c0,c1,c2)
@@ -112208,7 +112208,7 @@ awY(a,b){var s=0,r=A.q(t.y),q,p=2,o=[],n=this,m,l,k,j,i,h,g,f,e
 var $async$yj=A.r(function(c,d){if(c===1){o.push(d)
 s=p}for(;;)switch(s){case 0:n.x=null
 p=4
-i=B.c.W("https://tran-develoop.liara.run")
+i=B.c.W("https://kashan-project.liara.run")
 s=i.length!==0?7:9
 break
 case 7:i=b?"/api/driver/bars/"+a+"/complete/":"/api/operator/bars/"+a+"/complete/"
@@ -113042,7 +113042,7 @@ j.m(0,"address",m)
 if(c!=null&&B.c.W(c).length!==0)j.m(0,"city",B.c.W(c))
 if(d!=null&&B.c.W(d).length!==0)j.m(0,"province",B.c.W(d))
 s=3
-return A.h(A.OI(A.dl("https://tran-develoop.liara.run/transport/neshan/geocode",0,null).pt(0,A.ad(["json",B.am.j6(j,null)],l,k)),A.ad(["Authorization","Bearer "+A.m(b),"Accept","application/json","Cache-Control","no-cache"],l,l)),$async$A8)
+return A.h(A.OI(A.dl("https://kashan-project.liara.run/transport/neshan/geocode",0,null).pt(0,A.ad(["json",B.am.j6(j,null)],l,k)),A.ad(["Authorization","Bearer "+A.m(b),"Accept","application/json","Cache-Control","no-cache"],l,l)),$async$A8)
 case 3:p=h
 o=B.a7.ec(0,p.w)
 n=A.aW6(p.b,o)
@@ -113059,7 +113059,7 @@ for(;;)switch(s){case 0:l=B.c.W(a)
 if(l.length===0||l==="---")throw A.f(B.pe)
 p=t.N
 s=3
-return A.h(A.OI(A.dl("https://tran-develoop.liara.run/transport/neshan/search",0,null).pt(0,A.ad(["term",l,"lat",B.d.k(c.a),"lng",B.d.k(c.b)],p,t.z)),A.ad(["Authorization","Bearer "+A.m(b),"Accept","application/json","Cache-Control","no-cache"],p,p)),$async$As)
+return A.h(A.OI(A.dl("https://kashan-project.liara.run/transport/neshan/search",0,null).pt(0,A.ad(["term",l,"lat",B.d.k(c.a),"lng",B.d.k(c.b)],p,t.z)),A.ad(["Authorization","Bearer "+A.m(b),"Accept","application/json","Cache-Control","no-cache"],p,p)),$async$As)
 case 3:o=f
 n=B.a7.ec(0,o.w)
 m=A.aW6(o.b,n)
@@ -113083,7 +113083,7 @@ l.m(0,"avoidTrafficZone",String(!1))
 l.m(0,"avoidOddEvenZone",String(!1))
 if(!g)l.m(0,"traffic",i)
 s=3
-return A.h(A.OI(A.dl("https://tran-develoop.liara.run/transport/neshan/route",0,null).pt(0,l),A.ad(["Authorization","Bearer "+A.m(b),"Accept","application/json","Cache-Control","no-cache"],m,m)),$async$w2)
+return A.h(A.OI(A.dl("https://kashan-project.liara.run/transport/neshan/route",0,null).pt(0,l),A.ad(["Authorization","Bearer "+A.m(b),"Accept","application/json","Cache-Control","no-cache"],m,m)),$async$w2)
 case 3:p=a1
 o=B.a7.ec(0,p.w)
 n=A.aW6(p.b,o)
@@ -113362,7 +113362,7 @@ case 1:return A.o(q,r)}})
 return A.p($async$mi,r)},
 Gt(){var s=0,r=A.q(t.H),q,p
 var $async$Gt=A.r(function(a,b){if(a===1)return A.n(b,r)
-for(;;)switch(s){case 0:p=B.c.W("https://tran-develoop.liara.run")
+for(;;)switch(s){case 0:p=B.c.W("https://kashan-project.liara.run")
 if(p.length===0){s=1
 break}case 1:return A.o(q,r)}})
 return A.p($async$Gt,r)}}

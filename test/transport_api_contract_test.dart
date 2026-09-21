@@ -82,7 +82,7 @@ void main() {
     });
 
     test('uses the develoop host and documented API paths', () {
-      expect(ApiConfig.apiBaseUrl, 'https://tran-develoop.liara.run');
+      expect(ApiConfig.apiBaseUrl, 'https://kashan-project.liara.run');
       expect(ApiConfig.loginPath, '/api/accounts/login');
       expect(ApiConfig.registerPath, '/api/accounts/register/');
       expect(ApiConfig.profilePath, '/api/accounts/profile/');
